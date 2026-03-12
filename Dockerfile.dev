@@ -1,0 +1,18 @@
+FROM node:18-alpine
+
+WORKDIR /usr/src/app
+
+# Copiamos package files y instalamos deps una sola vez durante build inicial
+COPY package*.json ./
+
+# Instalar deps (se ejecuta solo cuando construyas esta imagen)
+RUN npm ci --no-audit --no-fund
+
+# Copiamos el resto (no necesario si montás un volumen en compose)
+COPY . .
+
+# Puerto que CRA usa por defecto es 3000
+EXPOSE 3000
+
+# Comando por defecto (en docker-compose dev normalmente se sobrescribe)
+CMD ["npm", "start"]
