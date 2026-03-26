@@ -1,5 +1,6 @@
 // src/App.jsx
 import React, { useEffect, useState } from 'react';
+import Nav from './components/nav';
 import './App.css';
 
 function App() {
@@ -17,9 +18,13 @@ function App() {
   }, [API]);
 
   return (
-    <div >
-      
-    </div>
+    <>
+      <Nav />
+
+      <div className="container mt-4">
+        Inicio
+      </div>
+    </>
   );
 }
 
