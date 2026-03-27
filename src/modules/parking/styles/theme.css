@@ -8,8 +8,18 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #030213;
-  --primary-foreground: oklch(1 0 0);
+  --primary: #C41230;
+  --primary-foreground: #ffffff;
+
+  /* Bootstrap overrides */
+  --bs-primary: #C41230;
+  --bs-primary-rgb: 196, 18, 48;
+  --bs-btn-bg: #C41230;
+  --bs-btn-border-color: #C41230;
+  --bs-btn-hover-bg: #a00f28;
+  --bs-btn-hover-border-color: #a00f28;
+  --bs-link-color: #C41230;
+  --bs-link-hover-color: #a00f28;
   --secondary: oklch(0.95 0.0058 264.53);
   --secondary-foreground: #030213;
   --muted: #ececf0;
@@ -117,6 +127,26 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+}
+
+.btn-primary {
+  --bs-btn-bg: #C41230;
+  --bs-btn-border-color: #C41230;
+  --bs-btn-hover-bg: #a00f28;
+  --bs-btn-hover-border-color: #a00f28;
+  --bs-btn-active-bg: #8c0d22;
+  --bs-btn-active-border-color: #8c0d22;
+  --bs-btn-disabled-bg: #C41230;
+  --bs-btn-disabled-border-color: #C41230;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: #C41230;
+  --bs-btn-border-color: #C41230;
+  --bs-btn-hover-bg: #C41230;
+  --bs-btn-hover-border-color: #C41230;
+  --bs-btn-active-bg: #C41230;
+  --bs-btn-active-border-color: #C41230;
 }
 
 @layer base {

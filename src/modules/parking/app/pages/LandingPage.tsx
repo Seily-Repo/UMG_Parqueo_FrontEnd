@@ -2,21 +2,28 @@ import { useNavigate } from 'react-router';
 import { Row, Col, Card, Button, Container } from 'react-bootstrap';
 import { Car } from 'lucide-react';
 import { AppHeader } from '../components/AppHeader';
+import villanueva from '../../../../assets/villanueva.webp';
 
 export function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #e3f2fd 0%, #ffffff 50%, #ede7f6 100%)' }}>
+    <div style={{
+      minHeight: '100vh',
+      backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${villanueva})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed',
+    }}>
       <AppHeader />
 
       {/* Hero Section */}
       <Container className="py-5">
         <div className="text-center mb-5">
-          <h1 className="display-4 fw-bold mb-3">
+          <h1 className="display-4 fw-bold mb-3" style={{ color: 'white' }}>
             Sistema de Registro de Parqueo Universitario
           </h1>
-          <p className="lead text-muted" style={{ maxWidth: 700, margin: '0 auto' }}>
+          <p className="lead" style={{ maxWidth: 700, margin: '0 auto', color: 'rgba(255,255,255,0.8)' }}>
             Gestiona tu parqueo de forma rápida y segura. Elige tu módulo para comenzar.
           </p>
         </div>
@@ -28,7 +35,7 @@ export function LandingPage() {
             <Card className="h-100 shadow-sm" style={{ border: '2px solid #e3f2fd', transition: 'all 0.3s' }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)';
-                e.currentTarget.style.borderColor = '#1976d2';
+                e.currentTarget.style.borderColor = '#C41230';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.12)';
@@ -36,47 +43,14 @@ export function LandingPage() {
               }}
             >
               <Card.Body className="text-center p-4">
-                <div style={{ width: 80, height: 80, backgroundColor: '#e3f2fd', borderRadius: '50%' }} 
-                     className="d-flex align-items-center justify-content-center mx-auto mb-4">
-                  <Car size={40} color="#1976d2" />
+                <div className="d-flex align-items-center justify-content-center mx-auto mb-4">
+                  <Car size={40} color="#C41230" />
                 </div>
-                <Card.Title className="h4 mb-2">Módulo de Usuario</Card.Title>
+                <Card.Title className="h4 mb-2">Registro De Parqueo</Card.Title>
                 <Card.Subtitle className="mb-4 text-muted">
                   Estudiantes y personal universitario
                 </Card.Subtitle>
                 
-                <ul className="list-unstyled text-start text-muted mb-4">
-                  <li className="mb-2">
-                    <div className="d-flex align-items-center gap-2">
-                      <div style={{ width: 6, height: 6, backgroundColor: '#1976d2', borderRadius: '50%' }}></div>
-                      <span>Registro de datos personales</span>
-                    </div>
-                  </li>
-                  <li className="mb-2">
-                    <div className="d-flex align-items-center gap-2">
-                      <div style={{ width: 6, height: 6, backgroundColor: '#1976d2', borderRadius: '50%' }}></div>
-                      <span>Registro de vehículos (hasta 3)</span>
-                    </div>
-                  </li>
-                  <li className="mb-2">
-                    <div className="d-flex align-items-center gap-2">
-                      <div style={{ width: 6, height: 6, backgroundColor: '#1976d2', borderRadius: '50%' }}></div>
-                      <span>Selección de plan de parqueo</span>
-                    </div>
-                  </li>
-                  <li className="mb-2">
-                    <div className="d-flex align-items-center gap-2">
-                      <div style={{ width: 6, height: 6, backgroundColor: '#1976d2', borderRadius: '50%' }}></div>
-                      <span>Pago en línea seguro</span>
-                    </div>
-                  </li>
-                  <li className="mb-2">
-                    <div className="d-flex align-items-center gap-2">
-                      <div style={{ width: 6, height: 6, backgroundColor: '#1976d2', borderRadius: '50%' }}></div>
-                      <span>Firma digital del acuerdo</span>
-                    </div>
-                  </li>
-                </ul>
                 
                 <Button 
                   variant="primary" 
