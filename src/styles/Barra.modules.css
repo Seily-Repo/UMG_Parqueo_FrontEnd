@@ -3,8 +3,8 @@
     height: 10vh;
 }
 
-.navbarMovile{
-    background-color: #c7352e;
+.navbarMobile{
+    background-color: #c7352e !important;
 }
 
 .navbar-brand{
