@@ -1,13 +1,19 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+
+.ff-Urbanist-xbi {
+  font-family: "Urbanist-ExtraBoldItalic" !important;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.ff-Urbanist-xli {
+  font-family: "Urbanist-ExtraLightItalic" !important;
+}
+
+/* */
+
+h1.display-1,
+h2.display-2,
+h3.display-3,
+h4.display-4,
+h5.display-5 {
+  color: #003366;
+  font-family: "Urbanist-ExtraBoldItalic", sans-serif;
 }

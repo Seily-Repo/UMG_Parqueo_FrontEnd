@@ -1,5 +1,6 @@
 // src/App.jsx
 import React, { useEffect, useState } from 'react';
+import Nav from './components/nav';
 import './App.css';
 
 function App() {
@@ -17,11 +18,13 @@ function App() {
   }, [API]);
 
   return (
-    <div style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
-      <h1>UMG Parqueo - Frontend</h1>
-      <p>Mensaje desde backend: <strong>{msg}</strong></p>
-      <p>API: <code>{API}</code></p>
-    </div>
+    <>
+      <Nav />
+
+      <div className="container mt-4">
+        Inicio
+      </div>
+    </>
   );
 }
 
