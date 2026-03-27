@@ -24,6 +24,7 @@ RUN npm run build
 # production image
 FROM nginx:stable-alpine AS runner
 COPY --from=builder /usr/src/app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # optional: custom nginx conf (gzip, cache headers) para mejorar performance
 EXPOSE 80

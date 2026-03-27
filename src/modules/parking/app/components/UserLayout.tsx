@@ -1,6 +1,7 @@
 import { Outlet, useLocation, useNavigate } from 'react-router';
-import { Container, Button, ProgressBar } from 'react-bootstrap';
-import { GraduationCap, ArrowLeft } from 'lucide-react';
+import { Container, Button } from 'react-bootstrap';
+import { ArrowLeft } from 'lucide-react';
+import { AppHeader } from './AppHeader';
 
 export function UserLayout() {
   const location = useLocation();
@@ -18,26 +19,14 @@ export function UserLayout() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #e3f2fd 0%, #ffffff 50%, #ede7f6 100%)' }}>
-      {/* Header */}
-      <div style={{ borderBottom: '1px solid #dee2e6', backgroundColor: 'rgba(255, 255, 255, 0.9)', position: 'sticky', top: 0, zIndex: 1000 }}>
-        <Container>
-          <div className="d-flex align-items-center justify-content-between py-3">
-            <div className="d-flex align-items-center gap-3">
-              <div style={{ width: 40, height: 40, backgroundColor: '#1976d2', borderRadius: 8 }} className="d-flex align-items-center justify-content-center">
-                <GraduationCap size={24} color="white" />
-              </div>
-              <div>
-                <h5 className="mb-0 fw-bold">Universidad Nacional</h5>
-                <small className="text-muted">Registro de Parqueo</small>
-              </div>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/parking')}>
-              <ArrowLeft size={16} className="me-2" />
-              Salir
-            </Button>
-          </div>
-        </Container>
-      </div>
+      <AppHeader
+        subtitle="Registro de Parqueo"
+        actions={
+          <Button variant="ghost" size="sm" onClick={() => navigate('/parking')} style={{ padding: '6px 8px' }}>
+            <ArrowLeft size={20} />
+          </Button>
+        }
+      />
 
       {/* Progress Steps */}
       {currentStepIndex !== -1 && location.pathname !== '/parking/user/confirmacion' && (
