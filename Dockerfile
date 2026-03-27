@@ -2,7 +2,7 @@
 # Habilitar sintaxis BuildKit (opcional, mejora mounts de cache)
 # syntax=docker/dockerfile:1.4
 
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /usr/src/app
 
 # copio package files primero para cachear instalación
@@ -17,13 +17,13 @@ COPY . .
 
 # Si necesitas variables en build, podrías pasar ARGs y crear .env
 ARG REACT_APP_API_URL
-RUN if [ -n "$REACT_APP_API_URL" ]; then echo "REACT_APP_API_URL=$REACT_APP_API_URL" > .env; fi
+RUN if [ -n "$REACT_APP_API_URL" ]; then echo "VITE_API_URL=$REACT_APP_API_URL" > .env; fi
 
 RUN npm run build
 
 # production image
 FROM nginx:stable-alpine AS runner
-COPY --from=builder /usr/src/app/build /usr/share/nginx/html
+COPY --from=builder /usr/src/app/dist /usr/share/nginx/html
 
 # optional: custom nginx conf (gzip, cache headers) para mejorar performance
 EXPOSE 80

@@ -1,0 +1,174 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { useRegistration } from '../../context/RegistrationContext';
+import { Card, Form, Button, Row, Col } from 'react-bootstrap';
+import { Car, Bike, Calendar } from 'lucide-react';
+import { toast } from 'react-toastify';
+
+export function UserStart() {
+  const navigate = useNavigate();
+  const { updateRegistration } = useRegistration();
+  
+  const [formData, setFormData] = useState({
+    carnet: '',
+    dpi: '',
+    vehicleType: 'carro' as 'moto' | 'carro',
+    parkingPlan: 'entre-semana' as 'entre-semana' | 'sabado' | 'domingo',
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formData.carnet || !formData.dpi) {
+      toast.error('Por favor complete todos los campos');
+      return;
+    }
+
+    updateRegistration(formData);
+    navigate('/parking/user/datos-personales');
+  };
+
+  const vehicleTypes = [
+    { value: 'moto', label: 'Moto', icon: Bike },
+    { value: 'carro', label: 'Carro', icon: Car },
+  ] as const;
+
+  const parkingPlans = [
+    { value: 'entre-semana', label: 'Entre Semana', price: 'Q200/mes', days: 'Lunes a Viernes' },
+    { value: 'sabado', label: 'Sábado', price: 'Q80/mes', days: 'Solo Sábados' },
+    { value: 'domingo', label: 'Domingo', price: 'Q50/mes', days: 'Solo Domingos' },
+  ] as const;
+
+  return (
+    <div style={{ maxWidth: 700, margin: '0 auto' }}>
+      <Card className="shadow-sm">
+        <Card.Header className="bg-white border-bottom">
+          <Card.Title className="mb-1 h4">Registro de Parqueo</Card.Title>
+          <Card.Subtitle className="text-muted">
+            Ingrese sus datos para comenzar el proceso de registro
+          </Card.Subtitle>
+        </Card.Header>
+        <Card.Body className="p-4">
+          <Form onSubmit={handleSubmit}>
+            {/* Carnet */}
+            <Form.Group className="mb-4">
+              <Form.Label>Número de Carnet *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="2021XXXXX"
+                value={formData.carnet}
+                onChange={(e) => setFormData({ ...formData, carnet: e.target.value })}
+                maxLength={15}
+              />
+            </Form.Group>
+
+            {/* DPI */}
+            <Form.Group className="mb-4">
+              <Form.Label>Número de DPI *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="XXXX XXXXX XXXX"
+                value={formData.dpi}
+                onChange={(e) => setFormData({ ...formData, dpi: e.target.value })}
+                maxLength={20}
+              />
+            </Form.Group>
+
+            {/* Vehicle Type */}
+            <Form.Group className="mb-4">
+              <Form.Label>Tipo de Vehículo *</Form.Label>
+              <Row className="g-3">
+                {vehicleTypes.map((type) => {
+                  const Icon = type.icon;
+                  const isSelected = formData.vehicleType === type.value;
+                  return (
+                    <Col xs={6} key={type.value}>
+                      <div
+                        onClick={() => setFormData({ ...formData, vehicleType: type.value })}
+                        style={{
+                          padding: 16,
+                          border: `2px solid ${isSelected ? '#1976d2' : '#dee2e6'}`,
+                          borderRadius: 8,
+                          backgroundColor: isSelected ? '#e3f2fd' : 'white',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 16
+                        }}
+                      >
+                        <Form.Check
+                          type="radio"
+                          name="vehicleType"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          style={{ marginTop: 0 }}
+                        />
+                        <Icon size={32} color={isSelected ? '#1976d2' : '#6c757d'} />
+                        <span style={{ fontWeight: 500, color: isSelected ? '#1976d2' : '#212529' }}>
+                          {type.label}
+                        </span>
+                      </div>
+                    </Col>
+                  );
+                })}
+              </Row>
+            </Form.Group>
+
+            {/* Parking Plan */}
+            <Form.Group className="mb-4">
+              <Form.Label>Plan de Parqueo *</Form.Label>
+              <div className="d-flex flex-column gap-3">
+                {parkingPlans.map((plan) => {
+                  const isSelected = formData.parkingPlan === plan.value;
+                  return (
+                    <div
+                      key={plan.value}
+                      onClick={() => setFormData({ ...formData, parkingPlan: plan.value })}
+                      style={{
+                        padding: 16,
+                        border: `2px solid ${isSelected ? '#1976d2' : '#dee2e6'}`,
+                        borderRadius: 8,
+                        backgroundColor: isSelected ? '#e3f2fd' : 'white',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div className="d-flex align-items-center gap-3">
+                        <Form.Check
+                          type="radio"
+                          name="parkingPlan"
+                          checked={isSelected}
+                          onChange={() => {}}
+                        />
+                        <Calendar size={20} color={isSelected ? '#1976d2' : '#6c757d'} />
+                        <div>
+                          <div style={{ fontWeight: 500, color: isSelected ? '#1976d2' : '#212529' }}>
+                            {plan.label}
+                          </div>
+                          <small className="text-muted">{plan.days}</small>
+                        </div>
+                      </div>
+                      <div className="text-end">
+                        <div style={{ fontWeight: 600, color: isSelected ? '#1976d2' : '#212529' }}>
+                          {plan.price}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Form.Group>
+
+            <Button variant="primary" type="submit" size="lg" className="w-100">
+              Continuar
+            </Button>
+          </Form>
+        </Card.Body>
+      </Card>
+    </div>
+  );
+}
