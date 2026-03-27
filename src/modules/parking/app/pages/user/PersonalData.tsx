@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useRegistration } from '../../context/RegistrationContext';
 import { Card, Form, Button, Row, Col } from 'react-bootstrap';
-import { Upload, User, ArrowLeft } from 'lucide-react';
+import { Upload, User } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export function PersonalData() {
@@ -193,12 +193,11 @@ export function PersonalData() {
             <Row className="g-3">
               <Col xs={6}>
                 <Button
-                  variant="outline-secondary"
+                  variant="outline-primary"
                   size="lg"
                   className="w-100"
                   onClick={() => navigate('/parking/user')}
                 >
-                  <ArrowLeft size={16} className="me-2" />
                   Atrás
                 </Button>
               </Col>
