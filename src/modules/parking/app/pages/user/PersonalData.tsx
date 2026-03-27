@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useRegistration } from '../../context/RegistrationContext';
 import { Card, Form, Button, Row, Col } from 'react-bootstrap';
-import { Upload, User } from 'lucide-react';
+import { Upload, User, ArrowLeft } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export function PersonalData() {
@@ -10,6 +10,8 @@ export function PersonalData() {
   const { currentRegistration, updateRegistration } = useRegistration();
   
   const [formData, setFormData] = useState({
+    carnet: (currentRegistration as any).carnet || '',
+    dpi: (currentRegistration as any).dpi || '',
     fullName: currentRegistration.fullName || '',
     address: currentRegistration.address || '',
     phone: currentRegistration.phone || '',
@@ -41,7 +43,7 @@ export function PersonalData() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.fullName || !formData.address || !formData.phone || 
+    if (!formData.carnet || !formData.dpi || !formData.fullName || !formData.address || !formData.phone ||
         !formData.emergencyContact || !formData.emergencyPhone) {
       toast.error('Por favor complete todos los campos');
       return;
@@ -109,6 +111,30 @@ export function PersonalData() {
               </div>
             </Form.Group>
 
+            {/* Carnet */}
+            <Form.Group className="mb-3">
+              <Form.Label>Número de Carnet *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="2021XXXXX"
+                value={formData.carnet}
+                onChange={(e) => setFormData({ ...formData, carnet: e.target.value })}
+                maxLength={15}
+              />
+            </Form.Group>
+
+            {/* DPI */}
+            <Form.Group className="mb-3">
+              <Form.Label>Número de DPI *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="XXXX XXXXX XXXX"
+                value={formData.dpi}
+                onChange={(e) => setFormData({ ...formData, dpi: e.target.value })}
+                maxLength={20}
+              />
+            </Form.Group>
+
             {/* Full Name */}
             <Form.Group className="mb-3">
               <Form.Label>Nombre Completo *</Form.Label>
@@ -167,11 +193,12 @@ export function PersonalData() {
             <Row className="g-3">
               <Col xs={6}>
                 <Button
-                  variant="outline-primary"
+                  variant="outline-secondary"
                   size="lg"
                   className="w-100"
                   onClick={() => navigate('/parking/user')}
                 >
+                  <ArrowLeft size={16} className="me-2" />
                   Atrás
                 </Button>
               </Col>

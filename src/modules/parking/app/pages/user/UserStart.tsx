@@ -3,27 +3,18 @@ import { useNavigate } from 'react-router';
 import { useRegistration } from '../../context/RegistrationContext';
 import { Card, Form, Button, Row, Col } from 'react-bootstrap';
 import { Car, Bike, Calendar } from 'lucide-react';
-import { toast } from 'react-toastify';
 
 export function UserStart() {
   const navigate = useNavigate();
   const { updateRegistration } = useRegistration();
   
   const [formData, setFormData] = useState({
-    carnet: '',
-    dpi: '',
     vehicleType: 'carro' as 'moto' | 'carro',
     parkingPlan: 'entre-semana' as 'entre-semana' | 'sabado' | 'domingo',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!formData.carnet || !formData.dpi) {
-      toast.error('Por favor complete todos los campos');
-      return;
-    }
-
     updateRegistration(formData);
     navigate('/parking/user/datos-personales');
   };
@@ -50,30 +41,6 @@ export function UserStart() {
         </Card.Header>
         <Card.Body className="p-4">
           <Form onSubmit={handleSubmit}>
-            {/* Carnet */}
-            <Form.Group className="mb-4">
-              <Form.Label>Número de Carnet *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="2021XXXXX"
-                value={formData.carnet}
-                onChange={(e) => setFormData({ ...formData, carnet: e.target.value })}
-                maxLength={15}
-              />
-            </Form.Group>
-
-            {/* DPI */}
-            <Form.Group className="mb-4">
-              <Form.Label>Número de DPI *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="XXXX XXXXX XXXX"
-                value={formData.dpi}
-                onChange={(e) => setFormData({ ...formData, dpi: e.target.value })}
-                maxLength={20}
-              />
-            </Form.Group>
-
             {/* Vehicle Type */}
             <Form.Group className="mb-4">
               <Form.Label>Tipo de Vehículo *</Form.Label>

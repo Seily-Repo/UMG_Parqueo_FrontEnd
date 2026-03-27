@@ -2,7 +2,6 @@ import { Outlet, useLocation, useNavigate } from 'react-router';
 import { Container, Button } from 'react-bootstrap';
 import { ArrowLeft } from 'lucide-react';
 import { AppHeader } from './AppHeader';
-import villanueva from '../../../../assets/villanueva.webp';
 
 export function UserLayout() {
   const location = useLocation();
@@ -19,13 +18,7 @@ export function UserLayout() {
   const currentStepIndex = steps.findIndex((step) => step.path === location.pathname);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${villanueva})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
-    }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #e3f2fd 0%, #ffffff 50%, #ede7f6 100%)' }}>
       <AppHeader
         subtitle="Registro de Parqueo"
         actions={
@@ -48,7 +41,7 @@ export function UserLayout() {
                         width: 32,
                         height: 32,
                         borderRadius: '50%',
-                        backgroundColor: index <= currentStepIndex ? '#C41230' : '#dee2e6',
+                        backgroundColor: index <= currentStepIndex ? '#1976d2' : '#dee2e6',
                         color: index <= currentStepIndex ? 'white' : '#6c757d',
                         display: 'flex',
                         alignItems: 'center',
@@ -64,7 +57,7 @@ export function UserLayout() {
                       className="mt-2 text-center"
                       style={{
                         fontSize: 12,
-                        color: index <= currentStepIndex ? '#C41230' : '#6c757d',
+                        color: index <= currentStepIndex ? '#1976d2' : '#6c757d',
                         fontWeight: index <= currentStepIndex ? 500 : 400
                       }}
                     >
@@ -76,7 +69,7 @@ export function UserLayout() {
                       style={{
                         height: 2,
                         flex: 1,
-                        backgroundColor: index < currentStepIndex ? '#C41230' : '#dee2e6',
+                        backgroundColor: index < currentStepIndex ? '#1976d2' : '#dee2e6',
                         marginBottom: 30,
                         marginLeft: 8,
                         marginRight: 8,
