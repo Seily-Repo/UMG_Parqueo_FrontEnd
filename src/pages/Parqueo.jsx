@@ -1,7 +1,10 @@
 import Isla from "../components/Isla";
+import Nav from "../components/nav";
 
 export default function Parqueo() {
   return (
+    <>
+      <Nav />
     <div className="container mt-4">
       <h2>Mapa de Parqueo</h2>
 
@@ -15,5 +18,6 @@ export default function Parqueo() {
         <Isla cantidad={15} />
       </div>
     </div>
+      </>
   );
 }
