@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import Nav from './components/nav';
 import './App.css';
+import Parqueo from './pages/Parqueo';
+
 
 function App() {
   const [msg, setMsg] = useState('Cargando...');
@@ -22,7 +24,8 @@ function App() {
       <Nav />
 
       <div className="container mt-4">
-        Inicio
+      <h3>{msg}</h3>
+
       </div>
     </>
   );
