@@ -100,6 +100,59 @@ export function Signature() {
     navigate('/parking/user/confirmacion');
   };
 
+  // Si ya hay firma, mostrar verificación
+  if (currentRegistration.signature) {
+    return (
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+        <Card className="shadow-sm">
+          <Card.Header className="bg-white border-bottom">
+            <Card.Title className="mb-1 h4">Verificación de Firma</Card.Title>
+            <Card.Subtitle className="text-muted">
+              Confirme su firma digital
+            </Card.Subtitle>
+          </Card.Header>
+          <Card.Body className="p-4">
+            <div className="text-center mb-4">
+              <CheckCircle size={48} color="#28a745" />
+              <h5 className="mt-3" style={{ color: '#28a745' }}>Firma Registrada</h5>
+            </div>
+            <div className="text-center">
+              <img 
+                src={currentRegistration.signature} 
+                alt="Firma" 
+                style={{ 
+                  maxWidth: '100%', 
+                  border: '2px solid #28a745', 
+                  borderRadius: 8, 
+                  backgroundColor: '#d4edda',
+                  padding: 16
+                }} 
+              />
+            </div>
+            <Row className="g-3 mt-4">
+              <Col xs={6}>
+                <Button
+                  variant="outline-primary"
+                  size="lg"
+                  className="w-100"
+                  onClick={() => navigate('/parking/user/pago')}
+                >
+                  <ArrowLeft size={16} className="me-2" />
+                  Atrás
+                </Button>
+              </Col>
+              <Col xs={6}>
+                <Button variant="primary" size="lg" className="w-100" onClick={() => navigate('/parking/user/confirmacion')}>
+                  Siguiente
+                </Button>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>
       <Card className="shadow-sm">

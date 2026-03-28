@@ -9,7 +9,7 @@ export function Confirmation() {
   const { currentRegistration, completeRegistration } = useRegistration();
 
   useEffect(() => {
-    if (!currentRegistration.signature) {
+    if (currentRegistration.paymentStatus !== 'paid') {
       navigate('/parking/user');
       return;
     }
@@ -34,10 +34,10 @@ export function Confirmation() {
           >
             <CheckCircle2 size={48} color="#198754" />
           </div>
-          <h2 className="mb-4" style={{ color: '#198754' }}>¡Registro Completado!</h2>
+          <h2 className="mb-4" style={{ color: '#198754' }}>¡Pago Completado!</h2>
           
           <p className="text-muted mb-4">
-            Su registro de parqueo ha sido completado exitosamente.
+            Su pago ha sido procesado exitosamente.
           </p>
 
           <Card className="mb-4 text-start">

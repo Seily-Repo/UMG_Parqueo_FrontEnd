@@ -1,0 +1,99 @@
+[
+  {
+    "id": "simulated-1",
+    "carnet": "5190-23-0001",
+    "password": "123",
+    "dpi": "1234567890123",
+    "vehicleType": "carro",
+    "parkingPlan": "entre-semana",
+    "fullName": "Juan Pérez",
+    "address": "Zona 1, Guatemala",
+    "phone": "55551234",
+    "emergencyContact": "María Pérez",
+    "emergencyPhone": "55556789",
+    "vehicles": [
+      {
+        "id": "veh-1",
+        "color": "Rojo",
+        "brand": "Toyota",
+        "model": "Corolla",
+        "plate": "P123ABC"
+      }
+    ],
+    "amount": 200,
+    "cardHolder": "",
+    "cardNumber": "",
+    "expiryDate": "",
+    "cvv": "",
+    "paymentStatus": "pending",
+    "signature": "",
+    "createdAt": "2024-03-27T00:00:00.000Z"
+  },
+  {
+    "id": "simulated-2",
+    "carnet": "5190-23-0002",
+    "password": "123",
+    "dpi": "9876543210987",
+    "vehicleType": "moto",
+    "parkingPlan": "sabado",
+    "fullName": "Ana García",
+    "address": "Zona 10, Guatemala",
+    "phone": "55559876",
+    "emergencyContact": "Carlos García",
+    "emergencyPhone": "55554321",
+    "vehicles": [
+      {
+        "id": "veh-2",
+        "color": "Negro",
+        "brand": "Honda",
+        "model": "CBR 600",
+        "plate": "M456DEF"
+      }
+    ],
+    "amount": 80,
+    "cardHolder": "",
+    "cardNumber": "",
+    "expiryDate": "",
+    "cvv": "",
+    "paymentStatus": "pending",
+    "signature": "",
+    "createdAt": "2024-03-27T00:00:00.000Z"
+  },
+  {
+    "id": "simulated-3",
+    "carnet": "5190-23-0003",
+    "password": "123",
+    "dpi": "4567890123456",
+    "vehicleType": "carro",
+    "parkingPlan": "domingo",
+    "fullName": "Luis Martínez",
+    "address": "Zona 5, Guatemala",
+    "phone": "55551111",
+    "emergencyContact": "Sofia Martínez",
+    "emergencyPhone": "55552222",
+    "vehicles": [
+      {
+        "id": "veh-3",
+        "color": "Azul",
+        "brand": "Nissan",
+        "model": "Sentra",
+        "plate": "C789GHI"
+      },
+      {
+        "id": "veh-4",
+        "color": "Blanco",
+        "brand": "Hyundai",
+        "model": "Accent",
+        "plate": "C101JKL"
+      }
+    ],
+    "amount": 50,
+    "cardHolder": "",
+    "cardNumber": "",
+    "expiryDate": "",
+    "cvv": "",
+    "paymentStatus": "pending",
+    "signature": "",
+    "createdAt": "2024-03-27T00:00:00.000Z"
+  }
+]

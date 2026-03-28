@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useRegistration } from '../../context/RegistrationContext';
 import { Card, Form, Button, Row, Col } from 'react-bootstrap';
-import { Car, Bike, Calendar } from 'lucide-react';
+import { Car, Bike, Calendar, CheckCircle } from 'lucide-react';
 
 export function UserStart() {
   const navigate = useNavigate();
-  const { updateRegistration } = useRegistration();
+  const { updateRegistration, currentRegistration } = useRegistration();
   
   const [formData, setFormData] = useState({
     vehicleType: 'carro' as 'moto' | 'carro',
@@ -29,6 +29,85 @@ export function UserStart() {
     { value: 'sabado', label: 'Sábado', price: 'Q80/mes', days: 'Solo Sábados' },
     { value: 'domingo', label: 'Domingo', price: 'Q50/mes', days: 'Solo Domingos' },
   ] as const;
+
+  // Si hay datos simulados, mostrar en modo verificación
+  if (currentRegistration.vehicleType && currentRegistration.parkingPlan) {
+    const selectedVehicle = vehicleTypes.find(v => v.value === currentRegistration.vehicleType);
+    const selectedPlan = parkingPlans.find(p => p.value === currentRegistration.parkingPlan);
+    const VehicleIcon = selectedVehicle?.icon || Car;
+
+    return (
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+        <Card className="shadow-sm">
+          <Card.Header className="bg-white border-bottom">
+            <Card.Title className="mb-1 h4">Verificación de Registro</Card.Title>
+            <Card.Subtitle className="text-muted">
+              Confirme sus datos de registro
+            </Card.Subtitle>
+          </Card.Header>
+          <Card.Body className="p-4">
+            {/* Vehicle Type */}
+            <div className="mb-4">
+              <h5 className="mb-3">Tipo de Vehículo</h5>
+              <div
+                style={{
+                  padding: 16,
+                  border: '2px solid #28a745',
+                  borderRadius: 8,
+                  backgroundColor: '#d4edda',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16
+                }}
+              >
+                <CheckCircle size={24} color="#28a745" />
+                <VehicleIcon size={32} color="#28a745" />
+                <span style={{ fontWeight: 500, color: '#155724' }}>
+                  {selectedVehicle?.label}
+                </span>
+              </div>
+            </div>
+
+            {/* Parking Plan */}
+            <div className="mb-4">
+              <h5 className="mb-3">Plan de Parqueo</h5>
+              <div
+                style={{
+                  padding: 16,
+                  border: '2px solid #28a745',
+                  borderRadius: 8,
+                  backgroundColor: '#d4edda',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+              >
+                <div className="d-flex align-items-center gap-3">
+                  <CheckCircle size={20} color="#28a745" />
+                  <Calendar size={20} color="#28a745" />
+                  <div>
+                    <div style={{ fontWeight: 500, color: '#155724' }}>
+                      {selectedPlan?.label}
+                    </div>
+                    <small style={{ color: '#155724' }}>{selectedPlan?.days}</small>
+                  </div>
+                </div>
+                <div className="text-end">
+                  <div style={{ fontWeight: 600, color: '#155724' }}>
+                    {selectedPlan?.price}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Button variant="primary" size="lg" className="w-100" onClick={() => navigate('/parking/user/datos-personales')}>
+              Continuar
+            </Button>
+          </Card.Body>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>

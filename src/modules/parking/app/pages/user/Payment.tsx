@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useRegistration } from '../../context/RegistrationContext';
 import { Card, Form, Button, Row, Col, Alert } from 'react-bootstrap';
-import { CreditCard, ArrowLeft, DollarSign } from 'lucide-react';
+import { CreditCard, ArrowLeft, DollarSign, CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export function Payment() {
@@ -64,8 +64,9 @@ export function Payment() {
       return;
     }
 
-    updateRegistration({ ...formData, amount });
-    navigate('/parking/user/firma');
+    updateRegistration({ ...formData, amount, paymentStatus: 'paid' });
+    toast.success('Pago realizado correctamente');
+    navigate('/parking/user/confirmacion');
   };
 
   const getPlanLabel = () => {
@@ -80,6 +81,88 @@ export function Payment() {
         return '';
     }
   };
+
+  // Si ya está pagado, mostrar verificación
+  if (currentRegistration.paymentStatus === 'paid') {
+    return (
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+        <Card className="shadow-sm">
+          <Card.Header className="bg-white border-bottom">
+            <Card.Title className="mb-1 h4">Verificación de Pago</Card.Title>
+            <Card.Subtitle className="text-muted">
+              Confirme su información de pago
+            </Card.Subtitle>
+          </Card.Header>
+          <Card.Body className="p-4">
+            {/* Payment Summary */}
+            <div 
+              className="p-4 rounded mb-4 text-white"
+              style={{ 
+                background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)'
+              }}
+            >
+              <div className="d-flex align-items-center gap-2 mb-3" style={{ opacity: 0.9 }}>
+                <CheckCircle size={16} />
+                <small>Pago realizado correctamente</small>
+              </div>
+              <Row>
+                <Col>
+                  <div>
+                    <small style={{ opacity: 0.9 }}>Plan seleccionado</small>
+                    <div className="fw-medium">{getPlanLabel()}</div>
+                    <small style={{ opacity: 0.9 }} className="mt-2 d-block">
+                      {currentRegistration.vehicles?.length || 0} vehículo(s) registrado(s)
+                    </small>
+                  </div>
+                </Col>
+                <Col xs="auto" className="text-end">
+                  <small style={{ opacity: 0.9 }}>Total pagado</small>
+                  <div className="display-5 fw-bold">Q{amount}</div>
+                  <small style={{ opacity: 0.75 }}>Pago mensual</small>
+                </Col>
+              </Row>
+            </div>
+
+            {/* Card Details */}
+            <div className="mb-3">
+              <h5>Información de Tarjeta</h5>
+              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
+                <CheckCircle size={20} color="#28a745" className="me-2" />
+                <span style={{ color: '#155724' }}>Titular: {currentRegistration.cardHolder}</span>
+              </div>
+              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda', marginTop: 8 }}>
+                <CheckCircle size={20} color="#28a745" className="me-2" />
+                <span style={{ color: '#155724' }}>Tarjeta: **** **** **** {currentRegistration.cardNumber?.slice(-4)}</span>
+              </div>
+              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda', marginTop: 8 }}>
+                <CheckCircle size={20} color="#28a745" className="me-2" />
+                <span style={{ color: '#155724' }}>Vencimiento: {currentRegistration.expiryDate}</span>
+              </div>
+            </div>
+
+            <Row className="g-3">
+              <Col xs={6}>
+                <Button
+                  variant="outline-primary"
+                  size="lg"
+                  className="w-100"
+                  onClick={() => navigate('/parking/user/vehiculos')}
+                >
+                  <ArrowLeft size={16} className="me-2" />
+                  Atrás
+                </Button>
+              </Col>
+              <Col xs={6}>
+                <Button variant="primary" size="lg" className="w-100" onClick={() => navigate('/parking/user/firma')}>
+                  Siguiente
+                </Button>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>

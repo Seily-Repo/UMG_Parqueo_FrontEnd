@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useRegistration } from '../../context/RegistrationContext';
 import { Card, Form, Button, Row, Col } from 'react-bootstrap';
-import { Upload, User } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export function PersonalData() {
@@ -17,28 +17,7 @@ export function PersonalData() {
     phone: currentRegistration.phone || '',
     emergencyContact: currentRegistration.emergencyContact || '',
     emergencyPhone: currentRegistration.emergencyPhone || '',
-    photo: currentRegistration.photo || '',
   });
-
-  const [previewPhoto, setPreviewPhoto] = useState(currentRegistration.photo || '');
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('La imagen debe ser menor a 5MB');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setPreviewPhoto(result);
-        setFormData({ ...formData, photo: result });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,14 +28,107 @@ export function PersonalData() {
       return;
     }
 
-    if (!formData.photo) {
-      toast.error('Por favor suba una foto');
-      return;
-    }
-
     updateRegistration(formData);
     navigate('/parking/user/vehiculos');
   };
+
+  // Si hay datos, mostrar en modo verificación
+  if (currentRegistration.fullName && currentRegistration.carnet) {
+    return (
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+        <Card className="shadow-sm">
+          <Card.Header className="bg-white border-bottom">
+            <Card.Title className="mb-1 h4">Verificación de Datos Personales</Card.Title>
+            <Card.Subtitle className="text-muted">
+              Confirme su información personal
+            </Card.Subtitle>
+          </Card.Header>
+          <Card.Body className="p-4">
+            {/* Carnet */}
+            <div className="mb-3">
+              <h5>Número de Carnet</h5>
+              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
+                <CheckCircle size={20} color="#28a745" className="me-2" />
+                <span style={{ color: '#155724' }}>{currentRegistration.carnet}</span>
+              </div>
+            </div>
+
+            {/* DPI */}
+            <div className="mb-3">
+              <h5>Número de DPI</h5>
+              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
+                <CheckCircle size={20} color="#28a745" className="me-2" />
+                <span style={{ color: '#155724' }}>{currentRegistration.dpi}</span>
+              </div>
+            </div>
+
+            {/* Full Name */}
+            <div className="mb-3">
+              <h5>Nombre Completo</h5>
+              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
+                <CheckCircle size={20} color="#28a745" className="me-2" />
+                <span style={{ color: '#155724' }}>{currentRegistration.fullName}</span>
+              </div>
+            </div>
+
+            {/* Address */}
+            <div className="mb-3">
+              <h5>Dirección</h5>
+              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
+                <CheckCircle size={20} color="#28a745" className="me-2" />
+                <span style={{ color: '#155724' }}>{currentRegistration.address}</span>
+              </div>
+            </div>
+
+            {/* Phone */}
+            <div className="mb-3">
+              <h5>Teléfono</h5>
+              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
+                <CheckCircle size={20} color="#28a745" className="me-2" />
+                <span style={{ color: '#155724' }}>{currentRegistration.phone}</span>
+              </div>
+            </div>
+
+            {/* Emergency Contact */}
+            <div className="mb-3">
+              <h5>Contacto de Emergencia</h5>
+              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
+                <CheckCircle size={20} color="#28a745" className="me-2" />
+                <span style={{ color: '#155724' }}>{currentRegistration.emergencyContact}</span>
+              </div>
+            </div>
+
+            {/* Emergency Phone */}
+            <div className="mb-4">
+              <h5>Teléfono de Emergencia</h5>
+              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
+                <CheckCircle size={20} color="#28a745" className="me-2" />
+                <span style={{ color: '#155724' }}>{currentRegistration.emergencyPhone}</span>
+              </div>
+            </div>
+
+            <Row className="g-3">
+              <Col xs={6}>
+                <Button
+                  variant="outline-primary"
+                  size="lg"
+                  className="w-100"
+                  onClick={() => navigate('/parking/user')}
+                >
+                  Atrás
+                </Button>
+              </Col>
+              <Col xs={6}>
+                <Button variant="primary" size="lg" className="w-100" onClick={() => navigate('/parking/user/vehiculos')}>
+                  Siguiente
+                </Button>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>
@@ -69,54 +141,12 @@ export function PersonalData() {
         </Card.Header>
         <Card.Body className="p-4">
           <Form onSubmit={handleSubmit}>
-            {/* Photo Upload */}
-            <Form.Group className="mb-4">
-              <Form.Label>Foto del Estudiante *</Form.Label>
-              <div className="d-flex align-items-center gap-4">
-                <div 
-                  style={{ 
-                    width: 128, 
-                    height: 128, 
-                    border: '2px dashed #dee2e6', 
-                    borderRadius: 8, 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    backgroundColor: '#f8f9fa',
-                    overflow: 'hidden'
-                  }}
-                >
-                  {previewPhoto ? (
-                    <img src={previewPhoto} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <User size={48} color="#adb5bd" />
-                  )}
-                </div>
-                <div className="flex-grow-1">
-                  <label htmlFor="photo-upload" className="btn btn-primary">
-                    <Upload size={16} className="me-2" />
-                    Subir Foto
-                  </label>
-                  <input
-                    id="photo-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    style={{ display: 'none' }}
-                  />
-                  <Form.Text className="d-block mt-2">
-                    Formato JPG, PNG. Tamaño máximo 5MB.
-                  </Form.Text>
-                </div>
-              </div>
-            </Form.Group>
-
             {/* Carnet */}
             <Form.Group className="mb-3">
               <Form.Label>Número de Carnet *</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="2021XXXXX"
+                placeholder="5190-23-XXXXX"
                 value={formData.carnet}
                 onChange={(e) => setFormData({ ...formData, carnet: e.target.value })}
                 maxLength={15}

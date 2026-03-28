@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useRegistration, Vehicle } from '../../context/RegistrationContext';
 import { Card, Form, Button, Row, Col, Badge } from 'react-bootstrap';
-import { Plus, Trash2, ArrowLeft, Car } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, Car, CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export function VehicleData() {
@@ -55,6 +55,75 @@ export function VehicleData() {
     updateRegistration({ vehicles });
     navigate('/parking/user/pago');
   };
+
+  // Si hay vehículos registrados, mostrar en modo verificación
+  if (currentRegistration.vehicles && currentRegistration.vehicles.length > 0) {
+    return (
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+        <Card className="shadow-sm">
+          <Card.Header className="bg-white border-bottom">
+            <Card.Title className="mb-1 h4">Verificación de Vehículos</Card.Title>
+            <Card.Subtitle className="text-muted">
+              Confirme sus vehículos registrados
+            </Card.Subtitle>
+          </Card.Header>
+          <Card.Body className="p-4">
+            <div className="d-flex flex-column gap-3">
+              {currentRegistration.vehicles.map((vehicle) => (
+                <div
+                  key={vehicle.id}
+                  className="d-flex align-items-center justify-content-between p-3 border rounded"
+                  style={{ backgroundColor: '#d4edda', borderColor: '#28a745' }}
+                >
+                  <div className="d-flex align-items-center gap-3">
+                    <CheckCircle size={24} color="#28a745" />
+                    <div 
+                      style={{ 
+                        width: 48, 
+                        height: 48, 
+                        backgroundColor: '#d4edda', 
+                        borderRadius: 8,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Car size={24} color="#28a745" />
+                    </div>
+                    <div>
+                      <div className="fw-semibold" style={{ color: '#155724' }}>{vehicle.plate}</div>
+                      <small style={{ color: '#155724' }}>
+                        {vehicle.color} - {vehicle.brand} {vehicle.model}
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Row className="g-3 mt-4">
+              <Col xs={6}>
+                <Button
+                  variant="outline-primary"
+                  size="lg"
+                  className="w-100"
+                  onClick={() => navigate('/parking/user/datos-personales')}
+                >
+                  <ArrowLeft size={16} className="me-2" />
+                  Atrás
+                </Button>
+              </Col>
+              <Col xs={6}>
+                <Button variant="primary" size="lg" className="w-100" onClick={() => navigate('/parking/user/pago')}>
+                  Siguiente
+                </Button>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>

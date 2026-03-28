@@ -9,6 +9,8 @@ import { VehicleData } from "./pages/user/VehicleData";
 import { Payment } from "./pages/user/Payment";
 import { Signature } from "./pages/user/Signature";
 import { Confirmation } from "./pages/user/Confirmation";
+import { LoginUser } from "./pages/user/LoginUser";
+import { UserProfile } from "./pages/user/UserProfile";
 
 // Admin Pages
 import { AdminLogin } from "./pages/admin/AdminLogin";
@@ -17,6 +19,10 @@ import { RegistrationDetail } from "./pages/admin/RegistrationDetail";
 
 export const parkingRoutes = [
   {
+    path: "login",
+    Component: LoginUser,
+  },
+  {
     index: true,
     Component: LandingPage,
   },
@@ -24,6 +30,7 @@ export const parkingRoutes = [
     path: "user",
     Component: UserLayout,
     children: [
+      { path: "perfil", Component: UserProfile },
       { index: true, Component: UserStart },
       { path: "datos-personales", Component: PersonalData },
       { path: "vehiculos", Component: VehicleData },

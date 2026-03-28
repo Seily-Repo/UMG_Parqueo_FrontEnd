@@ -1,16 +1,31 @@
 import { useNavigate } from 'react-router';
-import { Row, Col, Card, Button, Container } from 'react-bootstrap';
+import { useEffect } from 'react';
+import { Row, Col, Card, Button, Container, Form } from 'react-bootstrap';
 import { Car } from 'lucide-react';
 import { AppHeader } from '../components/AppHeader';
-import villanueva from '../../../../assets/villanueva.webp';
+import { useRegistration } from '../context/RegistrationContext';
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const { simulatedUsers, selectUser, currentRegistration } = useRegistration();
+
+  useEffect(() => {
+    if (currentRegistration.id) {
+      navigate('/parking/user');
+    } else {
+      navigate('/parking/login');
+    }
+  }, [currentRegistration, navigate]);
+
+  const handleUserChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const index = parseInt(e.target.value);
+    selectUser(index);
+  };
 
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${villanueva})`,
+      backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(/assets/villanueva.webp)`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundAttachment: 'fixed',
@@ -48,9 +63,8 @@ export function LandingPage() {
                 </div>
                 <Card.Title className="h4 mb-2">Registro De Parqueo</Card.Title>
                 <Card.Subtitle className="mb-4 text-muted">
-                  Estudiantes y personal universitario
+                  Gestiona tu parqueo universitario
                 </Card.Subtitle>
-                
                 
                 <Button 
                   variant="primary" 
