@@ -2,10 +2,11 @@ import { NavLink } from "react-router-dom";
 import "../styles/Barra.modules.css";
 import logo from "../images/logo.png";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Offcanvas } from "bootstrap";
 
 const Nav = () => {
+  
   const offcanvasRef = useRef(null);
   const offcanvasInstance = useRef(null);
 
@@ -24,12 +25,15 @@ const Nav = () => {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg">
+    <nav className="navbar navbar-expand-lg ">
       <div className="container-fluid">
-        <img src={logo} alt="Logo" className="img-fluid" width={60} />
-        <a className="navbar-brand fw-bold d-none d-sm-block" href="#!">
-          Universidad Mariano Galvez de Guatemala
-        </a>
+        <img src={logo} alt="Logo" className="img-fluid ms-5" width={60} />
+        <NavLink to="/" className="nav-link">
+          <h3 className="navbar-brand fw-bold d-none d-sm-block">
+            Universidad Mariano Gálvez de Guatemala
+          </h3>
+        </NavLink>
+
         <button
           className="navbar-toggler d-lg-none"
           type="button"
