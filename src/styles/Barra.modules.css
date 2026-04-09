@@ -19,6 +19,9 @@
   height: 11vh;
 }
 
+.navbar-toggler-icon{
+    color: white !important;
+}
 .navbar a {
   color: white;
   text-decoration: none;
