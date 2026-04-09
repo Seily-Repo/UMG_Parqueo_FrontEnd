@@ -17,3 +17,14 @@ h5.display-5 {
   color: #003366;
   font-family: "Urbanist-ExtraBoldItalic", sans-serif;
 }
+
+body {
+  margin: 0;
+  padding: 0;
+
+  background-image: url("./images/UMG_FONDO.jpeg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; 
+}

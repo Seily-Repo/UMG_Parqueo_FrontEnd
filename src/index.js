@@ -7,6 +7,7 @@ import reportWebVitals from "./reportWebVitals";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@flaticon/flaticon-uicons/css/all/all.css";
 import Perfil from "./perfil";
+import Parqueo from "./pages/Parqueo";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -14,6 +15,7 @@ root.render(
     <BrowserRouter>
       <Routes>
           <Route path="/" element={<App />} />
+          <Route path="/parqueo" element={<Parqueo />} />
           <Route path="/perfil" element={<Perfil />} />
         </Routes>
     </BrowserRouter>
