@@ -9,6 +9,24 @@ import "@flaticon/flaticon-uicons/css/all/all.css";
 import Perfil from "./perfil";
 import Parqueo from "./pages/Parqueo";
 
+export default function Espacio({ numero }) {
+  return (
+    <div
+      style={{
+        width: "60px",
+        height: "100px",
+        backgroundColor: "#ccc",
+        border: "1px solid black",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: "bold"
+      }}
+    >
+      {numero}
+    </div>
+  );
+}
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
@@ -17,6 +35,7 @@ root.render(
           <Route path="/" element={<App />} />
           <Route path="/parqueo" element={<Parqueo />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/parqueo" element={<Parqueo />} />
         </Routes>
     </BrowserRouter>
   </React.StrictMode>,
