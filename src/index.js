@@ -7,6 +7,8 @@ import reportWebVitals from "./reportWebVitals";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@flaticon/flaticon-uicons/css/all/all.css";
 import Perfil from "./perfil";
+import Reportes from "./reportes";
+import InicioAdmin from "./inicioAdmin";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -15,6 +17,8 @@ root.render(
       <Routes>
           <Route path="/" element={<App />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/reportes" element={<Reportes />} />
+          <Route path="/inicioAdmin" element={<InicioAdmin />} />
         </Routes>
     </BrowserRouter>
   </React.StrictMode>,

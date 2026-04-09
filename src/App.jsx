@@ -1,7 +1,7 @@
 // src/App.jsx
 import React, { useEffect, useState } from 'react';
 import Nav from './components/nav';
-import './App.css';
+import './index.css';
 
 function App() {
   const [msg, setMsg] = useState('Cargando...');
