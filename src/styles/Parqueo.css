@@ -1,0 +1,48 @@
+/* Fondo principal */
+.fondo-parqueo {
+  background-image: url("../images/UMG_FONDO.jpeg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  min-height: calc(100vh - 70px);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Capa oscura para mejorar visibilidad */
+.overlay-parqueo {
+  background-color: rgba(0, 0, 0, 0.4);
+
+  width: 100%;
+  min-height: 100vh;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Cuadro blanco (donde van las islas) */
+.card-parqueo {
+  background-color: white;
+  padding: 20px;
+  border-radius: 15px;
+
+  width: 70%;
+  max-width: 600px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Títulos */
+.card-parqueo h2 {
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.card-parqueo h5 {
+  color: #555;
+  margin-bottom: 10px;
+}

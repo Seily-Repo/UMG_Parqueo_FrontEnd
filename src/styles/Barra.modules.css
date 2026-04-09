@@ -1,25 +1,28 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
 .navbar{
-    background-color: #c7352e;
+    background-color: #e9dbc9;
     height: 10vh;
 }
 
 .navbarMobile{
-    background-color: #c7352e !important;
+    background-color: #e9dbc9 !important;
 }
 
 .navbar-brand{
-        color: #ffffff;
-        margin-left: 5%;
+        color: #573829;
+        margin-left: 2%;
         margin-right: 5%;
-        font-size: 25px;
-        font-family: 'ubuntu-italic', sans-serif;
+        font-size: 20px;
+        font-family: 'Poppins', sans-serif;
 }
 
 .navbar-nav a{
-    color: #ffffff;
+    color: #8a7465;
     font-size: 20px;
     margin-left: 50px;
-    font-family: 'century-gothic', sans-serif;
+    font-family: 'Poppins', sans-serif;
 }
 
 
