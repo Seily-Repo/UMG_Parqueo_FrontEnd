@@ -17,3 +17,18 @@ h5.display-5 {
   color: #003366;
   font-family: "Urbanist-ExtraBoldItalic", sans-serif;
 }
+
+body{
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+
+  background: linear-gradient(
+    135deg,
+    #003366 0%,
+    #00509e 85%,
+    #66a3ff 105%
+  );
+  
+  font-family: "Urbanist-ExtraBoldItalic" !important;;
+}
