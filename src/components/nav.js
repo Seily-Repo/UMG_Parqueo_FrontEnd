@@ -26,9 +26,13 @@ const Nav = () => {
   return (
     <nav className="navbar navbar-expand-lg">
       <div className="container-fluid">
-        <img src={logo} alt="Logo" className="img-fluid" width={60} />
-        <a className="navbar-brand fw-bold d-none d-sm-block" href="#!">
-          Universidad Mariano Galvez de Guatemala
+        <img src={logo} 
+              alt="Logo" 
+              className="img-fluid ms-2" 
+              width={60} 
+        />
+        <a className="navbar-brand fw-bold d-none d-sm-block titulo-nav" href="#!">
+          Universidad Mariano Gálvez de Guatemala
         </a>
         <button
           className="navbar-toggler d-lg-none"
@@ -50,11 +54,13 @@ const Nav = () => {
                 <i className="fi fi-rr-user me-2"></i>Perfil
               </NavLink>
             </li>
+
             <li className="nav-item me-3">
-              <a className="nav-link" href="#!">
+              <NavLink to="/parqueo" className="nav-link">
                 <i className="fi fi-rr-car me-2"></i>Parqueo
-              </a>
+              </NavLink>
             </li>
+
             <li className="nav-item">
               <a className="nav-link" href="#!">
                 <i className="fi fi-rr-exit me-2"></i>Salir
@@ -83,16 +89,19 @@ const Nav = () => {
                   <i className="fi fi-rr-home me-2"></i>Inicio
                 </NavLink>
               </li>
+
               <li className="nav-item mb-3">
                 <NavLink to="/perfil" className="nav-link" onClick={closeMenu}>
                   <i className="fi fi-rr-user me-2"></i>Perfil
                 </NavLink>
               </li>
+
               <li className="nav-item mb-3">
-                <a className="nav-link" href="#!">
+                <NavLink to="/parqueo" className="nav-link" onClick={closeMenu}>
                   <i className="fi fi-rr-car me-2"></i>Parqueo
-                </a>
+                </NavLink>
               </li>
+
               <li className="nav-item">
                 <a className="nav-link" href="#!">
                   <i className="fi fi-rr-exit me-2"></i>Salir
