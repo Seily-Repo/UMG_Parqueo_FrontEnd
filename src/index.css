@@ -32,3 +32,7 @@ body{
   
   font-family: "Urbanist-ExtraBoldItalic" !important;;
 }
+
+.vh-91 {
+  height: 91vh !important;
+}
