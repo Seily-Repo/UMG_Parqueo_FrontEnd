@@ -1,186 +1,149 @@
 import React, { useEffect, useState } from "react";
 import NavAdmin from "../components/navAdmin";
 
-const API_URL = "http://localhost:4000/api/reportes"; 
-
 function ReporteAdministrativo() {
-  const [data, setData] = useState([]);
-  const [tipo, setTipo] = useState("");
-  const [fecha, setFecha] = useState("");
-  const [mensaje, setMensaje] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState(null);
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
 
   useEffect(() => {
-    cargarDatos();
+    obtenerDatos();
   }, []);
 
-  const construirURL = (endpoint) => {
-    const url = new URL(`${API_URL}${endpoint}`);
-
-    if (tipo && fecha) {
-      if (tipo === "anio") {
-        url.searchParams.append("tipo", "anio");
-        url.searchParams.append("fecha", fecha.substring(0, 4));
-      } else if (tipo === "mes") {
-        url.searchParams.append("tipo", "mes");
-        url.searchParams.append("fecha", fecha.substring(0, 7));
-      } else {
-        url.searchParams.append("tipo", tipo);
-        url.searchParams.append("fecha", fecha);
-      }
-    }
-
-    return url;
-  };
-
-  const cargarDatos = async () => {
-    if (tipo && !fecha) {
-      setMensaje("Selecciona una fecha");
-      return;
-    }
-
-    setLoading(true);
-    setMensaje("");
-
+  const obtenerDatos = async () => {
     try {
-      const url = construirURL("/reporte");
-
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-
+      const res = await fetch("http://localhost:4000/api/reportes/reporte-administrativo");
       const json = await res.json();
-
-      if (json.length === 0) {
-        setMensaje("No hay datos para este filtro");
-      } else {
-        setMensaje(`${json.length} registros encontrados`);
-      }
-
       setData(json);
-
     } catch (err) {
       console.error(err);
-      setMensaje("Error de conexión con el servidor");
     }
-
-    setLoading(false);
   };
 
-  const exportarExcel = () => {
-    const url = construirURL("/exportar");
-    window.open(url, "_blank");
+  const filtrar = async () => {
+    try {
+      const url = new URL("http://localhost:4000/api/reportes/reporte-administrativo");
+      url.searchParams.append("fecha_inicio", fechaInicio);
+      url.searchParams.append("fecha_fin", fechaFin);
+
+      const res = await fetch(url);
+      const json = await res.json();
+      setData(json);
+    } catch (err) {
+      console.error(err);
+    }
   };
+
+  const limpiarFiltros = () => {
+    setFechaInicio("");
+    setFechaFin("");
+    obtenerDatos();
+  };
+
+  /*if (!data) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-primary"></div>
+      </div>
+    );
+  }*/
 
   return (
     <>
     <NavAdmin />
-    <div className="card card-report mt-5 container py-4">
-
-      {/* HEADER */}
+    <div className="card report-card p-4 w-100 mt-3 container py-4">
+      
       <div className="text-center mb-4">
-        <h1 className="fw-bold">
-          <i className="fi fi-rr-car me-2"></i>
-          Reporte Administrativo
-        </h1>
+        <h1 className="fw-bold uppercase">📊 DASHBOARD ADMINISTRATIVO</h1>
+        <p className="text-muted">Resumen general del sistema</p>
       </div>
 
-      {/* FILTROS */}
-      <div className="card shadow-sm p-3 mb-4">
-        <div className="row g-2">
-
+      <div className="card shadow-sm mb-4 p-3">
+        <div className="row g-2 align-items-center">
           <div className="col-md">
-            <select
-              className="form-select"
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-            >
-              <option value="">Todos</option>
-              <option value="dia">Día</option>
-              <option value="semana">Semana</option>
-              <option value="mes">Mes</option>
-              <option value="anio">Año</option>
-            </select>
+            <input
+              type="datetime-local"
+              className="form-control"
+              value={fechaInicio}
+              onChange={e => setFechaInicio(e.target.value)}
+            />
           </div>
 
           <div className="col-md">
             <input
-              type="date"
+              type="datetime-local"
               className="form-control"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
+              value={fechaFin}
+              onChange={e => setFechaFin(e.target.value)}
             />
           </div>
 
           <div className="col-md-auto">
-            <button className="btn btn-primary w-100" onClick={cargarDatos}>
-              <i className="fi fi-rr-search me-2"></i>
-              Buscar
+            <button className="btn btn-primary w-100" onClick={filtrar}>
+              <i className="fi fi-rr-filter me-2"></i>
+              Filtrar
             </button>
           </div>
 
           <div className="col-md-auto">
-            <button className="btn btn-success w-100" onClick={exportarExcel}>
-              <i className="fi fi-rr-file-excel me-2"></i>
-              Exportar
+            <button className="btn btn-danger w-100" onClick={limpiarFiltros}>
+              <i className="fi fi-rr-cross-circle me-2"></i>
+              Limpiar
             </button>
           </div>
-
         </div>
       </div>
 
-      {/* MENSAJE */}
-      {mensaje && (
-        <div className="alert alert-info text-center fw-bold">
-          {mensaje}
-        </div>
-      )}
-
-      {/* LOADING */}
-      {loading && (
-        <div className="text-center">
-          <div className="spinner-border text-primary"></div>
-        </div>
-      )}
-
-      {/* TABLA */}
-      <div className="card shadow-sm">
-        <div className="table-responsive">
-          <table className="table table-hover text-center mb-0">
-
-            <thead className="table-dark">
-              <tr>
-                <th>Nombre</th>
-                <th>Apellido</th>
-                <th>Placa</th>
-                <th>Parqueo</th>
-                <th>Fecha</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {data.map((d, i) => (
-                <tr key={i}>
-                  <td>{d.US_NOMBRE}</td>
-                  <td>{d.US_APELLIDO}</td>
-                  <td>{d.VH_PLACA || "-"}</td>
-                  <td>{d.PQ_NOMBRE}</td>
-                  <td>
-                    {new Date(d.AS_FECHAASIGNACION).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-
-          </table>
-        </div>
+      <div className="text-center mb-4">
+        <button
+          onClick={() => window.open("http://localhost:3001/reporte-pdf")}
+          className="btn btn-dark px-4 py-2 shadow"
+        >
+          <i className="fi fi-rr-file-pdf me-2"></i>
+          Descargar Reporte PDF
+        </button>
       </div>
-
+      {/*
+      <div className="row g-4">
+        <Card title="Usuarios Totales" value={data.total_usuarios} icon="fi fi-rr-users" />
+        <Card title="Usuarios Activos" value={data.usuarios_activos} icon="fi fi-rr-user-check" />
+        <Card title="Usuarios Inactivos" value={data.usuarios_inactivos} icon="fi fi-rr-user-delete" />
+        <Card title="Accesos Totales" value={data.total_accesos} icon="fi fi-rr-door-open" />
+        <Card title="Accesos Permitidos" value={data.accesos_permitidos} icon="fi fi-rr-shield-check" />
+        <Card title="Accesos Denegados" value={data.accesos_denegados} icon="fi fi-rr-shield-exclamation" />
+        <Card title="Vehículos" value={data.total_vehiculos} icon="fi fi-rr-car" />
+        <Card title="Tarjetas Activas" value={data.tarjetas_activas} icon="fi fi-rr-id-badge" />
+      </div>*/}
+      <div className="row g-4">
+        <Card title="Usuarios Totales" value={5} icon="fi fi-rr-users" />
+        <Card title="Usuarios Activos" value={5} icon="fi fi-rr-user-check" />
+        <Card title="Usuarios Inactivos" value={0} icon="fi fi-rr-delete-user" />
+        <Card title="Accesos Totales" value={5} icon="fi fi-rr-door-open" />
+        <Card title="Accesos Permitidos" value={5} icon="fi fi-rr-shield-check" />
+        <Card title="Accesos Denegados" value={0} icon="fi fi-rr-shield-exclamation" />
+        <Card title="Vehículos" value={5} icon="fi fi-rr-car" />
+        <Card title="Tarjetas Activas" value={4} icon="fi fi-rr-id-badge" />
+      </div>
     </div>
+    
     </>
+  );
+}
+function Card({ title, value, icon }) {
+  return (
+    <div className="col-md-6 col-lg-3">
+      <div className="card shadow h-100 border-0 card-hover text-bg-light">
+        <div className="card-body text-center">
+          
+          <div className="mb-4">
+            <i className={`${icon} fs-2 text-primary`}></i>
+          </div>
+
+          <h6 className="text-muted">{title}</h6>
+          <h3 className="fw-bold">{value}</h3>
+        </div>
+      </div>
+    </div>
   );
 }
 

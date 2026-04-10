@@ -1,150 +1,157 @@
 import React, { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
 import NavAdmin from "../components/navAdmin";
+/*const express = require("express");
+const cors = require("cors");
+const app = express();
 
-function App() {
-  const [data, setData] = useState(null);
-  const [fechaInicio, setFechaInicio] = useState("");
-  const [fechaFin, setFechaFin] = useState("");
+app.use(cors());
+app.use(express.json());*/
+
+const ReporteGerencial = () => {
+  const [datos, setDatos] = useState([]);
+  const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
-    obtenerDatos();
+    fetch("http://localhost:4000/api/reportes/reporte-gerencial")
+      .then((res) => res.json())
+      .then((data) => setDatos(data))
+      .catch((err) => console.log("Error al cargar datos:", err));
   }, []);
 
-  const obtenerDatos = async () => {
-    try {
-      const res = await fetch("http://localhost:4000/api/reportes/reporte-gerencial");
-      const json = await res.json();
-      setData(json);
-    } catch (err) {
-      console.error(err);
-    }
+  const exportarExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(datos);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Finanzas");
+    XLSX.writeFile(wb, "Reporte_Asignaciones.xlsx");
   };
 
-  const filtrar = async () => {
-    try {
-      const url = new URL("http://localhost:4000/api/reportes/reporte-gerencial");
-      url.searchParams.append("fecha_inicio", fechaInicio);
-      url.searchParams.append("fecha_fin", fechaFin);
-
-      const res = await fetch(url);
-      const json = await res.json();
-      setData(json);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const limpiarFiltros = () => {
-    setFechaInicio("");
-    setFechaFin("");
-    obtenerDatos();
-  };
-
-  /*if (!data) {
-    return (
-      <div className="d-flex justify-content-center align-items-center vh-100">
-        <div className="spinner-border text-primary"></div>
-      </div>
-    );
-  }*/
+  const filtrados = datos.filter(
+    (d) =>
+      (d.US_Nombre &&
+        d.US_Nombre.toLowerCase().includes(busqueda.toLowerCase())) ||
+      (d.VH_Placa && d.VH_Placa.includes(busqueda)),
+  );
 
   return (
     <>
-    <NavAdmin />
-    <div className="card report-card p-4 w-100 mt-3 container py-4">
-      
-      <div className="text-center mb-4">
-        <h1 className="fw-bold uppercase">📊 DASHBOARD GERENCIAL</h1>
-        <p className="text-muted">Resumen general del sistema</p>
-      </div>
+      <NavAdmin />
+      <div
+        className="card report-card p-4 w-100 container mt-5"
+        style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}
+      >
+        <h1 style={{ color: "#2c3e50" }}>
+          📊 Panel de Control Gerencial - Parqueos
+        </h1>
 
-      <div className="card shadow-sm mb-4 p-3">
-        <div className="row g-2 align-items-center">
-          <div className="col-md">
-            <input
-              type="datetime-local"
-              className="form-control"
-              value={fechaInicio}
-              onChange={e => setFechaInicio(e.target.value)}
-            />
-          </div>
+        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }} className="mt-4">
+          <input
+            type="text"
+            placeholder="Buscar por nombre o placa..."
+            style={{
+              padding: "8px",
+              width: "300px",
+              borderRadius: "4px",
+              border: "1px solid #ccc",
+            }}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+          <button
+            onClick={exportarExcel}
+            style={{
+              backgroundColor: "#2ecc71",
+              color: "white",
+              padding: "8px 15px",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            Descargar Excel
+          </button>
+        </div>
 
-          <div className="col-md">
-            <input
-              type="datetime-local"
-              className="form-control"
-              value={fechaFin}
-              onChange={e => setFechaFin(e.target.value)}
-            />
-          </div>
-
-          <div className="col-md-auto">
-            <button className="btn btn-primary w-100" onClick={filtrar}>
-              <i className="fi fi-rr-filter me-2"></i>
-              Filtrar
-            </button>
-          </div>
-
-          <div className="col-md-auto">
-            <button className="btn btn-danger w-100" onClick={limpiarFiltros}>
-              <i className="fi fi-rr-cross-circle me-2"></i>
-              Limpiar
-            </button>
+        <div
+          className="stats"
+          style={{ display: "flex", gap: "20px", marginBottom: "20px" }}
+        >
+          <div
+            style={{
+              backgroundColor: "#f9f9f9",
+              border: "1px solid #ddd",
+              padding: "15px",
+              borderRadius: "8px",
+            }}
+          >
+            <strong>Total Asignaciones:</strong> {filtrados.length}
           </div>
         </div>
-      </div>
 
-      <div className="text-center mb-4">
-        <button
-          onClick={() => window.open("http://localhost:3001/reporte-pdf")}
-          className="btn btn-dark px-4 py-2 shadow"
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+          }}
         >
-          <i className="fi fi-rr-file-pdf me-2"></i>
-          Descargar Reporte PDF
-        </button>
+          <thead style={{ backgroundColor: "#34495e", color: "white" }}>
+            <tr>
+              <th style={{ padding: "12px", textAlign: "left" }}>Usuario</th>
+              <th style={{ padding: "12px", textAlign: "left" }}>
+                Vehículo (Placa)
+              </th>
+              <th style={{ padding: "12px", textAlign: "left" }}>Ubicación</th>
+              <th style={{ padding: "12px", textAlign: "left" }}>Periodo</th>
+              <th style={{ padding: "12px", textAlign: "left" }}>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtrados.length > 0 ? (
+              filtrados.map((reg, i) => (
+                <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+                  <td
+                    style={{ padding: "10px" }}
+                  >{`${reg.US_Nombre} ${reg.US_Apellido}`}</td>
+                  <td style={{ padding: "10px" }}>{reg.VH_Placa}</td>
+                  <td
+                    style={{ padding: "10px" }}
+                  >{`${reg.Parqueo} - Espacio ${reg.Numero_Espacio}`}</td>
+                  <td
+                    style={{ padding: "10px" }}
+                  >{`${reg.Semestre} / ${reg.Anio}`}</td>
+                  <td style={{ padding: "10px" }}>
+                    <span style={{ color: "#27ae60", fontWeight: "bold" }}>
+                      ● Activo
+                    </span>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan="5"
+                  style={{
+                    textAlign: "center",
+                    padding: "20px",
+                    color: "#7f8c8d",
+                  }}
+                >
+                  No hay datos disponibles. Asegúrate de que el servidor esté
+                  encendido.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
-      {/*
-      <div className="row g-4">
-        <Card title="Usuarios Totales" value={data.total_usuarios} icon="fi fi-rr-users" />
-        <Card title="Usuarios Activos" value={data.usuarios_activos} icon="fi fi-rr-user-check" />
-        <Card title="Usuarios Inactivos" value={data.usuarios_inactivos} icon="fi fi-rr-user-delete" />
-        <Card title="Accesos Totales" value={data.total_accesos} icon="fi fi-rr-door-open" />
-        <Card title="Accesos Permitidos" value={data.accesos_permitidos} icon="fi fi-rr-shield-check" />
-        <Card title="Accesos Denegados" value={data.accesos_denegados} icon="fi fi-rr-shield-exclamation" />
-        <Card title="Vehículos" value={data.total_vehiculos} icon="fi fi-rr-car" />
-        <Card title="Tarjetas Activas" value={data.tarjetas_activas} icon="fi fi-rr-id-badge" />
-      </div>*/}
-      <div className="row g-4">
-        <Card title="Usuarios Totales" value={5} icon="fi fi-rr-users" />
-        <Card title="Usuarios Activos" value={5} icon="fi fi-rr-user-check" />
-        <Card title="Usuarios Inactivos" value={0} icon="fi fi-rr-delete-user" />
-        <Card title="Accesos Totales" value={5} icon="fi fi-rr-door-open" />
-        <Card title="Accesos Permitidos" value={5} icon="fi fi-rr-shield-check" />
-        <Card title="Accesos Denegados" value={0} icon="fi fi-rr-shield-exclamation" />
-        <Card title="Vehículos" value={5} icon="fi fi-rr-car" />
-        <Card title="Tarjetas Activas" value={4} icon="fi fi-rr-id-badge" />
-      </div>
-    </div>
-    
     </>
   );
-}
-function Card({ title, value, icon }) {
-  return (
-    <div className="col-md-6 col-lg-3">
-      <div className="card shadow h-100 border-0 card-hover text-bg-light">
-        <div className="card-body text-center">
-          
-          <div className="mb-4">
-            <i className={`${icon} fs-2 text-primary`}></i>
-          </div>
+};
 
-          <h6 className="text-muted">{title}</h6>
-          <h3 className="fw-bold">{value}</h3>
-        </div>
-      </div>
-    </div>
-  );
-}
+/*const PORT = 3001;
+app.listen(PORT, () => {
+  console.log(`Servidor de reportes corriendo en http://localhost:${PORT}`);
+});*/
 
-export default App;
+export default ReporteGerencial;

@@ -1,157 +1,187 @@
 import React, { useEffect, useState } from "react";
-import * as XLSX from "xlsx";
 import NavAdmin from "../components/navAdmin";
-/*const express = require("express");
-const cors = require("cors");
-const app = express();
 
-app.use(cors());
-app.use(express.json());*/
+const API_URL = "http://localhost:4000/api/reportes"; 
 
-const ReporteFinanciero = () => {
-  const [datos, setDatos] = useState([]);
-  const [busqueda, setBusqueda] = useState("");
+function ReporteFinanciero() {
+  const [data, setData] = useState([]);
+  const [tipo, setTipo] = useState("");
+  const [fecha, setFecha] = useState("");
+  const [mensaje, setMensaje] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:4000/api/reportes/reporte-financiero")
-      .then((res) => res.json())
-      .then((data) => setDatos(data))
-      .catch((err) => console.log("Error al cargar datos:", err));
+    cargarDatos();
   }, []);
 
-  const exportarExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(datos);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Finanzas");
-    XLSX.writeFile(wb, "Reporte_Asignaciones.xlsx");
+  const construirURL = (endpoint) => {
+    const url = new URL(`${API_URL}${endpoint}`);
+
+    if (tipo && fecha) {
+      if (tipo === "anio") {
+        url.searchParams.append("tipo", "anio");
+        url.searchParams.append("fecha", fecha.substring(0, 4));
+      } else if (tipo === "mes") {
+        url.searchParams.append("tipo", "mes");
+        url.searchParams.append("fecha", fecha.substring(0, 7));
+      } else {
+        url.searchParams.append("tipo", tipo);
+        url.searchParams.append("fecha", fecha);
+      }
+    }
+
+    return url;
   };
 
-  const filtrados = datos.filter(
-    (d) =>
-      (d.US_Nombre &&
-        d.US_Nombre.toLowerCase().includes(busqueda.toLowerCase())) ||
-      (d.VH_Placa && d.VH_Placa.includes(busqueda)),
-  );
+  const cargarDatos = async () => {
+    if (tipo && !fecha) {
+      setMensaje("Selecciona una fecha");
+      return;
+    }
+
+    setLoading(true);
+    setMensaje("");
+
+    try {
+      const url = construirURL("/reporte-financiero");
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+
+      const json = await res.json();
+
+      if (json.length === 0) {
+        setMensaje("No hay datos para este filtro");
+      } else {
+        setMensaje(`${json.length} registros encontrados`);
+      }
+
+      setData(json);
+
+    } catch (err) {
+      console.error(err);
+      setMensaje("Error de conexión con el servidor");
+    }
+
+    setLoading(false);
+  };
+
+  const exportarExcel = () => {
+    const url = construirURL("/exportar");
+    window.open(url, "_blank");
+  };
 
   return (
     <>
-      <NavAdmin />
-      <div
-        className="card report-card p-4 w-100 container mt-5"
-        style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}
-      >
-        <h1 style={{ color: "#2c3e50" }}>
-          📊 Panel de Control Financiero - Parqueos
+    <NavAdmin />
+    <div className="card card-report mt-5 container py-4">
+
+      {/* HEADER */}
+      <div className="text-center mb-4">
+        <h1 className="fw-bold">
+          <i className="fi fi-rr-car me-2"></i>
+          REPORTE FINANCIERO
         </h1>
+      </div>
 
-        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }} className="mt-4">
-          <input
-            type="text"
-            placeholder="Buscar por nombre o placa..."
-            style={{
-              padding: "8px",
-              width: "300px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-            }}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
-          <button
-            onClick={exportarExcel}
-            style={{
-              backgroundColor: "#2ecc71",
-              color: "white",
-              padding: "8px 15px",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            Descargar Excel
-          </button>
-        </div>
+      {/* FILTROS */}
+      <div className="card shadow-sm p-3 mb-4">
+        <div className="row g-2">
 
-        <div
-          className="stats"
-          style={{ display: "flex", gap: "20px", marginBottom: "20px" }}
-        >
-          <div
-            style={{
-              backgroundColor: "#f9f9f9",
-              border: "1px solid #ddd",
-              padding: "15px",
-              borderRadius: "8px",
-            }}
-          >
-            <strong>Total Asignaciones:</strong> {filtrados.length}
+          <div className="col-md">
+            <select
+              className="form-select"
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="dia">Día</option>
+              <option value="semana">Semana</option>
+              <option value="mes">Mes</option>
+              <option value="anio">Año</option>
+            </select>
           </div>
-        </div>
 
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-          }}
-        >
-          <thead style={{ backgroundColor: "#34495e", color: "white" }}>
-            <tr>
-              <th style={{ padding: "12px", textAlign: "left" }}>Usuario</th>
-              <th style={{ padding: "12px", textAlign: "left" }}>
-                Vehículo (Placa)
-              </th>
-              <th style={{ padding: "12px", textAlign: "left" }}>Ubicación</th>
-              <th style={{ padding: "12px", textAlign: "left" }}>Periodo</th>
-              <th style={{ padding: "12px", textAlign: "left" }}>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtrados.length > 0 ? (
-              filtrados.map((reg, i) => (
-                <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
-                  <td
-                    style={{ padding: "10px" }}
-                  >{`${reg.US_Nombre} ${reg.US_Apellido}`}</td>
-                  <td style={{ padding: "10px" }}>{reg.VH_Placa}</td>
-                  <td
-                    style={{ padding: "10px" }}
-                  >{`${reg.Parqueo} - Espacio ${reg.Numero_Espacio}`}</td>
-                  <td
-                    style={{ padding: "10px" }}
-                  >{`${reg.Semestre} / ${reg.Anio}`}</td>
-                  <td style={{ padding: "10px" }}>
-                    <span style={{ color: "#27ae60", fontWeight: "bold" }}>
-                      ● Activo
-                    </span>
+          <div className="col-md">
+            <input
+              type="date"
+              className="form-control"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+            />
+          </div>
+
+          <div className="col-md-auto">
+            <button className="btn btn-primary w-100" onClick={cargarDatos}>
+              <i className="fi fi-rr-search me-2"></i>
+              Buscar
+            </button>
+          </div>
+
+          <div className="col-md-auto">
+            <button className="btn btn-success w-100" onClick={exportarExcel}>
+              <i className="fi fi-rr-file-excel me-2"></i>
+              Exportar
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      {/* MENSAJE */}
+      {mensaje && (
+        <div className="alert alert-info text-center fw-bold">
+          {mensaje}
+        </div>
+      )}
+
+      {/* LOADING */}
+      {loading && (
+        <div className="text-center">
+          <div className="spinner-border text-primary"></div>
+        </div>
+      )}
+
+      {/* TABLA */}
+      <div className="card shadow-sm">
+        <div className="table-responsive">
+          <table className="table table-hover text-center mb-0">
+
+            <thead className="table-dark">
+              <tr>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Placa</th>
+                <th>Parqueo</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {data.map((d, i) => (
+                <tr key={i}>
+                  <td>{d.US_NOMBRE}</td>
+                  <td>{d.US_APELLIDO}</td>
+                  <td>{d.VH_PLACA || "-"}</td>
+                  <td>{d.PQ_NOMBRE}</td>
+                  <td>
+                    {new Date(d.AS_FECHAASIGNACION).toLocaleDateString()}
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan="5"
-                  style={{
-                    textAlign: "center",
-                    padding: "20px",
-                    color: "#7f8c8d",
-                  }}
-                >
-                  No hay datos disponibles. Asegúrate de que el servidor esté
-                  encendido.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+
+          </table>
+        </div>
       </div>
+
+    </div>
     </>
   );
-};
-
-/*const PORT = 3001;
-app.listen(PORT, () => {
-  console.log(`Servidor de reportes corriendo en http://localhost:${PORT}`);
-});*/
+}
 
 export default ReporteFinanciero;
