@@ -148,7 +148,7 @@ const Nav = () => {
                 </li>
 
                   <li className="nav-item mb-3">
-                    <NavLink to="/" className="nav-link" onClick={closeMenu}>
+                    <NavLink to="/parqueo" className="nav-link" onClick={closeMenu}>
                       <i className="fi fi-rr-home me-2"></i>Parqueo
                     </NavLink>
                   </li>
@@ -188,7 +188,7 @@ const Nav = () => {
                   </li>
 
                   <li className="nav-item mb-3">
-                    <NavLink to="/" className="nav-link" onClick={closeMenu}>
+                    <NavLink to="/parqueo" className="nav-link" onClick={closeMenu}>
                       <i className="fi fi-rr-home me-2"></i>Parqueo
                     </NavLink>
                   </li>
@@ -197,8 +197,10 @@ const Nav = () => {
                   <li className="nav-item mb-3">
                     <NavLink to="/" className="nav-link" onClick={closeMenu}>
                       <i className="fi fi-rr-envelope me-2"></i>Contacto
-                    </NavLink>
+                    </NavLink>                    
                   </li>
+
+                  
                   <li className="nav-item">
                     <a className="nav-link" href="#!">
                       <i className="fi fi-rr-sign-in-alt me-2"></i>Iniciar
