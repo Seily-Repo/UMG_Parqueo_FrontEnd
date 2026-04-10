@@ -57,11 +57,15 @@ const Nav = () => {
                     <i className="fi fi-rr-user me-2"></i>Perfil
                   </NavLink>
                 </li>
-                <li className="nav-item me-3">
-                  <a className="nav-link" href="#!">
-                    <i className="fi fi-rr-car me-2"></i>Parqueo
-                  </a>
-                </li>
+
+                  
+                  <li className="nav-item me-3">
+                    <NavLink to="/parqueo" className="nav-link">
+                      <i className="fi fi-rr-car me-2"></i>Parqueo
+                    </NavLink>
+                  </li>
+
+
                 <li className="nav-item">
                   <a className="nav-link" href="#!">
                     <i className="fi fi-rr-exit me-2"></i>Salir
@@ -98,12 +102,15 @@ const Nav = () => {
                     >
                       <i className="fi fi-rr-user me-2"></i>Perfil
                     </NavLink>
-                  </li>
-                  <li className="nav-item mb-3">
-                    <a className="nav-link" href="#!">
+                    </li>
+
+                    <li className="nav-item mb-3">
+                    <NavLink to="/parqueo" className="nav-link" onClick={closeMenu}>
                       <i className="fi fi-rr-car me-2"></i>Parqueo
-                    </a>
+                    </NavLink>
                   </li>
+
+
                   <li className="nav-item">
                     <a className="nav-link" href="#!">
                       <i className="fi fi-rr-exit me-2"></i>Salir
@@ -139,6 +146,13 @@ const Nav = () => {
                     <i className="fi fi-rr-home me-2"></i>Inicio
                   </NavLink>
                 </li>
+
+                  <li className="nav-item mb-3">
+                    <NavLink to="/" className="nav-link" onClick={closeMenu}>
+                      <i className="fi fi-rr-home me-2"></i>Parqueo
+                    </NavLink>
+                  </li>
+
                 <li className="nav-item me-3">
                   <NavLink to="/contacto" className="nav-link">
                     <i className="fi fi-rr-envelope me-2"></i>Contacto
@@ -172,6 +186,14 @@ const Nav = () => {
                       <i className="fi fi-rr-home me-2"></i>Inicio
                     </NavLink>
                   </li>
+
+                  <li className="nav-item mb-3">
+                    <NavLink to="/" className="nav-link" onClick={closeMenu}>
+                      <i className="fi fi-rr-home me-2"></i>Parqueo
+                    </NavLink>
+                  </li>
+
+
                   <li className="nav-item mb-3">
                     <NavLink to="/" className="nav-link" onClick={closeMenu}>
                       <i className="fi fi-rr-envelope me-2"></i>Contacto
