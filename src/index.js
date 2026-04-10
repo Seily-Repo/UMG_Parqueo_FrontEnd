@@ -9,6 +9,7 @@ import "@flaticon/flaticon-uicons/css/all/all.css";
 import Perfil from "./perfil";
 import Reportes from "./reportes";
 import InicioAdmin from "./inicioAdmin";
+import ReporteFinanciero from "./reportes/financieros";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -19,6 +20,7 @@ root.render(
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/reportes" element={<Reportes />} />
           <Route path="/inicioAdmin" element={<InicioAdmin />} />
+          <Route path="/reportes/financieros" element={<ReporteFinanciero />} />
         </Routes>
     </BrowserRouter>
   </React.StrictMode>,

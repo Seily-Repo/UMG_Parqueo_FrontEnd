@@ -1,7 +1,11 @@
 import NavAdmin from "./components/navAdmin";
 import "./styles/Reportes.module.css";
 
+import {useNavigate} from "react-router-dom";
+
 const Reportes = () => {
+  const navigate = useNavigate();
+
   return (
     <>
     <NavAdmin />
@@ -39,7 +43,9 @@ const Reportes = () => {
               <p className="text-muted small">
                 Reportes de ingresos, egresos y análisis financiero.
               </p>
-              <button className="btn btn-outline-success btn-sm">
+              <button className="btn btn-outline-success btn-sm" 
+              onClick={() => navigate('/reportes/financieros')}
+              >
                 Ver reportes
               </button>
             </div>
