@@ -13,7 +13,7 @@ const ReporteFinanciero = () => {
   const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:4000/api/reporte-financiero")
+    fetch("http://localhost:4000/api/reportes/reporte-financiero")
       .then((res) => res.json())
       .then((data) => setDatos(data))
       .catch((err) => console.log("Error al cargar datos:", err));

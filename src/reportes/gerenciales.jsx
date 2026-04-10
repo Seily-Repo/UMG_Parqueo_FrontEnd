@@ -12,7 +12,7 @@ function App() {
 
   const obtenerDatos = async () => {
     try {
-      const res = await fetch("http://localhost:3001/reporte-gerencial");
+      const res = await fetch("http://localhost:4000/api/reportes/reporte-gerencial");
       const json = await res.json();
       setData(json);
     } catch (err) {
@@ -22,7 +22,7 @@ function App() {
 
   const filtrar = async () => {
     try {
-      const url = new URL("http://localhost:3001/reporte-gerencial");
+      const url = new URL("http://localhost:4000/api/reportes/reporte-gerencial");
       url.searchParams.append("fecha_inicio", fechaInicio);
       url.searchParams.append("fecha_fin", fechaFin);
 

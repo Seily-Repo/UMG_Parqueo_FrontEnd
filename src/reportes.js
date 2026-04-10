@@ -29,7 +29,7 @@ const Reportes = () => {
               <p className="text-muted small">
                 Reportes operativos y administrativos del sistema.
               </p>
-              <button className="btn btn-outline-primary btn-sm">
+              <button className="btn btn-outline-primary btn-sm"onClick={() => navigate('/reportes/administrativos')}>
                 Ver reportes
               </button>
             </div>
