@@ -7,7 +7,7 @@ export default function Espacio({ numero, ocupado, tipo }) {
         width: "70px",
         height: "100px",
         borderRadius: "10px",
-        backgroundColor: ocupado ? "#dc3545" : "#28a745",
+        backgroundColor: ocupado ? "#cb3634" : "#1f4e79",
         color: "white",
         display: "flex",
         flexDirection: "column",

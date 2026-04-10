@@ -14,16 +14,16 @@ export default function Parqueo() {
             <div className="d-flex flex-column align-items-center gap-4">
 
               {/* ISLA A */}
-              <div className="card p-4 shadow-sm w-100">
+              <div className="card-isla p-4 shadow-sm w-100">
                 <h5 className="text-center mb-3">Isla A</h5>
                 <p className="text-muted">Frente a Edificio A</p>
                 <Isla carros={5} motos={5} />
               </div>
 
               {/* ISLA B */}
-              <div className="card p-4 shadow-sm w-100">
+              <div className="card-isla p-4 shadow-sm w-100">
                 <h5 className="text-center mb-3">Isla B</h5>
-                <p className="text-muted">Frente a Edificio A</p>
+                <p className="text-muted">Frente a Edificio B</p>
                 <Isla carros={5} motos={5} />
               </div>
 
