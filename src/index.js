@@ -10,6 +10,7 @@ import Perfil from "./perfil";
 import Reportes from "./reportes";
 import InicioAdmin from "./inicioAdmin";
 import ReporteFinanciero from "./reportes/financieros";
+import ReporteGerencial from "./reportes/gerenciales";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -21,6 +22,7 @@ root.render(
           <Route path="/reportes" element={<Reportes />} />
           <Route path="/inicioAdmin" element={<InicioAdmin />} />
           <Route path="/reportes/financieros" element={<ReporteFinanciero />} />
+          <Route path="/reportes/gerenciales" element={<ReporteGerencial />} />
         </Routes>
     </BrowserRouter>
   </React.StrictMode>,

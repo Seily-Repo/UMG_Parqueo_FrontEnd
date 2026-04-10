@@ -59,7 +59,8 @@ const Reportes = () => {
               <p className="text-muted small">
                 Reportes estratégicos para la toma de decisiones.
               </p>
-              <button className="btn btn-outline-warning btn-sm">
+              <button className="btn btn-outline-warning btn-sm"
+               onClick={() => navigate('/reportes/gerenciales')}>
                 Ver reportes
               </button>
             </div>
