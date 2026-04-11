@@ -1,6 +1,6 @@
 import Espacio from "./Espacio";
 
-export default function Isla({ carros = 5, motos = 5 }) {
+export default function Isla({ carros = 5, motos = 5, espaciosBackend = [] }) {
 
   //  Genera dinámicamente los espacios
   const espacios = [
@@ -22,7 +22,7 @@ export default function Isla({ carros = 5, motos = 5 }) {
           key={index}
           numero={index + 1}
           tipo={tipo}
-          ocupado={false} // luego esto vendrá del backend
+          ocupado={espaciosBackend[index]?.ES_Estado === 0} // backend
         />
       ))}
     </div>
