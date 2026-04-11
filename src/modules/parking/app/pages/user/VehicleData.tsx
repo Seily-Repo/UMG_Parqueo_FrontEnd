@@ -73,26 +73,26 @@ export function VehicleData() {
                 <div
                   key={vehicle.id}
                   className="d-flex align-items-center justify-content-between p-3 border rounded"
-                  style={{ backgroundColor: '#d4edda', borderColor: '#28a745' }}
+                  style={{ backgroundColor: '#e3f2fd', borderColor: '#1976d2' }}
                 >
                   <div className="d-flex align-items-center gap-3">
-                    <CheckCircle size={24} color="#28a745" />
+                    <CheckCircle size={24} color="#1976d2" />
                     <div 
                       style={{ 
                         width: 48, 
                         height: 48, 
-                        backgroundColor: '#d4edda', 
+                        backgroundColor: '#e3f2fd', 
                         borderRadius: 8,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
                       }}
                     >
-                      <Car size={24} color="#28a745" />
+                      <Car size={24} color="#1976d2" />
                     </div>
                     <div>
-                      <div className="fw-semibold" style={{ color: '#155724' }}>{vehicle.plate}</div>
-                      <small style={{ color: '#155724' }}>
+                      <div className="fw-semibold" style={{ color: '#0d47a1' }}>{vehicle.plate}</div>
+                      <small style={{ color: '#0d47a1' }}>
                         {vehicle.color} - {vehicle.brand} {vehicle.model}
                       </small>
                     </div>
@@ -106,7 +106,7 @@ export function VehicleData() {
                 <Button
                   variant="outline-primary"
                   size="lg"
-                  className="w-100"
+                className="w-100 d-flex align-items-center justify-content-center"
                   onClick={() => navigate('/parking/user/datos-personales')}
                 >
                   <ArrowLeft size={16} className="me-2" />
@@ -256,7 +256,7 @@ export function VehicleData() {
             <Button
               variant="outline-secondary"
               size="lg"
-              className="w-100"
+              className="w-100 d-flex align-items-center justify-content-center"
               onClick={() => navigate('/parking/user/datos-personales')}
             >
               <ArrowLeft size={16} className="me-2" />

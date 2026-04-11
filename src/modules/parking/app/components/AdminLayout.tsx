@@ -16,11 +16,11 @@ export function AdminLayout() {
         subtitle="Panel de Administración"
         actions={
           <>
-            <div className="text-end d-none d-md-block">
+            <div className="text-end d-none d-md-block text-white">
               <div className="small fw-medium">Admin Usuario</div>
-              <small className="text-muted">Administrador</small>
+              <small style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Administrador</small>
             </div>
-            <Button variant="outline-secondary" size="sm" onClick={handleLogout}>
+            <Button variant="light" size="sm" onClick={handleLogout}>
               <LogOut size={16} className="me-2" />
               Cerrar Sesión
             </Button>

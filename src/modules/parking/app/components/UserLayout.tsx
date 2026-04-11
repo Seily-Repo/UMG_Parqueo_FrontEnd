@@ -9,9 +9,7 @@ export function UserLayout() {
   const navigate = useNavigate();
 
   const steps = [
-    { path: '/parking/user', label: 'Inicio' },
-    { path: '/parking/user/datos-personales', label: 'Datos Personales' },
-    { path: '/parking/user/vehiculos', label: 'Vehículos' },
+    { path: '/parking/user', label: 'Datos del vehiculo' },
     { path: '/parking/user/pago', label: 'Pago' },
     { path: '/parking/user/firma', label: 'Firma' },
   ];
@@ -29,7 +27,7 @@ export function UserLayout() {
       <AppHeader
         subtitle="Registro de Parqueo"
         actions={
-          <Button variant="ghost" size="sm" onClick={() => navigate('/parking')} style={{ padding: '6px 8px' }}>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/parking')} style={{ padding: '6px 8px', color: 'white' }}>
             <ArrowLeft size={20} />
           </Button>
         }

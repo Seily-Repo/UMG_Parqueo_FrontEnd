@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useRegistration } from '../../context/RegistrationContext';
-import { Card, Button, ListGroup } from 'react-bootstrap';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { CheckCircle2, Home } from 'lucide-react';
+import { Button } from '../../components/ui/button';
 
 export function Confirmation() {
   const navigate = useNavigate();
@@ -17,70 +18,51 @@ export function Confirmation() {
   }, []);
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      <Card className="shadow-sm" style={{ borderColor: '#d1e7dd', backgroundColor: '#f8f9fa' }}>
-        <Card.Body className="text-center p-5">
-          <div 
-            style={{ 
-              width: 80, 
-              height: 80, 
-              backgroundColor: '#d1e7dd', 
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 24px'
-            }}
-          >
-            <CheckCircle2 size={48} color="#198754" />
+    <div className="max-w-2xl mx-auto">
+      <Card className="border-blue-200 bg-gray-50">
+        <CardHeader className="items-center text-center">
+          <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+            <CheckCircle2 size={48} className="text-blue-600" />
           </div>
-          <h2 className="mb-4" style={{ color: '#198754' }}>¡Pago Completado!</h2>
-          
-          <p className="text-muted mb-4">
+          <CardTitle className="text-3xl text-blue-700">¡Pago Completado!</CardTitle>
+          <p className="text-gray-600 pt-2">
             Su pago ha sido procesado exitosamente.
           </p>
+        </CardHeader>
 
-          <Card className="mb-4 text-start">
-            <Card.Body className="p-4">
-              <div className="text-center mb-4">
-                <small className="text-muted">Número de Registro</small>
-                <h3 className="mb-0 fw-bold">
+        <CardContent className="space-y-6">
+          <Card className="text-start">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <p className="text-sm text-gray-500">Número de Registro</p>
+                <p className="text-2xl font-bold">
                   #{currentRegistration.carnet?.substring(0, 8) || 'XXXXXXXX'}
-                </h3>
+                </p>
               </div>
 
-              <hr />
+              <hr className="my-4" />
 
-              <div className="mt-4">
-                <p className="small text-muted mb-3">Información importante:</p>
-                <ListGroup variant="flush">
-                  <ListGroup.Item className="px-0 py-2 small">
-                    • Recibirá un correo de confirmación en las próximas 24 horas
-                  </ListGroup.Item>
-                  <ListGroup.Item className="px-0 py-2 small">
-                    • Su sticker de parqueo estará disponible en la oficina administrativa
-                  </ListGroup.Item>
-                  <ListGroup.Item className="px-0 py-2 small">
-                    • Recuerde respetar las normas de parqueo establecidas
-                  </ListGroup.Item>
-                  <ListGroup.Item className="px-0 py-2 small border-0">
-                    • El pago es mensual y debe realizarse los primeros 5 días
-                  </ListGroup.Item>
-                </ListGroup>
+              <div>
+                <p className="text-sm text-gray-500 mb-3">Información importante:</p>
+                <ul className="space-y-2 text-sm text-gray-700 list-disc list-inside">
+                  <li>Recibirá un correo de confirmación en las próximas 24 horas.</li>
+                  <li>Su sticker de parqueo estará disponible en la oficina administrativa.</li>
+                  <li>Recuerde respetar las normas de parqueo establecidas.</li>
+                  <li>El pago es mensual y debe realizarse los primeros 5 días.</li>
+                </ul>
               </div>
-            </Card.Body>
+            </CardContent>
           </Card>
 
           <Button
-            variant="primary"
             size="lg"
-            className="w-100"
+            className="w-full"
             onClick={() => navigate('/parking')}
           >
-            <Home size={16} className="me-2" />
+            <Home size={16} className="mr-2" />
             Volver al Inicio
           </Button>
-        </Card.Body>
+        </CardContent>
       </Card>
     </div>
   );

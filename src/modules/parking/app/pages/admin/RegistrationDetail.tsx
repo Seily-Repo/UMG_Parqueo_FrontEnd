@@ -32,11 +32,11 @@ export function RegistrationDetail() {
   const getPlanDetails = () => {
     switch (registration.parkingPlan) {
       case 'entre-semana':
-        return { label: 'Entre Semana', description: 'Lunes a Viernes', price: 'Q200/mes' };
+        return { label: 'Entre Semana', description: 'Lunes a Viernes', price: 'Q600/mes' };
       case 'sabado':
-        return { label: 'Sábado', description: 'Solo Sábados', price: 'Q80/mes' };
+        return { label: 'Sábado', description: 'Solo Sábados', price: 'Q600/mes' };
       case 'domingo':
-        return { label: 'Domingo', description: 'Solo Domingos', price: 'Q50/mes' };
+        return { label: 'Domingo', description: 'Solo Domingos', price: 'Q600/mes' };
       default:
         return { label: '', description: '', price: '' };
     }
@@ -62,7 +62,7 @@ export function RegistrationDetail() {
             <p className="text-muted mb-0">Información completa del estudiante</p>
           </div>
           <Badge 
-            bg={registration.paymentStatus === 'paid' ? 'success' : 'warning'}
+            bg={registration.paymentStatus === 'paid' ? 'primary' : 'warning'}
             className="text-white px-3 py-2"
           >
             {registration.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente'}
@@ -232,7 +232,7 @@ export function RegistrationDetail() {
                   </Col>
                   <Col md={6}>
                     <small className="text-muted">Monto Pagado</small>
-                    <div className="h4 fw-bold text-success mb-0">Q{registration.amount}</div>
+                    <div className="h4 fw-bold text-primary mb-0">Q{registration.amount}</div>
                     <small className="text-muted">Mensual</small>
                   </Col>
                   <Col md={6}>

@@ -96,7 +96,7 @@ export function ActiveVehicles() {
                       <CardDescription>{getVehicleTypeLabel(vehicle.type)}</CardDescription>
                     </div>
                   </div>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                     Activo
                   </Badge>
                 </div>

@@ -44,16 +44,16 @@ export function AdminDashboard() {
       value: `Q${totalRevenue}`,
       description: 'Pagos procesados',
       icon: DollarSign,
-      color: '#2e7d32',
-      bgColor: '#e8f5e9'
+      color: '#C41230',
+      bgColor: '#ffebee'
     },
     {
       title: 'Vehículos Registrados',
       value: totalVehicles,
       description: 'Total de vehículos',
       icon: Car,
-      color: '#7e57c2',
-      bgColor: '#ede7f6'
+      color: '#0d47a1',
+      bgColor: '#e3f2fd'
     },
   ];
 
@@ -71,7 +71,7 @@ export function AdminDashboard() {
           const Icon = stat.icon;
           return (
             <Col md={4} key={stat.title}>
-              <Card className="shadow-sm h-100">
+              <Card className="shadow-sm h-100" style={{ borderColor: '#0d47a1' }}>
                 <Card.Body>
                   <div className="d-flex align-items-center justify-content-between mb-3">
                     <h6 className="text-muted mb-0 small">{stat.title}</h6>
@@ -99,7 +99,7 @@ export function AdminDashboard() {
       </Row>
 
       {/* Search and Table */}
-      <Card className="shadow-sm">
+      <Card className="shadow-sm" style={{ borderColor: '#0d47a1' }}>
         <Card.Header className="bg-white">
           <h5 className="mb-1">Lista de Registros</h5>
           <p className="text-muted small mb-0">
@@ -152,7 +152,7 @@ export function AdminDashboard() {
                       <td>{registration.vehicles.length}</td>
                       <td>
                         <Badge 
-                          bg={registration.paymentStatus === 'paid' ? 'success' : 'warning'}
+                          bg={registration.paymentStatus === 'paid' ? 'primary' : 'danger'}
                           className="text-white"
                         >
                           {registration.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente'}

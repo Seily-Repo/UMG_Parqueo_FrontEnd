@@ -3,20 +3,36 @@ import { useNavigate } from 'react-router';
 import { useRegistration } from '../../context/RegistrationContext';
 import { Card, Form, Button, Row, Col } from 'react-bootstrap';
 import { Car, Bike, Calendar, CheckCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export function UserStart() {
   const navigate = useNavigate();
   const { updateRegistration, currentRegistration } = useRegistration();
   
   const [formData, setFormData] = useState({
-    vehicleType: 'carro' as 'moto' | 'carro',
-    parkingPlan: 'entre-semana' as 'entre-semana' | 'sabado' | 'domingo',
+    vehicleType: currentRegistration.vehicleType || ('carro' as 'moto' | 'carro'),
+    parkingPlan: currentRegistration.parkingPlan || ('entre-semana' as 'entre-semana' | 'sabado' | 'domingo'),
+    plate: currentRegistration.vehicles?.[0]?.plate || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateRegistration(formData);
-    navigate('/parking/user/datos-personales');
+    
+    if (!formData.plate.trim()) {
+      toast.error('Por favor ingrese el número de placa');
+      return;
+    }
+
+    const newVehicle = {
+      id: Date.now().toString(),
+      color: 'N/A',
+      brand: 'N/A',
+      model: 'N/A',
+      plate: formData.plate.toUpperCase(),
+    };
+
+    updateRegistration({ vehicleType: formData.vehicleType, parkingPlan: formData.parkingPlan, vehicles: [newVehicle] });
+    navigate('/parking/user/pago');
   };
 
   const vehicleTypes = [
@@ -25,9 +41,9 @@ export function UserStart() {
   ] as const;
 
   const parkingPlans = [
-    { value: 'entre-semana', label: 'Entre Semana', price: 'Q200/mes', days: 'Lunes a Viernes' },
-    { value: 'sabado', label: 'Sábado', price: 'Q80/mes', days: 'Solo Sábados' },
-    { value: 'domingo', label: 'Domingo', price: 'Q50/mes', days: 'Solo Domingos' },
+    { value: 'entre-semana', label: 'Entre Semana', price: 'Q600/mes', days: 'Lunes a Viernes' },
+    { value: 'sabado', label: 'Sábado', price: 'Q600/mes', days: 'Solo Sábados' },
+    { value: 'domingo', label: 'Domingo', price: 'Q600/mes', days: 'Solo Domingos' },
   ] as const;
 
   // Si hay datos simulados, mostrar en modo verificación
@@ -52,18 +68,29 @@ export function UserStart() {
               <div
                 style={{
                   padding: 16,
-                  border: '2px solid #28a745',
+                  border: '2px solid #1976d2',
                   borderRadius: 8,
-                  backgroundColor: '#d4edda',
+                  backgroundColor: '#e3f2fd',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 16
                 }}
               >
-                <CheckCircle size={24} color="#28a745" />
-                <VehicleIcon size={32} color="#28a745" />
-                <span style={{ fontWeight: 500, color: '#155724' }}>
+                <CheckCircle size={24} color="#1976d2" />
+                <VehicleIcon size={32} color="#1976d2" />
+                <span style={{ fontWeight: 500, color: '#0d47a1' }}>
                   {selectedVehicle?.label}
+                </span>
+              </div>
+            </div>
+
+            {/* Plate Verification */}
+            <div className="mb-4">
+              <h5 className="mb-3">Número de Placa</h5>
+              <div style={{ padding: 16, border: '2px solid #1976d2', borderRadius: 8, backgroundColor: '#e3f2fd', display: 'flex', alignItems: 'center', gap: 16 }}>
+                <CheckCircle size={24} color="#1976d2" />
+                <span style={{ fontWeight: 500, color: '#0d47a1', fontSize: '1.1rem' }}>
+                  {currentRegistration.vehicles?.[0]?.plate}
                 </span>
               </div>
             </div>
@@ -74,33 +101,33 @@ export function UserStart() {
               <div
                 style={{
                   padding: 16,
-                  border: '2px solid #28a745',
+                  border: '2px solid #1976d2',
                   borderRadius: 8,
-                  backgroundColor: '#d4edda',
+                  backgroundColor: '#e3f2fd',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center'
                 }}
               >
                 <div className="d-flex align-items-center gap-3">
-                  <CheckCircle size={20} color="#28a745" />
-                  <Calendar size={20} color="#28a745" />
+                  <CheckCircle size={20} color="#1976d2" />
+                  <Calendar size={20} color="#1976d2" />
                   <div>
-                    <div style={{ fontWeight: 500, color: '#155724' }}>
+                    <div style={{ fontWeight: 500, color: '#0d47a1' }}>
                       {selectedPlan?.label}
                     </div>
-                    <small style={{ color: '#155724' }}>{selectedPlan?.days}</small>
+                    <small style={{ color: '#0d47a1' }}>{selectedPlan?.days}</small>
                   </div>
                 </div>
                 <div className="text-end">
-                  <div style={{ fontWeight: 600, color: '#155724' }}>
+                  <div style={{ fontWeight: 600, color: '#0d47a1' }}>
                     {selectedPlan?.price}
                   </div>
                 </div>
               </div>
             </div>
 
-            <Button variant="primary" size="lg" className="w-100" onClick={() => navigate('/parking/user/datos-personales')}>
+            <Button variant="primary" size="lg" className="w-100" onClick={() => navigate('/parking/user/pago')}>
               Continuar
             </Button>
           </Card.Body>
@@ -159,6 +186,18 @@ export function UserStart() {
                   );
                 })}
               </Row>
+            </Form.Group>
+
+            {/* Plate Input */}
+            <Form.Group className="mb-4">
+              <Form.Label>Número de Placa *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Ej. P-123ABC"
+                style={{ textTransform: 'uppercase', padding: '12px' }}
+                value={formData.plate}
+                onChange={(e) => setFormData({ ...formData, plate: e.target.value.toUpperCase() })}
+              />
             </Form.Group>
 
             {/* Parking Plan */}

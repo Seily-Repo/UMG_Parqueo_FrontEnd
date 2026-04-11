@@ -1,8 +1,9 @@
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useRegistration } from '../../context/RegistrationContext';
-import { Card, Button, Row, Col } from 'react-bootstrap';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { ArrowLeft, RotateCcw, CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export function Signature() {
@@ -103,124 +104,99 @@ export function Signature() {
   // Si ya hay firma, mostrar verificación
   if (currentRegistration.signature) {
     return (
-      <div style={{ maxWidth: 700, margin: '0 auto' }}>
-        <Card className="shadow-sm">
-          <Card.Header className="bg-white border-bottom">
-            <Card.Title className="mb-1 h4">Verificación de Firma</Card.Title>
-            <Card.Subtitle className="text-muted">
-              Confirme su firma digital
-            </Card.Subtitle>
-          </Card.Header>
-          <Card.Body className="p-4">
-            <div className="text-center mb-4">
-              <CheckCircle size={48} color="#28a745" />
-              <h5 className="mt-3" style={{ color: '#28a745' }}>Firma Registrada</h5>
-            </div>
+      <div className="max-w-2xl mx-auto">
+        <Card>
+          <CardHeader className="text-center">
+            <CheckCircle size={48} className="mx-auto text-blue-600" />
+            <CardTitle className="mt-3 text-2xl">Firma Registrada</CardTitle>
+            <CardDescription>
+              Tu firma digital ha sido guardada.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="text-center">
               <img 
                 src={currentRegistration.signature} 
                 alt="Firma" 
-                style={{ 
-                  maxWidth: '100%', 
-                  border: '2px solid #28a745', 
-                  borderRadius: 8, 
-                  backgroundColor: '#d4edda',
-                  padding: 16
-                }} 
+                className="max-w-full border-2 border-blue-600 rounded-lg bg-blue-50 p-4 inline-block"
               />
             </div>
-            <Row className="g-3 mt-4">
-              <Col xs={6}>
-                <Button
-                  variant="outline-primary"
-                  size="lg"
-                  className="w-100"
-                  onClick={() => navigate('/parking/user/pago')}
-                >
-                  <ArrowLeft size={16} className="me-2" />
-                  Atrás
-                </Button>
-              </Col>
-              <Col xs={6}>
-                <Button variant="primary" size="lg" className="w-100" onClick={() => navigate('/parking/user/confirmacion')}>
-                  Siguiente
-                </Button>
-              </Col>
-            </Row>
-          </Card.Body>
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => navigate('/parking/user/pago')}
+              >
+                <ArrowLeft size={16} className="mr-2" />
+                Atrás
+              </Button>
+              <Button size="lg" onClick={() => navigate('/parking/user/confirmacion')}>
+                Siguiente
+              </Button>
+            </div>
+          </CardContent>
         </Card>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      <Card className="shadow-sm">
-        <Card.Header className="bg-white border-bottom">
-          <Card.Title className="mb-1 h4">Firma Digital</Card.Title>
-          <Card.Subtitle className="text-muted">
+    <div className="max-w-2xl mx-auto">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Firma Digital</CardTitle>
+          <CardDescription>
             Firme en el área designada para completar su registro
-          </Card.Subtitle>
-        </Card.Header>
-        <Card.Body className="p-4">
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
           {/* Agreement Text */}
           <div 
-            className="p-4 mb-4 border rounded"
-            style={{ 
-              backgroundColor: '#f8f9fa', 
-              maxHeight: 256, 
-              overflowY: 'auto' 
-            }}
+            className="p-4 border rounded-lg bg-gray-50 max-h-64 overflow-y-auto"
           >
-            <h6 className="fw-semibold">Términos y Condiciones del Servicio de Parqueo</h6>
-            <div className="small text-muted">
-              <p className="mb-2">
+            <h3 className="font-semibold text-base mb-2">Términos y Condiciones del Servicio de Parqueo</h3>
+            <div className="text-sm text-gray-600 space-y-2">
+              <p>
                 <strong>1.</strong> El usuario se compromete a utilizar el espacio de parqueo asignado únicamente
                 con los vehículos registrados en este formulario.
               </p>
-              <p className="mb-2">
+              <p>
                 <strong>2.</strong> La Universidad Nacional no se hace responsable por daños, robos o pérdidas
                 que puedan ocurrir dentro de las instalaciones de parqueo.
               </p>
-              <p className="mb-2">
+              <p>
                 <strong>3.</strong> El estacionamiento debe realizarse únicamente en los espacios asignados,
                 respetando las señalizaciones y normas de tránsito internas.
               </p>
-              <p className="mb-2">
+              <p>
                 <strong>4.</strong> El pago del servicio de parqueo es mensual y debe realizarse dentro de
                 los primeros 5 días de cada mes.
               </p>
-              <p className="mb-2">
+              <p>
                 <strong>5.</strong> El incumplimiento de las normas puede resultar en la suspensión del
                 servicio sin derecho a reembolso.
               </p>
-              <p className="mb-0">
+              <p>
                 <strong>6.</strong> Al firmar este documento, el usuario acepta haber leído y estar de acuerdo
                 con todos los términos y condiciones establecidos.
               </p>
             </div>
           </div>
 
-          {/* Signature Area */}
-          <div className="mb-4">
-            <div className="d-flex align-items-center justify-content-between mb-3">
-              <label className="fw-medium">Firma del Estudiante *</label>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium">Firma del Estudiante *</label>
               <Button
-                variant="outline-secondary"
+                variant="outline"
                 size="sm"
                 onClick={clearSignature}
               >
-                <RotateCcw size={16} className="me-2" />
+                <RotateCcw size={14} className="mr-2" />
                 Limpiar
               </Button>
             </div>
             <div 
-              style={{ 
-                border: '2px dashed #dee2e6', 
-                borderRadius: 8,
-                overflow: 'hidden',
-                backgroundColor: 'white'
-              }}
+              className="border-2 border-dashed rounded-lg overflow-hidden bg-white"
             >
               <canvas
                 ref={canvasRef}
@@ -231,44 +207,31 @@ export function Signature() {
                 onTouchStart={startDrawing}
                 onTouchMove={draw}
                 onTouchEnd={stopDrawing}
-                style={{ 
-                  width: '100%', 
-                  height: 256, 
-                  cursor: 'crosshair',
-                  touchAction: 'none'
-                }}
+                className="w-full h-64 cursor-crosshair touch-none"
               />
             </div>
-            <p className="text-center text-muted small mt-2">
+            <p className="text-center text-gray-500 text-xs mt-2">
               Dibuje su firma en el área de arriba usando el mouse o su dedo
             </p>
           </div>
 
-          {/* Navigation */}
-          <Row className="g-3">
-            <Col xs={6}>
-              <Button
-                variant="outline-secondary"
-                size="lg"
-                className="w-100"
-                onClick={() => navigate('/parking/user/pago')}
-              >
-                <ArrowLeft size={16} className="me-2" />
-                Atrás
-              </Button>
-            </Col>
-            <Col xs={6}>
-              <Button
-                variant="primary"
-                size="lg"
-                className="w-100"
-                onClick={handleSubmit}
-              >
-                Finalizar
-              </Button>
-            </Col>
-          </Row>
-        </Card.Body>
+          <div className="grid grid-cols-2 gap-4">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => navigate('/parking/user/pago')}
+            >
+              <ArrowLeft size={16} className="mr-2" />
+              Atrás
+            </Button>
+            <Button
+              size="lg"
+              onClick={handleSubmit}
+            >
+              Finalizar
+            </Button>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

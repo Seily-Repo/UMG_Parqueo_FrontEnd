@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useRegistration } from '../../context/RegistrationContext';
 import { Card, Form, Button, Row, Col } from 'react-bootstrap';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 export function PersonalData() {
@@ -11,19 +11,14 @@ export function PersonalData() {
   
   const [formData, setFormData] = useState({
     carnet: (currentRegistration as any).carnet || '',
-    dpi: (currentRegistration as any).dpi || '',
     fullName: currentRegistration.fullName || '',
-    address: currentRegistration.address || '',
     phone: currentRegistration.phone || '',
-    emergencyContact: currentRegistration.emergencyContact || '',
-    emergencyPhone: currentRegistration.emergencyPhone || '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.carnet || !formData.dpi || !formData.fullName || !formData.address || !formData.phone ||
-        !formData.emergencyContact || !formData.emergencyPhone) {
+    if (!formData.carnet || !formData.fullName || !formData.phone) {
       toast.error('Por favor complete todos los campos');
       return;
     }
@@ -47,63 +42,27 @@ export function PersonalData() {
             {/* Carnet */}
             <div className="mb-3">
               <h5>Número de Carnet</h5>
-              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
-                <CheckCircle size={20} color="#28a745" className="me-2" />
-                <span style={{ color: '#155724' }}>{currentRegistration.carnet}</span>
-              </div>
-            </div>
-
-            {/* DPI */}
-            <div className="mb-3">
-              <h5>Número de DPI</h5>
-              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
-                <CheckCircle size={20} color="#28a745" className="me-2" />
-                <span style={{ color: '#155724' }}>{currentRegistration.dpi}</span>
+              <div style={{ padding: 12, border: '2px solid #1976d2', borderRadius: 8, backgroundColor: '#e3f2fd' }}>
+                <CheckCircle size={20} color="#1976d2" className="me-2" />
+                <span style={{ color: '#0d47a1' }}>{currentRegistration.carnet}</span>
               </div>
             </div>
 
             {/* Full Name */}
             <div className="mb-3">
               <h5>Nombre Completo</h5>
-              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
-                <CheckCircle size={20} color="#28a745" className="me-2" />
-                <span style={{ color: '#155724' }}>{currentRegistration.fullName}</span>
-              </div>
-            </div>
-
-            {/* Address */}
-            <div className="mb-3">
-              <h5>Dirección</h5>
-              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
-                <CheckCircle size={20} color="#28a745" className="me-2" />
-                <span style={{ color: '#155724' }}>{currentRegistration.address}</span>
+              <div style={{ padding: 12, border: '2px solid #1976d2', borderRadius: 8, backgroundColor: '#e3f2fd' }}>
+                <CheckCircle size={20} color="#1976d2" className="me-2" />
+                <span style={{ color: '#0d47a1' }}>{currentRegistration.fullName}</span>
               </div>
             </div>
 
             {/* Phone */}
             <div className="mb-3">
               <h5>Teléfono</h5>
-              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
-                <CheckCircle size={20} color="#28a745" className="me-2" />
-                <span style={{ color: '#155724' }}>{currentRegistration.phone}</span>
-              </div>
-            </div>
-
-            {/* Emergency Contact */}
-            <div className="mb-3">
-              <h5>Contacto de Emergencia</h5>
-              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
-                <CheckCircle size={20} color="#28a745" className="me-2" />
-                <span style={{ color: '#155724' }}>{currentRegistration.emergencyContact}</span>
-              </div>
-            </div>
-
-            {/* Emergency Phone */}
-            <div className="mb-4">
-              <h5>Teléfono de Emergencia</h5>
-              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
-                <CheckCircle size={20} color="#28a745" className="me-2" />
-                <span style={{ color: '#155724' }}>{currentRegistration.emergencyPhone}</span>
+              <div style={{ padding: 12, border: '2px solid #1976d2', borderRadius: 8, backgroundColor: '#e3f2fd' }}>
+                <CheckCircle size={20} color="#1976d2" className="me-2" />
+                <span style={{ color: '#0d47a1' }}>{currentRegistration.phone}</span>
               </div>
             </div>
 
@@ -112,9 +71,10 @@ export function PersonalData() {
                 <Button
                   variant="outline-primary"
                   size="lg"
-                  className="w-100"
+                className="w-100 d-flex align-items-center justify-content-center"
                   onClick={() => navigate('/parking/user')}
                 >
+                <ArrowLeft size={16} className="me-2" />
                   Atrás
                 </Button>
               </Col>
@@ -153,18 +113,6 @@ export function PersonalData() {
               />
             </Form.Group>
 
-            {/* DPI */}
-            <Form.Group className="mb-3">
-              <Form.Label>Número de DPI *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="XXXX XXXXX XXXX"
-                value={formData.dpi}
-                onChange={(e) => setFormData({ ...formData, dpi: e.target.value })}
-                maxLength={20}
-              />
-            </Form.Group>
-
             {/* Full Name */}
             <Form.Group className="mb-3">
               <Form.Label>Nombre Completo *</Form.Label>
@@ -176,19 +124,8 @@ export function PersonalData() {
               />
             </Form.Group>
 
-            {/* Address */}
-            <Form.Group className="mb-3">
-              <Form.Label>Dirección *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Zona 1, Guatemala, Guatemala"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              />
-            </Form.Group>
-
             {/* Phone */}
-            <Form.Group className="mb-3">
+            <Form.Group className="mb-4">
               <Form.Label>Teléfono *</Form.Label>
               <Form.Control
                 type="text"
@@ -198,36 +135,15 @@ export function PersonalData() {
               />
             </Form.Group>
 
-            {/* Emergency Contact */}
-            <Form.Group className="mb-3">
-              <Form.Label>Contacto de Emergencia *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="María Pérez"
-                value={formData.emergencyContact}
-                onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
-              />
-            </Form.Group>
-
-            {/* Emergency Phone */}
-            <Form.Group className="mb-4">
-              <Form.Label>Teléfono de Emergencia *</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="5555-5555"
-                value={formData.emergencyPhone}
-                onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })}
-              />
-            </Form.Group>
-
             <Row className="g-3">
               <Col xs={6}>
                 <Button
-                  variant="outline-primary"
+              variant="outline-secondary"
                   size="lg"
-                  className="w-100"
+              className="w-100 d-flex align-items-center justify-content-center"
                   onClick={() => navigate('/parking/user')}
                 >
+              <ArrowLeft size={16} className="me-2" />
                   Atrás
                 </Button>
               </Col>

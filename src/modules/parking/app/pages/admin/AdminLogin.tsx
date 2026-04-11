@@ -106,7 +106,7 @@ export function AdminLogin() {
               <Button
                 variant="link"
                 size="sm"
-                className="w-100 text-decoration-none"
+              className="w-100 text-decoration-none d-flex align-items-center justify-content-center"
                 onClick={() => navigate('/parking')}
               >
                 <ArrowLeft size={16} className="me-2" />

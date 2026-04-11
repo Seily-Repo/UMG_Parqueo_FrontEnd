@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useParking } from '../context/ParkingContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { DollarSign, Car, TrendingUp, Clock } from 'lucide-react';
@@ -10,20 +11,24 @@ export function Dashboard() {
   const todayRevenue = getTodayRevenue();
   const totalVehicles = vehicles.length;
   
-  // Calculate average duration for completed vehicles today
-  const completedToday = vehicles.filter((v) => {
-    if (v.status !== 'completed' || !v.exitTime) return false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return v.exitTime >= today;
-  });
-  
-  const avgDuration = completedToday.length > 0
-    ? completedToday.reduce((sum, v) => {
-        const duration = v.exitTime!.getTime() - v.entryTime.getTime();
-        return sum + duration / (1000 * 60 * 60);
-      }, 0) / completedToday.length
-    : 0;
+  const { avgDuration } = useMemo(() => {
+    // Calculate average duration for completed vehicles today
+    const completedToday = vehicles.filter((v) => {
+      if (v.status !== 'completed' || !v.exitTime) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return v.exitTime >= today;
+    });
+    
+    const avgDuration = completedToday.length > 0
+      ? completedToday.reduce((sum, v) => {
+          const duration = v.exitTime!.getTime() - v.entryTime.getTime();
+          return sum + duration / (1000 * 60 * 60); // duration in hours
+        }, 0) / completedToday.length
+      : 0;
+
+    return { avgDuration };
+  }, [vehicles]);
 
   const stats = [
     {
@@ -31,8 +36,8 @@ export function Dashboard() {
       value: `$${todayRevenue.toFixed(2)}`,
       description: 'Total recaudado hoy',
       icon: DollarSign,
-      color: 'text-green-600',
-      bg: 'bg-green-100',
+      color: 'text-blue-600',
+      bg: 'bg-blue-100',
     },
     {
       title: 'Vehículos Activos',
@@ -47,16 +52,16 @@ export function Dashboard() {
       value: totalVehicles,
       description: 'Registrados en total',
       icon: TrendingUp,
-      color: 'text-purple-600',
-      bg: 'bg-purple-100',
+      color: 'text-blue-600',
+      bg: 'bg-blue-100',
     },
     {
       title: 'Tiempo Promedio',
       value: `${avgDuration.toFixed(1)}h`,
       description: 'Duración promedio hoy',
       icon: Clock,
-      color: 'text-orange-600',
-      bg: 'bg-orange-100',
+      color: 'text-red-600',
+      bg: 'bg-red-100',
     },
   ];
 
@@ -72,7 +77,7 @@ export function Dashboard() {
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.title}>
+            <Card key={stat.title} className="bg-white border border-blue-600 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600">
                   {stat.title}
@@ -91,7 +96,7 @@ export function Dashboard() {
       </div>
 
       {/* New Vehicle Registration */}
-      <Card>
+      <Card className="bg-white border border-blue-600 shadow-sm">
         <CardHeader>
           <CardTitle>Registrar Nuevo Vehículo</CardTitle>
           <CardDescription>

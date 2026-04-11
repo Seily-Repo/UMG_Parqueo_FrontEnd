@@ -13,11 +13,11 @@ export function Payment() {
   const getAmount = () => {
     switch (currentRegistration.parkingPlan) {
       case 'entre-semana':
-        return 200;
+        return 600;
       case 'sabado':
-        return 80;
+        return 600;
       case 'domingo':
-        return 50;
+        return 600;
       default:
         return 0;
     }
@@ -98,7 +98,7 @@ export function Payment() {
             <div 
               className="p-4 rounded mb-4 text-white"
               style={{ 
-                background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)'
+                background: 'linear-gradient(135deg, #C41230 0%, #0d47a1 100%)'
               }}
             >
               <div className="d-flex align-items-center gap-2 mb-3" style={{ opacity: 0.9 }}>
@@ -126,17 +126,17 @@ export function Payment() {
             {/* Card Details */}
             <div className="mb-3">
               <h5>Información de Tarjeta</h5>
-              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda' }}>
-                <CheckCircle size={20} color="#28a745" className="me-2" />
-                <span style={{ color: '#155724' }}>Titular: {currentRegistration.cardHolder}</span>
+              <div style={{ padding: 12, border: '2px solid #0d47a1', borderRadius: 8, backgroundColor: '#e3f2fd' }}>
+                <CheckCircle size={20} color="#0d47a1" className="me-2" />
+                <span style={{ color: '#0d47a1' }}>Titular: {currentRegistration.cardHolder}</span>
               </div>
-              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda', marginTop: 8 }}>
-                <CheckCircle size={20} color="#28a745" className="me-2" />
-                <span style={{ color: '#155724' }}>Tarjeta: **** **** **** {currentRegistration.cardNumber?.slice(-4)}</span>
+              <div style={{ padding: 12, border: '2px solid #0d47a1', borderRadius: 8, backgroundColor: '#e3f2fd', marginTop: 8 }}>
+                <CheckCircle size={20} color="#0d47a1" className="me-2" />
+                <span style={{ color: '#0d47a1' }}>Tarjeta: **** **** **** {currentRegistration.cardNumber?.slice(-4)}</span>
               </div>
-              <div style={{ padding: 12, border: '2px solid #28a745', borderRadius: 8, backgroundColor: '#d4edda', marginTop: 8 }}>
-                <CheckCircle size={20} color="#28a745" className="me-2" />
-                <span style={{ color: '#155724' }}>Vencimiento: {currentRegistration.expiryDate}</span>
+              <div style={{ padding: 12, border: '2px solid #0d47a1', borderRadius: 8, backgroundColor: '#e3f2fd', marginTop: 8 }}>
+                <CheckCircle size={20} color="#0d47a1" className="me-2" />
+                <span style={{ color: '#0d47a1' }}>Vencimiento: {currentRegistration.expiryDate}</span>
               </div>
             </div>
 
@@ -145,8 +145,8 @@ export function Payment() {
                 <Button
                   variant="outline-primary"
                   size="lg"
-                  className="w-100"
-                  onClick={() => navigate('/parking/user/vehiculos')}
+                className="w-100 d-flex align-items-center justify-content-center"
+                onClick={() => navigate('/parking/user')}
                 >
                   <ArrowLeft size={16} className="me-2" />
                   Atrás
@@ -179,7 +179,7 @@ export function Payment() {
             <div 
               className="p-4 rounded mb-4 text-white"
               style={{ 
-                background: 'linear-gradient(135deg, #1976d2 0%, #7e57c2 100%)'
+                background: 'linear-gradient(135deg, #0d47a1 0%, #C41230 100%)'
               }}
             >
               <div className="d-flex align-items-center gap-2 mb-3" style={{ opacity: 0.9 }}>
@@ -280,8 +280,8 @@ export function Payment() {
                 <Button
                   variant="outline-secondary"
                   size="lg"
-                  className="w-100"
-                  onClick={() => navigate('/parking/user/vehiculos')}
+                className="w-100 d-flex align-items-center justify-content-center"
+                  onClick={() => navigate('/parking/user')}
                 >
                   <ArrowLeft size={16} className="me-2" />
                   Atrás

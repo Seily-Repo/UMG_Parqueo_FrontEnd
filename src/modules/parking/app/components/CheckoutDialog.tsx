@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Vehicle, useParking } from '../context/ParkingContext';
 import {
   Dialog,
@@ -28,32 +28,30 @@ const RATES = {
   truck: 5,
 };
 
+const paymentMethods = [
+  { value: 'cash', label: 'Efectivo', icon: Banknote },
+  { value: 'card', label: 'Tarjeta', icon: CreditCard },
+  { value: 'digital', label: 'Digital', icon: Smartphone },
+] as const;
+
 export function CheckoutDialog({ vehicle, open, onClose }: CheckoutDialogProps) {
   const { checkoutVehicle } = useParking();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
 
-  const calculateAmount = () => {
-    const now = new Date();
-    const hours = Math.ceil((now.getTime() - vehicle.entryTime.getTime()) / (1000 * 60 * 60));
-    return hours * RATES[vehicle.type];
-  };
-
-  const amount = calculateAmount();
-  const duration = new Date().getTime() - vehicle.entryTime.getTime();
-  const hours = Math.floor(duration / (1000 * 60 * 60));
-  const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+  const { amount, hours, minutes } = useMemo(() => {
+    const durationMs = new Date().getTime() - vehicle.entryTime.getTime();
+    const totalHours = durationMs / (1000 * 60 * 60);
+    const amount = Math.ceil(totalHours) * RATES[vehicle.type];
+    const hours = Math.floor(totalHours);
+    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+    return { amount, hours, minutes };
+  }, [vehicle.entryTime, vehicle.type, open]); // Recalculate when dialog opens
 
   const handleCheckout = () => {
     checkoutVehicle(vehicle.id, amount);
     toast.success(`Pago procesado exitosamente - ${vehicle.plate}`);
     onClose();
   };
-
-  const paymentMethods = [
-    { value: 'cash', label: 'Efectivo', icon: Banknote },
-    { value: 'card', label: 'Tarjeta', icon: CreditCard },
-    { value: 'digital', label: 'Digital', icon: Smartphone },
-  ] as const;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -90,10 +88,10 @@ export function CheckoutDialog({ vehicle, open, onClose }: CheckoutDialogProps) 
           </div>
 
           {/* Total Amount */}
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+          <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
             <div className="flex justify-between items-center">
-              <span className="text-lg font-medium text-blue-900">Total a pagar:</span>
-              <span className="text-3xl font-bold text-blue-600">${amount.toFixed(2)}</span>
+              <span className="text-lg font-medium text-red-900">Total a pagar:</span>
+              <span className="text-3xl font-bold text-red-600">Q{amount.toFixed(2)}</span>
             </div>
           </div>
 

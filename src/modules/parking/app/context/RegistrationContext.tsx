@@ -33,6 +33,11 @@ export interface Registration {
   paymentStatus: 'pending' | 'paid';
   // Firma
   signature?: string;
+  // Verificación de Correo
+  institutionalEmail?: string;
+  otpExpected?: string;
+  emailVerified?: boolean;
+  otpVerifiedAt?: Date;
   // Metadata
   createdAt: Date;
 }
@@ -72,7 +77,7 @@ const simulatedUsers: Registration[] = [
         plate: 'P123ABC',
       },
     ],
-    amount: 200,
+    amount: 600,
     cardHolder: '',
     cardNumber: '',
     expiryDate: '',
@@ -101,7 +106,7 @@ const simulatedUsers: Registration[] = [
         plate: 'M456DEF',
       },
     ],
-    amount: 80,
+    amount: 600,
     cardHolder: '',
     cardNumber: '',
     expiryDate: '',
@@ -137,7 +142,7 @@ const simulatedUsers: Registration[] = [
         plate: 'C101JKL',
       },
     ],
-    amount: 50,
+    amount: 600,
     cardHolder: '',
     cardNumber: '',
     expiryDate: '',
@@ -156,6 +161,7 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
       return {
         ...parsed,
         createdAt: parsed.createdAt ? new Date(parsed.createdAt) : new Date(),
+        otpVerifiedAt: parsed.otpVerifiedAt ? new Date(parsed.otpVerifiedAt) : undefined,
       };
     }
     // Inicializar vacío para requerir login
@@ -195,7 +201,7 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
           plate: 'P123ABC',
         },
       ],
-      amount: 200,
+      amount: 600,
       cardHolder: 'Juan Pérez',
       cardNumber: '1234567890123456',
       expiryDate: '12/28',
@@ -219,6 +225,7 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
     localStorage.setItem('currentRegistration', JSON.stringify({
       ...currentRegistration,
       createdAt: currentRegistration.createdAt?.toISOString(),
+      otpVerifiedAt: currentRegistration.otpVerifiedAt?.toISOString(),
     }));
   }, [currentRegistration]);
 
@@ -235,7 +242,7 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
 
   const completeRegistration = () => {
     const newRegistration: Registration = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       carnet: currentRegistration.carnet || '',
       dpi: currentRegistration.dpi || '',
       vehicleType: currentRegistration.vehicleType || 'carro',
@@ -254,6 +261,10 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
       cvv: currentRegistration.cvv || '',
       paymentStatus: 'paid',
       signature: currentRegistration.signature,
+      institutionalEmail: currentRegistration.institutionalEmail,
+      otpExpected: currentRegistration.otpExpected,
+      emailVerified: currentRegistration.emailVerified,
+      otpVerifiedAt: currentRegistration.otpVerifiedAt,
       createdAt: new Date(),
     };
 

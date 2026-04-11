@@ -64,7 +64,7 @@ export function History() {
         </div>
         <div className="text-right">
           <p className="text-sm text-gray-600">Ingresos Totales</p>
-          <p className="text-2xl font-bold text-green-600">${totalRevenue.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-blue-600">${totalRevenue.toFixed(2)}</p>
         </div>
       </div>
 
@@ -135,7 +135,7 @@ export function History() {
                     <TableCell>
                       {vehicle.exitTime && calculateDuration(vehicle.entryTime, vehicle.exitTime)}
                     </TableCell>
-                    <TableCell className="text-right font-semibold text-green-600">
+                    <TableCell className="text-right font-semibold text-blue-600">
                       ${vehicle.amountPaid?.toFixed(2)}
                     </TableCell>
                   </TableRow>
