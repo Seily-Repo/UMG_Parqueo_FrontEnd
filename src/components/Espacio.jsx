@@ -25,7 +25,7 @@ export default function Espacio({ numero, ocupado, tipo }) {
       onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
       onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
    onClick={(e) => e.currentTarget.style.backgroundColor="green"}
-onDoubleClickCapture={(e) => e.currentTarget.style.backgroundColor="red"}
+
 
  
       
