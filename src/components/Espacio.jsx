@@ -1,8 +1,11 @@
-import { FaCar, FaMotorcycle, FaCheckCircle } from "react-icons/fa";
+import { FaCar, FaMotorcycle, FaCheckCircle, } from "react-icons/fa";
+import React, { useState } from 'react';
 
+  
 export default function Espacio({ numero, ocupado, tipo }) {
   return (
-    <div
+    
+    <button 
       style={{
         width: "70px",
         height: "100px",
@@ -17,9 +20,15 @@ export default function Espacio({ numero, ocupado, tipo }) {
         boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
         cursor: "pointer",
         transition: "transform 0.2s"
+        
       }}
       onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
       onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+   onClick={(e) => e.currentTarget.style.backgroundColor="green"}
+onDoubleClickCapture={(e) => e.currentTarget.style.backgroundColor="red"}
+
+ 
+      
     >
   
       <div style={{ fontSize: "18px" }}>
@@ -36,6 +45,6 @@ export default function Espacio({ numero, ocupado, tipo }) {
       <small style={{ fontSize: "10px" }}>
         {ocupado ? "Ocupado" : "Libre"}
       </small>
-    </div>
+    </button>
   );
 }

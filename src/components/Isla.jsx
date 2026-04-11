@@ -1,6 +1,6 @@
 import Espacio from "./Espacio";
 
-export default function Isla({ carros = 5, motos = 5 }) {
+export default function Isla({ carros = 7, motos = 5 }) {
 
   //  Genera dinámicamente los espacios
   const espacios = [
