@@ -6,6 +6,6 @@ function parseTimeout(value: string | undefined) {
 }
 
 export const apiConfig = {
-  baseUrl: (import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/$/, ""),
+  baseUrl: (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/$/, ""),
   timeoutMs: parseTimeout(import.meta.env.VITE_API_TIMEOUT_MS),
 } as const;
