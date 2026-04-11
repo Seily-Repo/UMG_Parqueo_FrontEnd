@@ -1,0 +1,55 @@
+/* Fondo principal */
+.fondo-parqueo {
+  background-image: url("../images/Fondo_UMG.jpeg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  min-height: calc(100vh - 70px);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Capa oscura para mejorar visibilidad */
+.overlay-parqueo {
+
+  width: 100%;
+  min-height: 110vh;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Cuadro grande (el transparente de afuera) */
+.card-parqueo {
+  background: rgba(255, 255, 255, 0.3); 
+  backdrop-filter: blur(10px);
+
+  padding: 30px;
+  border-radius: 25px;
+
+  width: 90%;
+  max-width: 800px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Cuadros internos (Islas) */
+.card-isla {
+  background-color: #ded9d4; 
+  border-radius: 15px;
+}
+
+/* Títulos */
+.card-parqueo h2 {
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.card-parqueo h5 {
+  color: #302b2c;
+  margin-bottom: 10px;
+}
