@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export interface Vehicle {
   id: string;
@@ -14,7 +14,8 @@ export interface Registration {
   carnet: string;
   dpi: string;
   vehicleType: 'moto' | 'carro';
-  parkingPlan: 'entre-semana' | 'sabado' | 'domingo';
+  parkingPlan: string;
+  selectedPlanId?: number;
   // Datos personales
   fullName: string;
   address: string;
@@ -31,10 +32,14 @@ export interface Registration {
   expiryDate: string;
   cvv: string;
   paymentStatus: 'pending' | 'paid';
+  paymentReference?: string;
+  paymentRecordedAt?: string;
   // Firma
   signature?: string;
   // Verificación de Correo
   institutionalEmail?: string;
+  isDelinquent?: boolean;
+  delinquentReason?: string;
   otpExpected?: string;
   emailVerified?: boolean;
   otpVerifiedAt?: Date;
@@ -63,6 +68,7 @@ const simulatedUsers: Registration[] = [
     dpi: '1234567890123',
     vehicleType: 'carro',
     parkingPlan: 'entre-semana',
+    selectedPlanId: 1,
     fullName: 'Juan Pérez',
     address: 'Zona 1, Guatemala',
     phone: '55551234',
@@ -92,6 +98,7 @@ const simulatedUsers: Registration[] = [
     dpi: '9876543210987',
     vehicleType: 'moto',
     parkingPlan: 'sabado',
+    selectedPlanId: 2,
     fullName: 'Ana García',
     address: 'Zona 10, Guatemala',
     phone: '55559876',
@@ -121,6 +128,7 @@ const simulatedUsers: Registration[] = [
     dpi: '4567890123456',
     vehicleType: 'carro',
     parkingPlan: 'domingo',
+    selectedPlanId: 3,
     fullName: 'Luis Martínez',
     address: 'Zona 5, Guatemala',
     phone: '55551111',
@@ -187,6 +195,7 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
       dpi: '1234567890123',
       vehicleType: 'carro',
       parkingPlan: 'entre-semana',
+      selectedPlanId: 1,
       fullName: 'Juan Pérez',
       address: 'Zona 1, Guatemala',
       phone: '55551234',
@@ -236,9 +245,9 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
     }
   };
 
-  const updateRegistration = (data: Partial<Registration>) => {
+  const updateRegistration = useCallback((data: Partial<Registration>) => {
     setCurrentRegistration((prev) => ({ ...prev, ...data }));
-  };
+  }, []);
 
   const completeRegistration = () => {
     const newRegistration: Registration = {
@@ -246,7 +255,8 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
       carnet: currentRegistration.carnet || '',
       dpi: currentRegistration.dpi || '',
       vehicleType: currentRegistration.vehicleType || 'carro',
-      parkingPlan: currentRegistration.parkingPlan || 'entre-semana',
+      parkingPlan: currentRegistration.parkingPlan || '',
+      selectedPlanId: currentRegistration.selectedPlanId,
       fullName: currentRegistration.fullName || '',
       address: currentRegistration.address || '',
       phone: currentRegistration.phone || '',
@@ -260,8 +270,12 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
       expiryDate: currentRegistration.expiryDate || '',
       cvv: currentRegistration.cvv || '',
       paymentStatus: 'paid',
+      paymentReference: currentRegistration.paymentReference,
+      paymentRecordedAt: currentRegistration.paymentRecordedAt,
       signature: currentRegistration.signature,
       institutionalEmail: currentRegistration.institutionalEmail,
+      isDelinquent: currentRegistration.isDelinquent,
+      delinquentReason: currentRegistration.delinquentReason,
       otpExpected: currentRegistration.otpExpected,
       emailVerified: currentRegistration.emailVerified,
       otpVerifiedAt: currentRegistration.otpVerifiedAt,

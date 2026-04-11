@@ -4,11 +4,11 @@ import { useRegistration, Vehicle } from '../../context/RegistrationContext';
 import { Card, Form, Button, Row, Col, Badge } from 'react-bootstrap';
 import { Plus, Trash2, ArrowLeft, Car, CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { getGuatemalaPlateExample, validateGuatemalaPlate } from '../../utils/plateValidation';
 
 export function VehicleData() {
   const navigate = useNavigate();
   const { currentRegistration, updateRegistration } = useRegistration();
-  
   const [vehicles, setVehicles] = useState<Vehicle[]>(currentRegistration.vehicles || []);
   const [currentVehicle, setCurrentVehicle] = useState({
     color: '',
@@ -17,9 +17,19 @@ export function VehicleData() {
     plate: '',
   });
 
+  const currentVehicleType = currentRegistration.vehicleType || 'carro';
+
   const handleAddVehicle = () => {
     if (!currentVehicle.color || !currentVehicle.brand || !currentVehicle.model || !currentVehicle.plate) {
       toast.error('Por favor complete todos los campos del vehículo');
+      return;
+    }
+
+    const plateValidation = validateGuatemalaPlate(currentVehicle.plate, currentVehicleType);
+    if (!plateValidation.isValid) {
+      toast.error(
+        `La placa no cumple el formato de Guatemala para ${currentVehicleType === 'carro' ? 'carro' : 'moto'}. Ejemplo: ${getGuatemalaPlateExample(currentVehicleType)}`
+      );
       return;
     }
 
@@ -31,7 +41,7 @@ export function VehicleData() {
     const newVehicle: Vehicle = {
       id: Date.now().toString(),
       ...currentVehicle,
-      plate: currentVehicle.plate.toUpperCase(),
+      plate: plateValidation.normalizedPlate,
     };
 
     setVehicles([...vehicles, newVehicle]);
@@ -56,7 +66,6 @@ export function VehicleData() {
     navigate('/parking/user/pago');
   };
 
-  // Si hay vehículos registrados, mostrar en modo verificación
   if (currentRegistration.vehicles && currentRegistration.vehicles.length > 0) {
     return (
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
@@ -77,11 +86,11 @@ export function VehicleData() {
                 >
                   <div className="d-flex align-items-center gap-3">
                     <CheckCircle size={24} color="#1976d2" />
-                    <div 
-                      style={{ 
-                        width: 48, 
-                        height: 48, 
-                        backgroundColor: '#e3f2fd', 
+                    <div
+                      style={{
+                        width: 48,
+                        height: 48,
+                        backgroundColor: '#e3f2fd',
                         borderRadius: 8,
                         display: 'flex',
                         alignItems: 'center',
@@ -106,7 +115,7 @@ export function VehicleData() {
                 <Button
                   variant="outline-primary"
                   size="lg"
-                className="w-100 d-flex align-items-center justify-content-center"
+                  className="w-100 d-flex align-items-center justify-content-center"
                   onClick={() => navigate('/parking/user/datos-personales')}
                 >
                   <ArrowLeft size={16} className="me-2" />
@@ -127,7 +136,6 @@ export function VehicleData() {
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      {/* Add Vehicle Form */}
       <Card className="shadow-sm mb-4">
         <Card.Header className="bg-white border-bottom">
           <Card.Title className="mb-1 h4">Información de Vehículos</Card.Title>
@@ -178,11 +186,14 @@ export function VehicleData() {
                 <Form.Label>Número de Placa</Form.Label>
                 <Form.Control
                   type="text"
-                  placeholder="P-123ABC"
+                  placeholder={currentVehicleType === 'moto' ? 'M123ABC' : 'P123ABC'}
                   style={{ textTransform: 'uppercase' }}
                   value={currentVehicle.plate}
                   onChange={(e) => setCurrentVehicle({ ...currentVehicle, plate: e.target.value.toUpperCase() })}
                 />
+                <Form.Text className="text-muted">
+                  Formato válido: {getGuatemalaPlateExample(currentVehicleType)}
+                </Form.Text>
               </Form.Group>
             </Col>
           </Row>
@@ -199,7 +210,6 @@ export function VehicleData() {
         </Card.Body>
       </Card>
 
-      {/* Vehicle List */}
       {vehicles.length > 0 && (
         <Card className="shadow-sm mb-4">
           <Card.Header className="bg-white border-bottom">
@@ -214,11 +224,11 @@ export function VehicleData() {
                   style={{ backgroundColor: '#f8f9fa' }}
                 >
                   <div className="d-flex align-items-center gap-3">
-                    <div 
-                      style={{ 
-                        width: 48, 
-                        height: 48, 
-                        backgroundColor: '#e3f2fd', 
+                    <div
+                      style={{
+                        width: 48,
+                        height: 48,
+                        backgroundColor: '#e3f2fd',
                         borderRadius: 8,
                         display: 'flex',
                         alignItems: 'center',
@@ -249,7 +259,6 @@ export function VehicleData() {
         </Card>
       )}
 
-      {/* Navigation */}
       <Form onSubmit={handleSubmit}>
         <Row className="g-3">
           <Col xs={6}>

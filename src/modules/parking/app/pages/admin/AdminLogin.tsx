@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Container, Card, Form, Button, Alert } from 'react-bootstrap';
 import { GraduationCap, ArrowLeft, Shield } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { AppFooter } from '../../components/AppFooter';
 
 export function AdminLogin() {
   const navigate = useNavigate();
@@ -24,13 +25,13 @@ export function AdminLogin() {
   };
 
   return (
-    <div 
-      className="d-flex align-items-center justify-content-center p-4"
-      style={{ 
-        minHeight: '100vh', 
-        background: 'linear-gradient(135deg, #ede7f6 0%, #ffffff 50%, #e1bee7 100%)' 
+    <div
+      className="parking-shell parking-shell--solid d-flex flex-column"
+      style={{
+        minHeight: '100vh',
       }}
     >
+      <main className="flex-grow-1 d-flex align-items-center justify-content-center p-4">
       <Container style={{ maxWidth: 450 }}>
         {/* Header */}
         <div className="text-center mb-4">
@@ -39,7 +40,7 @@ export function AdminLogin() {
             style={{ 
               width: 64, 
               height: 64, 
-              backgroundColor: '#7e57c2', 
+              backgroundColor: '#1A6AA6', 
               borderRadius: 16
             }}
           >
@@ -50,7 +51,7 @@ export function AdminLogin() {
         </div>
 
         {/* Login Card */}
-        <Card className="shadow-sm" style={{ border: '2px solid #f3f4f6' }}>
+        <Card className="shadow-sm" style={{ border: '2px solid #A7C9D6' }}>
           <Card.Body className="p-4">
             <div className="text-center mb-4">
               <div 
@@ -58,11 +59,11 @@ export function AdminLogin() {
                 style={{ 
                   width: 48, 
                   height: 48, 
-                  backgroundColor: '#ede7f6', 
+                  backgroundColor: '#CCF2FF', 
                   borderRadius: '50%'
                 }}
               >
-                <Shield size={24} color="#7e57c2" />
+                <Shield size={24} color="#1A6AA6" />
               </div>
               <h5 className="mb-1">Inicio de Sesión</h5>
               <p className="text-muted small mb-0">
@@ -116,6 +117,8 @@ export function AdminLogin() {
           </Card.Body>
         </Card>
       </Container>
+      </main>
+      <AppFooter />
     </div>
   );
 }

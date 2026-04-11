@@ -1,21 +1,146 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { useRegistration } from '../../context/RegistrationContext';
-import { Card, Button, Badge, Row, Col, ListGroup } from 'react-bootstrap';
-import { ArrowLeft, User, Car, CreditCard, FileSignature, Phone, MapPin, Users } from 'lucide-react';
+import { Alert, Badge, Button, Card, Col, ListGroup, Row, Spinner, Table } from 'react-bootstrap';
+import { ArrowLeft, CreditCard, Mail, ShieldAlert, User, Receipt } from 'lucide-react';
+import { getReadableApiError } from '../../../../../shared/api';
+import type {
+  BackendEstudiante,
+  BackendEstudianteMoroso,
+  BackendEstudianteMulta,
+  BackendPago,
+} from '../../../../../shared/models/backend';
+import { delinquentStudentService, fineService, paymentService, studentService } from '../../../../../shared/services';
+
+function formatCurrency(amount: number) {
+  return `Q${amount.toFixed(2)}`;
+}
+
+function formatDate(value?: string) {
+  if (!value) {
+    return 'No disponible';
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
+}
+
+function getPaymentBadge(status?: string) {
+  switch (status) {
+    case 'A':
+      return { label: 'Aceptado', bg: 'success' };
+    case 'P':
+      return { label: 'Pendiente', bg: 'warning' };
+    case 'C':
+      return { label: 'Cancelado', bg: 'secondary' };
+    default:
+      return { label: 'Sin estado', bg: 'secondary' };
+  }
+}
+
+function getFineBadge(status?: string) {
+  switch (status) {
+    case 'A':
+      return { label: 'Activa', bg: 'danger' };
+    case 'C':
+      return { label: 'Cancelada', bg: 'secondary' };
+    case 'P':
+      return { label: 'Pagada', bg: 'success' };
+    default:
+      return { label: status || 'Desconocido', bg: 'secondary' };
+  }
+}
 
 export function RegistrationDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { getRegistrationById } = useRegistration();
+  const carne = id;
+  const [student, setStudent] = useState<BackendEstudiante | null>(null);
+  const [payments, setPayments] = useState<BackendPago[]>([]);
+  const [fines, setFines] = useState<BackendEstudianteMulta[]>([]);
+  const [delinquentRecords, setDelinquentRecords] = useState<BackendEstudianteMoroso[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const registration = id ? getRegistrationById(id) : undefined;
+  useEffect(() => {
+    if (!carne) {
+      return;
+    }
 
-  if (!registration) {
+    let isMounted = true;
+
+    const loadDetail = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const [studentResponse, paymentsResponse, finesResponse, delinquentResponse] = await Promise.all([
+          studentService.getByCarne(carne),
+          paymentService.getAll(),
+          fineService.getStudentFinesByCarne(carne),
+          delinquentStudentService.getByCarne(carne),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setStudent(studentResponse);
+        setPayments(paymentsResponse.filter((payment) => payment.EST_CARNE === carne));
+        setFines(finesResponse);
+        setDelinquentRecords(Array.isArray(delinquentResponse) ? delinquentResponse : delinquentResponse ? [delinquentResponse] : []);
+      } catch (requestError) {
+        if (!isMounted) {
+          return;
+        }
+
+        setError(getReadableApiError(requestError, 'No fue posible cargar el detalle del estudiante.'));
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadDetail();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [carne]);
+
+  const activeDelinquentRecord = useMemo(
+    () => delinquentRecords.find((record) => record.MOR_ESTADO === 'A'),
+    [delinquentRecords]
+  );
+
+  const totalPaid = useMemo(
+    () => payments.reduce((sum, payment) => sum + Number(payment.PAG_MONTO_TOTAL || 0), 0),
+    [payments]
+  );
+
+  if (!carne) {
+    return (
+      <Alert variant="warning">
+        No se recibió un identificador válido para el detalle.
+      </Alert>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" />
+        <p className="text-muted mt-3 mb-0">Cargando detalle del estudiante...</p>
+      </div>
+    );
+  }
+
+  if (error || !student) {
     return (
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
         <Card className="shadow-sm">
           <Card.Body className="text-center py-5">
-            <p className="text-muted mb-3">Registro no encontrado</p>
+            <p className="text-muted mb-3">{error || 'Registro no encontrado'}</p>
             <Button
               variant="outline-secondary"
               onClick={() => navigate('/parking/admin/dashboard')}
@@ -29,24 +154,8 @@ export function RegistrationDetail() {
     );
   }
 
-  const getPlanDetails = () => {
-    switch (registration.parkingPlan) {
-      case 'entre-semana':
-        return { label: 'Entre Semana', description: 'Lunes a Viernes', price: 'Q600/mes' };
-      case 'sabado':
-        return { label: 'Sábado', description: 'Solo Sábados', price: 'Q600/mes' };
-      case 'domingo':
-        return { label: 'Domingo', description: 'Solo Domingos', price: 'Q600/mes' };
-      default:
-        return { label: '', description: '', price: '' };
-    }
-  };
-
-  const planDetails = getPlanDetails();
-
   return (
     <div>
-      {/* Header */}
       <div className="mb-4">
         <Button
           variant="link"
@@ -54,24 +163,25 @@ export function RegistrationDetail() {
           onClick={() => navigate('/parking/admin/dashboard')}
         >
           <ArrowLeft size={16} className="me-2" />
-          Volver a la Lista
+          Volver a la lista
         </Button>
-        <div className="d-flex align-items-center justify-content-between">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
           <div>
-            <h3 className="fw-bold mb-1">Detalle del Registro</h3>
-            <p className="text-muted mb-0">Información completa del estudiante</p>
+            <h3 className="fw-bold mb-1">Detalle del Estudiante</h3>
+            <p className="text-muted mb-0">Resumen consolidado desde el backend</p>
           </div>
-          <Badge 
-            bg={registration.paymentStatus === 'paid' ? 'primary' : 'warning'}
-            className="text-white px-3 py-2"
-          >
-            {registration.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente'}
-          </Badge>
+          <div className="d-flex gap-2 flex-wrap">
+            <Badge bg={payments.length > 0 ? 'primary' : 'warning'} className="text-white px-3 py-2">
+              {payments.length > 0 ? 'Con pagos' : 'Sin pagos'}
+            </Badge>
+            <Badge bg={activeDelinquentRecord ? 'warning' : 'success'} text={activeDelinquentRecord ? 'dark' : 'white'} className="px-3 py-2">
+              {activeDelinquentRecord ? 'Morosidad activa' : 'Sin restricción'}
+            </Badge>
+          </div>
         </div>
       </div>
 
       <Row className="g-4">
-        {/* Photo and Basic Info */}
         <Col lg={4}>
           <Card className="shadow-sm h-100">
             <Card.Header className="bg-white">
@@ -81,196 +191,154 @@ export function RegistrationDetail() {
               </h6>
             </Card.Header>
             <Card.Body>
-              {/* Photo */}
-              {registration.photo && (
-                <div className="text-center mb-4">
-                  <div 
-                    className="mx-auto border"
-                    style={{ 
-                      width: 192, 
-                      height: 192, 
-                      borderRadius: 8, 
-                      overflow: 'hidden',
-                      borderWidth: 4,
-                      borderColor: '#dee2e6'
-                    }}
-                  >
-                    <img
-                      src={registration.photo}
-                      alt={registration.fullName}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Basic Info */}
               <ListGroup variant="flush">
                 <ListGroup.Item className="px-0 pt-0">
                   <small className="text-muted">Nombre Completo</small>
-                  <div className="fw-semibold">{registration.fullName}</div>
+                  <div className="fw-semibold">{student.EST_NOMBRE_COMPLETO}</div>
                 </ListGroup.Item>
 
                 <ListGroup.Item className="px-0">
                   <small className="text-muted">Número de Carnet</small>
-                  <div className="fw-semibold">{registration.carnet}</div>
-                </ListGroup.Item>
-
-                <ListGroup.Item className="px-0">
-                  <small className="text-muted">Número de DPI</small>
-                  <div className="fw-semibold">{registration.dpi}</div>
-                </ListGroup.Item>
-
-                <ListGroup.Item className="px-0">
-                  <small className="text-muted d-flex align-items-center gap-2">
-                    <MapPin size={14} />
-                    Dirección
-                  </small>
-                  <div className="fw-medium mt-1">{registration.address}</div>
+                  <div className="fw-semibold">{student.EST_CARNE}</div>
                 </ListGroup.Item>
 
                 <ListGroup.Item className="px-0 pb-0">
                   <small className="text-muted d-flex align-items-center gap-2">
-                    <Phone size={14} />
-                    Teléfono
+                    <Mail size={14} />
+                    Correo institucional
                   </small>
-                  <div className="fw-medium mt-1">{registration.phone}</div>
+                  <div className="fw-medium mt-1">{student.EST_EMAIL}</div>
                 </ListGroup.Item>
               </ListGroup>
             </Card.Body>
           </Card>
         </Col>
 
-        {/* Details */}
         <Col lg={8}>
           <div className="d-flex flex-column gap-4">
-            {/* Emergency Contact */}
             <Card className="shadow-sm">
               <Card.Header className="bg-white">
                 <h6 className="mb-0 d-flex align-items-center gap-2">
-                  <Users size={18} />
-                  Contacto de Emergencia
+                  <ShieldAlert size={18} />
+                  Estado de Morosidad
                 </h6>
               </Card.Header>
               <Card.Body>
-                <Row>
-                  <Col md={6}>
-                    <small className="text-muted">Nombre</small>
-                    <div className="fw-semibold">{registration.emergencyContact}</div>
-                  </Col>
-                  <Col md={6}>
-                    <small className="text-muted">Teléfono</small>
-                    <div className="fw-semibold">{registration.emergencyPhone}</div>
-                  </Col>
-                </Row>
+                {activeDelinquentRecord ? (
+                  <Alert variant="warning" className="mb-0">
+                    <strong>Motivo:</strong> {activeDelinquentRecord.MOR_MOTIVO}
+                    <br />
+                    <strong>Fecha:</strong> {activeDelinquentRecord.MOR_FECHA_AGREGADO || 'No disponible'}
+                  </Alert>
+                ) : (
+                  <p className="text-muted mb-0">El estudiante no presenta morosidad activa.</p>
+                )}
               </Card.Body>
             </Card>
 
-            {/* Vehicles */}
-            <Card className="shadow-sm">
-              <Card.Header className="bg-white">
-                <h6 className="mb-1 d-flex align-items-center gap-2">
-                  <Car size={18} />
-                  Vehículos Registrados
-                </h6>
-                <small className="text-muted">
-                  {registration.vehicles.length} vehículo(s) - Tipo: {registration.vehicleType === 'carro' ? 'Carro' : 'Moto'}
-                </small>
-              </Card.Header>
-              <Card.Body>
-                <div className="d-flex flex-column gap-3">
-                  {registration.vehicles.map((vehicle, index) => (
-                    <div
-                      key={vehicle.id}
-                      className="d-flex align-items-center justify-content-between p-3 border rounded"
-                      style={{ backgroundColor: '#f8f9fa' }}
-                    >
-                      <div className="d-flex align-items-center gap-3">
-                        <div 
-                          style={{ 
-                            width: 48, 
-                            height: 48, 
-                            backgroundColor: '#e3f2fd', 
-                            borderRadius: 8,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <Car size={24} color="#1976d2" />
-                        </div>
-                        <div>
-                          <div className="fw-semibold">Vehículo {index + 1}</div>
-                          <small className="text-muted">
-                            {vehicle.color} - {vehicle.brand} {vehicle.model}
-                          </small>
-                        </div>
-                      </div>
-                      <Badge bg="light" text="dark" className="border">
-                        {vehicle.plate}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </Card.Body>
-            </Card>
-
-            {/* Payment Info */}
             <Card className="shadow-sm">
               <Card.Header className="bg-white">
                 <h6 className="mb-0 d-flex align-items-center gap-2">
                   <CreditCard size={18} />
-                  Información de Pago
+                  Información de Pagos
                 </h6>
               </Card.Header>
               <Card.Body>
-                <Row className="g-4">
-                  <Col md={6}>
-                    <small className="text-muted">Plan Seleccionado</small>
-                    <div className="fw-semibold">{planDetails.label}</div>
-                    <small className="text-muted">{planDetails.description}</small>
-                  </Col>
-                  <Col md={6}>
-                    <small className="text-muted">Monto Pagado</small>
-                    <div className="h4 fw-bold text-primary mb-0">Q{registration.amount}</div>
-                    <small className="text-muted">Mensual</small>
-                  </Col>
-                  <Col md={6}>
-                    <small className="text-muted">Titular de Tarjeta</small>
-                    <div className="fw-medium">{registration.cardHolder}</div>
-                  </Col>
-                  <Col md={6}>
-                    <small className="text-muted">Tarjeta</small>
-                    <div className="fw-medium">
-                      **** **** **** {registration.cardNumber.slice(-4)}
-                    </div>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
+                <div className="mb-3">
+                  <small className="text-muted">Total acumulado</small>
+                  <div className="h4 fw-bold text-primary mb-0">{formatCurrency(totalPaid)}</div>
+                </div>
 
-            {/* Signature */}
-            <Card className="shadow-sm">
-              <Card.Header className="bg-white">
-                <h6 className="mb-0 d-flex align-items-center gap-2">
-                  <FileSignature size={18} />
-                  Firma Digital
-                </h6>
-              </Card.Header>
-              <Card.Body>
-                {registration.signature ? (
-                  <div className="border rounded p-3 bg-white">
-                    <img
-                      src={registration.signature}
-                      alt="Firma"
-                      style={{ maxWidth: '100%', height: 'auto' }}
-                    />
-                  </div>
+                {payments.length === 0 ? (
+                  <p className="text-muted mb-0">No hay pagos registrados para este estudiante.</p>
                 ) : (
-                  <p className="text-muted text-center py-5 mb-0">No hay firma disponible</p>
+                  <div className="table-responsive">
+                    <Table hover>
+                      <thead className="table-light">
+                        <tr>
+                          <th>ID Pago</th>
+                          <th>Plan</th>
+                          <th>Forma</th>
+                          <th>Monto</th>
+                          <th>Estado</th>
+                          <th>Fecha</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payments.map((payment) => {
+                          const badge = getPaymentBadge(payment.PAG_ESTADO);
+                          return (
+                            <tr key={payment.PAG_PAGO}>
+                              <td className="fw-medium">{payment.PAG_PAGO}</td>
+                              <td>{payment.PLN_PLAN}</td>
+                              <td>{payment.FPG_FORMA_PAGO}</td>
+                              <td>{formatCurrency(Number(payment.PAG_MONTO_TOTAL || 0))}</td>
+                              <td>
+                                <Badge bg={badge.bg} text={badge.bg === 'warning' ? 'dark' : 'white'}>
+                                  {badge.label}
+                                </Badge>
+                              </td>
+                              <td>{formatDate(payment.PAG_FECHA_PAGO)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </Table>
+                  </div>
                 )}
               </Card.Body>
             </Card>
+
+            <Card className="shadow-sm">
+              <Card.Header className="bg-white">
+                <h6 className="mb-0 d-flex align-items-center gap-2">
+                  <Receipt size={18} />
+                  Multas Asociadas
+                </h6>
+              </Card.Header>
+              <Card.Body>
+                {fines.length === 0 ? (
+                  <p className="text-muted mb-0">No hay multas asociadas al estudiante.</p>
+                ) : (
+                  <div className="table-responsive">
+                    <Table hover>
+                      <thead className="table-light">
+                        <tr>
+                          <th>ID Relación</th>
+                          <th>ID Multa</th>
+                          <th>Estado</th>
+                          <th>Creado por</th>
+                          <th>Fecha</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {fines.map((fine) => {
+                          const badge = getFineBadge(fine.EMU_ESTADO_MULTA);
+                          return (
+                            <tr key={fine.EMU_ESTUDIANTE_MULTA}>
+                              <td className="fw-medium">{fine.EMU_ESTUDIANTE_MULTA}</td>
+                              <td>{fine.MUL_MULTA}</td>
+                              <td>
+                                <Badge bg={badge.bg} text={badge.bg === 'warning' ? 'dark' : 'white'}>
+                                  {badge.label}
+                                </Badge>
+                              </td>
+                              <td>{fine.EMU_CREADO_POR}</td>
+                              <td>{fine.EMU_FECHA_CREACION || 'No disponible'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </Table>
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
+
+            <Alert variant="info" className="mb-0">
+              Esta vista ya usa datos reales de estudiante, pagos, multas y morosidad. Los campos de vehículos, firma,
+              dirección y contacto de emergencia siguen pendientes de backend.
+            </Alert>
           </div>
         </Col>
       </Row>

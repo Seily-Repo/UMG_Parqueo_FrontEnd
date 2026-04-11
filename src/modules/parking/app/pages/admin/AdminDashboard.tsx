@@ -1,71 +1,192 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { useRegistration } from '../../context/RegistrationContext';
-import { Card, Form, Button, Table, Badge, Row, Col, InputGroup } from 'react-bootstrap';
-import { Search, Eye, Users, DollarSign, Car } from 'lucide-react';
+import { Card, Form, Button, Table, Badge, Row, Col, InputGroup, Alert, Spinner } from 'react-bootstrap';
+import { Search, Eye, Users, DollarSign, ShieldAlert } from 'lucide-react';
+import { getReadableApiError } from '../../../../../shared/api';
+import type { BackendEstudiante, BackendEstudianteMoroso, BackendPago } from '../../../../../shared/models/backend';
+import { delinquentStudentService, paymentService, studentService } from '../../../../../shared/services';
+
+interface AdminStudentRow {
+  carne: string;
+  fullName: string;
+  email: string;
+  isDelinquent: boolean;
+  delinquentReason?: string;
+  paymentStatus: 'paid' | 'pending';
+  totalPaid: number;
+  latestPaymentDate?: string;
+}
+
+function formatCurrency(amount: number) {
+  return `Q${amount.toFixed(2)}`;
+}
+
+function formatDate(value?: string) {
+  if (!value) {
+    return 'Sin pagos';
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString();
+}
+
+function isAcceptedPayment(payment: BackendPago) {
+  return payment.PAG_ESTADO === 'A' || payment.PAG_ESTADO === 'P' || !payment.PAG_ESTADO;
+}
 
 export function AdminDashboard() {
   const navigate = useNavigate();
-  const { registrations } = useRegistration();
   const [searchTerm, setSearchTerm] = useState('');
+  const [students, setStudents] = useState<BackendEstudiante[]>([]);
+  const [payments, setPayments] = useState<BackendPago[]>([]);
+  const [delinquents, setDelinquents] = useState<BackendEstudianteMoroso[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const filteredRegistrations = registrations.filter((reg) =>
-    reg.carnet.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    reg.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const [studentsResponse, paymentsResponse, delinquentsResponse] = await Promise.all([
+          studentService.getAll(),
+          paymentService.getAll(),
+          delinquentStudentService.getAll(),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setStudents(studentsResponse);
+        setPayments(paymentsResponse);
+        setDelinquents(delinquentsResponse);
+      } catch (requestError) {
+        if (!isMounted) {
+          return;
+        }
+
+        setError(getReadableApiError(requestError, 'No fue posible cargar el panel administrativo.'));
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const delinquentMap = useMemo(() => {
+    return delinquents.reduce<Record<string, BackendEstudianteMoroso>>((accumulator, item) => {
+      if (item.MOR_ESTADO === 'A') {
+        accumulator[item.EST_CARNE] = item;
+      }
+      return accumulator;
+    }, {});
+  }, [delinquents]);
+
+  const paymentMap = useMemo(() => {
+    return payments.reduce<Record<string, BackendPago[]>>((accumulator, item) => {
+      if (!accumulator[item.EST_CARNE]) {
+        accumulator[item.EST_CARNE] = [];
+      }
+
+      accumulator[item.EST_CARNE].push(item);
+      return accumulator;
+    }, {});
+  }, [payments]);
+
+  const rows = useMemo<AdminStudentRow[]>(() => {
+    return students.map((student) => {
+      const studentPayments = paymentMap[student.EST_CARNE] || [];
+      const acceptedPayments = studentPayments.filter(isAcceptedPayment);
+      const totalPaid = acceptedPayments.reduce((sum, payment) => sum + Number(payment.PAG_MONTO_TOTAL || 0), 0);
+      const latestPayment = acceptedPayments
+        .slice()
+        .sort((a, b) => new Date(b.PAG_FECHA_PAGO).getTime() - new Date(a.PAG_FECHA_PAGO).getTime())[0];
+      const delinquentRecord = delinquentMap[student.EST_CARNE];
+
+      return {
+        carne: student.EST_CARNE,
+        fullName: student.EST_NOMBRE_COMPLETO,
+        email: student.EST_EMAIL,
+        isDelinquent: !!delinquentRecord,
+        delinquentReason: delinquentRecord?.MOR_MOTIVO,
+        paymentStatus: acceptedPayments.length > 0 ? 'paid' : 'pending',
+        totalPaid,
+        latestPaymentDate: latestPayment?.PAG_FECHA_PAGO,
+      };
+    });
+  }, [delinquentMap, paymentMap, students]);
+
+  const filteredRows = useMemo(() => {
+    const normalized = searchTerm.trim().toLowerCase();
+
+    if (!normalized) {
+      return rows;
+    }
+
+    return rows.filter((row) =>
+      row.carne.toLowerCase().includes(normalized) ||
+      row.fullName.toLowerCase().includes(normalized) ||
+      row.email.toLowerCase().includes(normalized)
+    );
+  }, [rows, searchTerm]);
+
+  const totalRevenue = useMemo(
+    () => rows.reduce((sum, row) => sum + row.totalPaid, 0),
+    [rows]
   );
 
-  const totalRevenue = registrations.reduce((sum, reg) => sum + (reg.amount || 0), 0);
-  const totalVehicles = registrations.reduce((sum, reg) => sum + reg.vehicles.length, 0);
-
-  const getPlanLabel = (plan: string) => {
-    switch (plan) {
-      case 'entre-semana':
-        return 'Entre Semana';
-      case 'sabado':
-        return 'Sábado';
-      case 'domingo':
-        return 'Domingo';
-      default:
-        return plan;
-    }
-  };
+  const totalDelinquents = useMemo(
+    () => rows.filter((row) => row.isDelinquent).length,
+    [rows]
+  );
 
   const stats = [
     {
       title: 'Total Estudiantes',
-      value: registrations.length,
-      description: 'Registros activos',
+      value: rows.length,
+      description: 'Estudiantes registrados',
       icon: Users,
       color: '#1976d2',
       bgColor: '#e3f2fd'
     },
     {
       title: 'Ingresos Totales',
-      value: `Q${totalRevenue}`,
-      description: 'Pagos procesados',
+      value: formatCurrency(totalRevenue),
+      description: 'Pagos registrados',
       icon: DollarSign,
       color: '#C41230',
       bgColor: '#ffebee'
     },
     {
-      title: 'Vehículos Registrados',
-      value: totalVehicles,
-      description: 'Total de vehículos',
-      icon: Car,
-      color: '#0d47a1',
-      bgColor: '#e3f2fd'
+      title: 'Morosidad Activa',
+      value: totalDelinquents,
+      description: 'Estudiantes con restricción',
+      icon: ShieldAlert,
+      color: '#9a3412',
+      bgColor: '#ffedd5'
     },
   ];
 
   return (
     <div>
-      {/* Header */}
       <div className="mb-4">
         <h3 className="fw-bold mb-1">Panel de Administración</h3>
-        <p className="text-muted mb-0">Gestión de registros de parqueo universitario</p>
+        <p className="text-muted mb-0">Gestión de estudiantes, pagos y morosidad</p>
       </div>
 
-      {/* Stats */}
+      {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
+
       <Row className="g-4 mb-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -75,11 +196,11 @@ export function AdminDashboard() {
                 <Card.Body>
                   <div className="d-flex align-items-center justify-content-between mb-3">
                     <h6 className="text-muted mb-0 small">{stat.title}</h6>
-                    <div 
-                      style={{ 
-                        width: 40, 
-                        height: 40, 
-                        backgroundColor: stat.bgColor, 
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        backgroundColor: stat.bgColor,
                         borderRadius: 8,
                         display: 'flex',
                         alignItems: 'center',
@@ -98,33 +219,35 @@ export function AdminDashboard() {
         })}
       </Row>
 
-      {/* Search and Table */}
       <Card className="shadow-sm" style={{ borderColor: '#0d47a1' }}>
         <Card.Header className="bg-white">
-          <h5 className="mb-1">Lista de Registros</h5>
+          <h5 className="mb-1">Lista de Estudiantes</h5>
           <p className="text-muted small mb-0">
-            Busque y gestione los registros de estudiantes
+            Búsqueda sobre estudiantes, pagos registrados y morosidad activa
           </p>
         </Card.Header>
         <Card.Body className="p-4">
-          {/* Search */}
           <InputGroup className="mb-4">
             <InputGroup.Text>
               <Search size={16} />
             </InputGroup.Text>
             <Form.Control
-              placeholder="Buscar por carnet o nombre..."
+              placeholder="Buscar por carnet, nombre o correo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </InputGroup>
 
-          {/* Table */}
-          {filteredRegistrations.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" />
+              <p className="text-muted mt-3 mb-0">Cargando información del panel...</p>
+            </div>
+          ) : filteredRows.length === 0 ? (
             <div className="text-center py-5">
               <Users size={64} color="#dee2e6" className="mb-3" />
               <p className="text-muted mb-1">
-                {searchTerm ? 'No se encontraron resultados' : 'No hay registros'}
+                {searchTerm ? 'No se encontraron resultados' : 'No hay estudiantes para mostrar'}
               </p>
               <small className="text-muted">
                 {searchTerm ? 'Intenta con otro término de búsqueda' : 'Los registros aparecerán aquí'}
@@ -137,32 +260,40 @@ export function AdminDashboard() {
                   <tr>
                     <th>Carnet</th>
                     <th>Nombre</th>
-                    <th>Plan</th>
-                    <th>Vehículos</th>
+                    <th>Correo</th>
+                    <th>Morosidad</th>
                     <th>Estado Pago</th>
+                    <th>Total Pagado</th>
+                    <th>Último Pago</th>
                     <th className="text-end">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRegistrations.map((registration) => (
-                    <tr key={registration.id}>
-                      <td className="fw-medium">{registration.carnet}</td>
-                      <td>{registration.fullName}</td>
-                      <td>{getPlanLabel(registration.parkingPlan)}</td>
-                      <td>{registration.vehicles.length}</td>
+                  {filteredRows.map((row) => (
+                    <tr key={row.carne}>
+                      <td className="fw-medium">{row.carne}</td>
+                      <td>{row.fullName}</td>
+                      <td>{row.email}</td>
                       <td>
-                        <Badge 
-                          bg={registration.paymentStatus === 'paid' ? 'primary' : 'danger'}
-                          className="text-white"
-                        >
-                          {registration.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente'}
+                        <Badge bg={row.isDelinquent ? 'warning' : 'success'} text={row.isDelinquent ? 'dark' : 'white'}>
+                          {row.isDelinquent ? row.delinquentReason || 'Activa' : 'Sin restricción'}
                         </Badge>
                       </td>
+                      <td>
+                        <Badge
+                          bg={row.paymentStatus === 'paid' ? 'primary' : 'danger'}
+                          className="text-white"
+                        >
+                          {row.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente'}
+                        </Badge>
+                      </td>
+                      <td>{formatCurrency(row.totalPaid)}</td>
+                      <td>{formatDate(row.latestPaymentDate)}</td>
                       <td className="text-end">
                         <Button
                           variant="outline-primary"
                           size="sm"
-                          onClick={() => navigate(`/parking/admin/dashboard/registro/${registration.id}`)}
+                          onClick={() => navigate(`/parking/admin/dashboard/registro/${row.carne}`)}
                         >
                           <Eye size={16} className="me-2" />
                           Ver Detalles

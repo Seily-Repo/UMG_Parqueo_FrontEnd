@@ -1,12 +1,11 @@
-import { Outlet, useLocation, useNavigate } from 'react-router';
-import { Container, Button } from 'react-bootstrap';
-import { ArrowLeft } from 'lucide-react';
+import { Outlet, useLocation } from 'react-router';
+import { Container } from 'react-bootstrap';
 import { AppHeader } from './AppHeader';
+import { AppFooter } from './AppFooter';
 import villanueva from '../../../../assets/villanueva.webp';
 
 export function UserLayout() {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const steps = [
     { path: '/parking/user', label: 'Datos del vehiculo' },
@@ -17,82 +16,77 @@ export function UserLayout() {
   const currentStepIndex = steps.findIndex((step) => step.path === location.pathname);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)), url(${villanueva})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
-    }}>
-      <AppHeader
-        subtitle="Registro de Parqueo"
-        actions={
-          <Button variant="ghost" size="sm" onClick={() => navigate('/parking')} style={{ padding: '6px 8px', color: 'white' }}>
-            <ArrowLeft size={20} />
-          </Button>
-        }
-      />
+    <div
+      className="parking-shell parking-shell--photo"
+      style={{
+        backgroundImage: `url(${villanueva})`,
+      }}
+    >
+      <AppHeader subtitle="Registro de Parqueo" />
 
-      {/* Progress Steps */}
-      {currentStepIndex !== -1 && location.pathname !== '/parking/user/confirmacion' && (
-        <div style={{ backgroundColor: 'white', borderBottom: '1px solid #dee2e6' }}>
-          <Container className="py-4">
-            <div className="d-flex align-items-center justify-content-between">
-              {steps.map((step, index) => (
-                <div key={step.path} className="d-flex align-items-center" style={{ flex: 1 }}>
-                  <div className="d-flex flex-column align-items-center" style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: '50%',
-                        backgroundColor: index <= currentStepIndex ? '#C41230' : '#dee2e6',
-                        color: index <= currentStepIndex ? 'white' : '#6c757d',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 14,
-                        fontWeight: 500,
-                        transition: 'all 0.3s'
-                      }}
-                    >
-                      {index + 1}
+      <main>
+        {currentStepIndex !== -1 && location.pathname !== '/parking/user/confirmacion' && (
+          <div className="parking-progress-shell">
+            <Container className="py-4">
+              <div className="d-flex align-items-center justify-content-between">
+                {steps.map((step, index) => (
+                  <div key={step.path} className="d-flex align-items-center" style={{ flex: 1 }}>
+                    <div className="d-flex flex-column align-items-center" style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          backgroundColor: index <= currentStepIndex ? '#1A6AA6' : '#A7C9D6',
+                          color: '#FFFFFF',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 14,
+                          fontWeight: 700,
+                          transition: 'all 0.3s',
+                          boxShadow: index <= currentStepIndex ? '0 8px 18px rgba(26, 106, 166, 0.22)' : 'none',
+                        }}
+                      >
+                        {index + 1}
+                      </div>
+                      <span
+                        className="mt-2 text-center"
+                        style={{
+                          fontSize: 12,
+                          color: index <= currentStepIndex ? '#003366' : '#4b6478',
+                          fontWeight: index <= currentStepIndex ? 700 : 500,
+                        }}
+                      >
+                        {step.label}
+                      </span>
                     </div>
-                    <span
-                      className="mt-2 text-center"
-                      style={{
-                        fontSize: 12,
-                        color: index <= currentStepIndex ? '#C41230' : '#6c757d',
-                        fontWeight: index <= currentStepIndex ? 500 : 400
-                      }}
-                    >
-                      {step.label}
-                    </span>
+                    {index < steps.length - 1 && (
+                      <div
+                        style={{
+                          height: 2,
+                          flex: 1,
+                          backgroundColor: index < currentStepIndex ? '#1A6AA6' : '#A7C9D6',
+                          marginBottom: 30,
+                          marginLeft: 8,
+                          marginRight: 8,
+                          transition: 'all 0.3s',
+                        }}
+                      />
+                    )}
                   </div>
-                  {index < steps.length - 1 && (
-                    <div
-                      style={{
-                        height: 2,
-                        flex: 1,
-                        backgroundColor: index < currentStepIndex ? '#C41230' : '#dee2e6',
-                        marginBottom: 30,
-                        marginLeft: 8,
-                        marginRight: 8,
-                        transition: 'all 0.3s'
-                      }}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </Container>
-        </div>
-      )}
+                ))}
+              </div>
+            </Container>
+          </div>
+        )}
 
-      {/* Main Content */}
-      <Container className="py-4">
-        <Outlet />
-      </Container>
+        <Container className="parking-content-container py-4">
+          <Outlet />
+        </Container>
+      </main>
+
+      <AppFooter />
     </div>
   );
 }

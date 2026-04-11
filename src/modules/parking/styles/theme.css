@@ -1,32 +1,47 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --azul-oscuro: #1F4E79;
+  --azul-marino: #003366;
+  --azul-universitario: #1A6AA6;
+  --celeste-v1: #20A4D6;
+  --celeste-v2: #00CCFF;
+  --rojo: #C7352E;
+  --fondo-general: #F2F2F2;
+  --blanco: #FFFFFF;
+  --celeste-claro: #A7C9D6;
+  --celeste-palido: #CCF2FF;
+  --parking-surface: rgba(255, 255, 255, 0.96);
+  --parking-surface-strong: rgba(255, 255, 255, 1);
+  --parking-border-soft: rgba(31, 78, 121, 0.18);
+  --parking-shadow: 0 16px 34px rgba(0, 51, 102, 0.12);
+  --parking-shadow-soft: 0 10px 22px rgba(0, 51, 102, 0.08);
+  --parking-overlay: linear-gradient(180deg, rgba(242, 242, 242, 0.46), rgba(167, 201, 214, 0.34));
+  --parking-text-soft: #4b6478;
   --font-size: 16px;
-  --background: #ffffff;
+  --background: #F2F2F2;
   --foreground: oklch(0.145 0 0);
-  --card: #ffffff;
+  --card: #FFFFFF;
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #C41230;
-  --primary-foreground: #ffffff;
-
-  /* Bootstrap overrides */
-  --bs-primary: #C41230;
-  --bs-primary-rgb: 196, 18, 48;
-  --bs-btn-bg: #C41230;
-  --bs-btn-border-color: #C41230;
-  --bs-btn-hover-bg: #a00f28;
-  --bs-btn-hover-border-color: #a00f28;
-  --bs-link-color: #C41230;
-  --bs-link-hover-color: #a00f28;
+  --primary: #1A6AA6;
+  --primary-foreground: #FFFFFF;
+  --bs-primary: #1A6AA6;
+  --bs-primary-rgb: 26, 106, 166;
+  --bs-btn-bg: #1A6AA6;
+  --bs-btn-border-color: #1A6AA6;
+  --bs-btn-hover-bg: #1F4E79;
+  --bs-btn-hover-border-color: #1F4E79;
+  --bs-link-color: #1A6AA6;
+  --bs-link-hover-color: #1F4E79;
   --secondary: oklch(0.95 0.0058 264.53);
   --secondary-foreground: #030213;
   --muted: #ececf0;
   --muted-foreground: #717182;
   --accent: #e9ebef;
   --accent-foreground: #030213;
-  --destructive: #d4183d;
+  --destructive: #C7352E;
   --destructive-foreground: #ffffff;
   --border: rgba(0, 0, 0, 0.1);
   --input: transparent;
@@ -130,23 +145,23 @@
 }
 
 .btn-primary {
-  --bs-btn-bg: #C41230;
-  --bs-btn-border-color: #C41230;
-  --bs-btn-hover-bg: #a00f28;
-  --bs-btn-hover-border-color: #a00f28;
-  --bs-btn-active-bg: #8c0d22;
-  --bs-btn-active-border-color: #8c0d22;
-  --bs-btn-disabled-bg: #C41230;
-  --bs-btn-disabled-border-color: #C41230;
+  --bs-btn-bg: #1A6AA6;
+  --bs-btn-border-color: #1A6AA6;
+  --bs-btn-hover-bg: #1F4E79;
+  --bs-btn-hover-border-color: #1F4E79;
+  --bs-btn-active-bg: #003366;
+  --bs-btn-active-border-color: #003366;
+  --bs-btn-disabled-bg: #1A6AA6;
+  --bs-btn-disabled-border-color: #1A6AA6;
 }
 
 .btn-outline-primary {
-  --bs-btn-color: #C41230;
-  --bs-btn-border-color: #C41230;
-  --bs-btn-hover-bg: #C41230;
-  --bs-btn-hover-border-color: #C41230;
-  --bs-btn-active-bg: #C41230;
-  --bs-btn-active-border-color: #C41230;
+  --bs-btn-color: #1A6AA6;
+  --bs-btn-border-color: #1A6AA6;
+  --bs-btn-hover-bg: #1A6AA6;
+  --bs-btn-hover-border-color: #1A6AA6;
+  --bs-btn-active-bg: #1A6AA6;
+  --bs-btn-active-border-color: #1A6AA6;
 }
 
 @layer base {
@@ -154,14 +169,15 @@
     @apply border-border outline-ring/50;
   }
 
+  html,
   body {
     @apply bg-background text-foreground;
+    font-family: var(--parking-font-sans);
   }
 
-  /**
-  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
-  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
-  */
+  #root {
+    min-height: 100vh;
+  }
 
   html {
     font-size: var(--font-size);
@@ -171,24 +187,32 @@
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
+    font-family: var(--parking-font-title);
+    font-style: italic;
   }
 
   h2 {
     font-size: var(--text-xl);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
+    font-family: var(--parking-font-title);
+    font-style: italic;
   }
 
   h3 {
     font-size: var(--text-lg);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
+    font-family: var(--parking-font-title);
+    font-style: italic;
   }
 
   h4 {
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
+    font-family: var(--parking-font-title);
+    font-style: italic;
   }
 
   label {
@@ -201,11 +225,340 @@
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
+    font-family: var(--parking-font-sans);
   }
 
   input {
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
+    font-family: var(--parking-font-sans);
+  }
+}
+
+body {
+  background: var(--fondo-general);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.btn,
+.form-label,
+.card-title,
+.card-subtitle,
+.table,
+.badge,
+.navbar,
+.alert,
+.form-control,
+.form-select {
+  font-family: var(--parking-font-sans);
+}
+
+h5,
+h6,
+.parking-app-header__title,
+.parking-section-title,
+.card-title {
+  font-family: var(--parking-font-title);
+  font-style: italic;
+}
+
+.parking-shell {
+  min-height: 100vh;
+  position: relative;
+}
+
+.parking-shell--photo {
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+.parking-shell--photo::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: var(--parking-overlay);
+  backdrop-filter: blur(1px);
+  pointer-events: none;
+}
+
+.parking-shell--solid {
+  background:
+    radial-gradient(circle at top left, rgba(32, 164, 214, 0.14), transparent 30%),
+    radial-gradient(circle at top right, rgba(31, 78, 121, 0.14), transparent 35%),
+    linear-gradient(180deg, #F2F2F2 0%, #CCF2FF 100%);
+}
+
+.parking-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.parking-app-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  background:
+    linear-gradient(90deg, rgba(0, 51, 102, 0.96), rgba(31, 78, 121, 0.94)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+  backdrop-filter: blur(14px);
+  box-shadow: 0 14px 28px rgba(0, 51, 102, 0.16);
+}
+
+.parking-app-header__brand {
+  background: rgba(255, 255, 255, 0.94);
+  padding: 8px;
+  border-radius: 14px;
+  display: flex;
+  box-shadow: 0 10px 24px rgba(255, 255, 255, 0.18);
+}
+
+.parking-app-header__title {
+  letter-spacing: -0.03em;
+}
+
+.parking-app-header small {
+  color: #FFFFFF !important;
+}
+
+.parking-app-footer {
+  border-top: 1px solid rgba(31, 78, 121, 0.18);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -8px 20px rgba(0, 51, 102, 0.05);
+}
+
+.parking-app-footer__text {
+  color: var(--azul-marino) !important;
+  font-family: var(--parking-font-sans);
+}
+
+.parking-content-container {
+  position: relative;
+}
+
+.parking-progress-shell {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(31, 78, 121, 0.12);
+  box-shadow: 0 10px 22px rgba(0, 51, 102, 0.06);
+  backdrop-filter: blur(12px);
+}
+
+.card,
+.parking-panel {
+  border: 1px solid rgba(31, 78, 121, 0.12);
+  border-radius: 22px;
+  background: var(--parking-surface);
+  box-shadow: var(--parking-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.card .card-header {
+  background: transparent;
+  border-bottom: 1px solid rgba(16, 32, 53, 0.08);
+  padding: 1.25rem 1.5rem;
+}
+
+.card .card-body {
+  padding: 1.5rem;
+}
+
+.btn {
+  border-radius: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-light,
+.btn-danger {
+  min-height: 44px;
+}
+
+.btn-primary {
+  color: #FFFFFF;
+  box-shadow: 0 12px 24px rgba(26, 106, 166, 0.2);
+}
+
+.btn-primary:hover,
+.btn-outline-primary:hover,
+.btn-secondary:hover,
+.btn-outline-secondary:hover,
+.btn-light:hover {
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  --bs-btn-bg: #1F4E79;
+  --bs-btn-border-color: #1F4E79;
+  --bs-btn-hover-bg: #003366;
+  --bs-btn-hover-border-color: #003366;
+  --bs-btn-active-bg: #003366;
+  --bs-btn-active-border-color: #003366;
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: #1F4E79;
+  --bs-btn-border-color: rgba(31, 78, 121, 0.24);
+  --bs-btn-bg: rgba(255, 255, 255, 0.9);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: #1F4E79;
+  --bs-btn-hover-border-color: #1F4E79;
+}
+
+.btn-light {
+  --bs-btn-color: #003366;
+  --bs-btn-bg: rgba(255, 255, 255, 0.92);
+  --bs-btn-border-color: rgba(255, 255, 255, 0.92);
+  --bs-btn-hover-color: #003366;
+  --bs-btn-hover-bg: #ffffff;
+  --bs-btn-hover-border-color: #ffffff;
+}
+
+.form-control,
+.form-select {
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 38, 64, 0.12);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: inset 0 1px 2px rgba(15, 38, 64, 0.03);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: rgba(26, 106, 166, 0.45);
+  box-shadow: 0 0 0 0.25rem rgba(26, 106, 166, 0.12);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.alert {
+  border: 1px solid rgba(15, 38, 64, 0.08);
+  border-radius: 16px;
+}
+
+.table-responsive {
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.table {
+  --bs-table-bg: transparent;
+  margin-bottom: 0;
+}
+
+.table thead th {
+  background: rgba(204, 242, 255, 0.8);
+  color: #003366;
+  font-size: 0.86rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-bottom-width: 1px;
+}
+
+.table tbody td {
+  vertical-align: middle;
+  color: #223247;
+  border-color: rgba(15, 38, 64, 0.08);
+}
+
+.table-hover > tbody > tr:hover > * {
+  --bs-table-accent-bg: rgba(167, 201, 214, 0.18);
+  color: #003366;
+}
+
+.parking-fines-table {
+  border: 1px solid rgba(31, 78, 121, 0.12);
+  background: #FFFFFF;
+  box-shadow: 0 10px 22px rgba(0, 51, 102, 0.06);
+}
+
+.parking-fines-table .table thead th {
+  padding: 1rem 1.1rem;
+}
+
+.parking-fines-table .table tbody td {
+  padding: 1rem 1.1rem;
+}
+
+.parking-fines-table .table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.parking-finance-heading {
+  color: #1A6AA6;
+}
+
+.parking-finance-subheading {
+  color: #1A6AA6;
+}
+
+.parking-student-panel {
+  overflow: hidden;
+  border: 1px solid rgba(31, 78, 121, 0.18);
+  background: linear-gradient(135deg, rgba(204, 242, 255, 0.92) 0%, rgba(167, 201, 214, 0.72) 100%);
+  box-shadow: 0 14px 28px rgba(0, 51, 102, 0.08);
+}
+
+.parking-student-panel__body {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
+}
+
+.parking-student-panel__icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 18px;
+  background: rgba(26, 106, 166, 0.12);
+  border: 1px solid rgba(26, 106, 166, 0.18);
+  color: #1A6AA6;
+}
+
+.parking-student-panel__eyebrow {
+  color: #1A6AA6 !important;
+}
+
+.parking-student-panel__text {
+  color: #003366;
+}
+
+.parking-student-panel__muted {
+  color: #1F4E79 !important;
+}
+
+.parking-student-panel__balance {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(31, 78, 121, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.badge {
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.5em 0.8em;
+}
+
+.text-muted,
+.card-subtitle,
+.form-text,
+small {
+  color: var(--parking-text-soft) !important;
+}
+
+.display-4,
+.display-5 {
+  letter-spacing: -0.04em;
+}
+
+@media (max-width: 768px) {
+  .card .card-header,
+  .card .card-body {
+    padding: 1.1rem;
   }
 }

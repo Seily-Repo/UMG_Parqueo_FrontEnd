@@ -11,6 +11,8 @@ import { Signature } from "./pages/user/Signature";
 import { Confirmation } from "./pages/user/Confirmation";
 import { LoginUser } from "./pages/user/LoginUser";
 import { UserProfile } from "./pages/user/UserProfile";
+import { UserFines } from "./pages/user/UserFines";
+import { UserFinePayment } from "./pages/user/UserFinePayment";
 
 // Admin Pages
 import { AdminLogin } from "./pages/admin/AdminLogin";
@@ -31,6 +33,8 @@ export const parkingRoutes = [
     Component: UserLayout,
     children: [
       { path: "perfil", Component: UserProfile },
+      { path: "multas", Component: UserFines },
+      { path: "multas/pagar/:relationId", Component: UserFinePayment },
       { index: true, Component: UserStart },
       { path: "datos-personales", Component: PersonalData },
       { path: "vehiculos", Component: VehicleData },
