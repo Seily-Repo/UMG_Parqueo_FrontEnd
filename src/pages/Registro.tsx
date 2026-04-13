@@ -1,321 +1,368 @@
+import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import Swal from 'sweetalert2';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
-export default function Registro() {
+const API_BASE = 'http://localhost:3001/api';
+
+const Registro = () => {
   const navigate = useNavigate();
 
-  const handleRegistro = async (e: React.FormEvent<HTMLFormElement>) => {
+  // Apply saved theme
+  useEffect(() => {
+    const t = localStorage.getItem('umg-theme') || 'azul';
+    document.documentElement.setAttribute('data-theme', t);
+  }, []);
+
+  // --- ESTADOS PARA CATÁLOGOS DINÁMICOS ---
+  const [facultades, setFacultades] = useState<any[]>([]);
+  const [sedes, setSedes] = useState<any[]>([]);
+  const [ciclos, setCiclos] = useState<any[]>([]);
+  const [secciones, setSecciones] = useState<any[]>([]);
+  const [jornadas, setJornadas] = useState<any[]>([]);
+  const [departamentos, setDepartamentos] = useState<any[]>([]);
+  const [municipios, setMunicipios] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [deptoSeleccionado, setDeptoSeleccionado] = useState('');
+
+  // --- CARGA PARALELA DE TODOS LOS CATÁLOGOS (Promise.all nativo) ---
+  useEffect(() => {
+    const cargarCatalogos = async () => {
+      try {
+        const [resFac, resSedes, resCiclos, resSec, resJor, resDepto] = await Promise.all([
+          fetch(`${API_BASE}/facultades`),
+          fetch(`${API_BASE}/sedes`),
+          fetch(`${API_BASE}/ciclos`),
+          fetch(`${API_BASE}/secciones`),
+          fetch(`${API_BASE}/jornadas`),
+          fetch(`${API_BASE}/departamentos`),
+        ]);
+
+        const [facData, sedesData, ciclosData, secData, jorData, deptoData] = await Promise.all([
+          resFac.json(), resSedes.json(), resCiclos.json(),
+          resSec.json(), resJor.json(), resDepto.json(),
+        ]);
+
+        setFacultades(facData);
+        setSedes(sedesData);
+        setCiclos(ciclosData);
+        setSecciones(secData);
+        setJornadas(jorData);
+        setDepartamentos(deptoData);
+      } catch (error) {
+        console.error("Error al conectar con la API:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+    cargarCatalogos();
+  }, []);
+
+  // --- CASCADA: Departamento → Municipios ---
+  useEffect(() => {
+    if (!deptoSeleccionado) {
+      setMunicipios([]);
+      return;
+    }
+    const cargarMunicipios = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/municipios/${deptoSeleccionado}`);
+        if (res.ok) {
+          const data = await res.json();
+          setMunicipios(data);
+        }
+      } catch (error) {
+        console.error("Error al cargar municipios:", error);
+      }
+    };
+    cargarMunicipios();
+  }, [deptoSeleccionado]);
+
+  // --- ENVÍO DEL FORMULARIO ---
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    // Extraemos todos los datos del formulario automáticamente gracias a los atributos "name"
     const formData = new FormData(e.currentTarget);
     const datosUsuario = Object.fromEntries(formData.entries());
 
-    console.log("🚀 Datos capturados, listos para Oracle:", datosUsuario);
-
     try {
-      // Hacemos la petición POST al backend en Node.js
-      const respuesta = await fetch('http://localhost:3001/api/auth/registro', {
+      const response = await fetch(`${API_BASE}/auth/registro`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(datosUsuario),
       });
 
-      const resultado = await respuesta.json();
+      const data = await response.json();
 
-      if (respuesta.ok) {
-        alert('✅ ' + resultado.mensaje);
-        navigate('/login'); 
+      if (response.ok) {
+        Swal.fire({
+          title: '¡Registro Exitoso!',
+          text: 'Tu perfil ha sido creado. Ya puedes iniciar sesión con tu carné.',
+          icon: 'success',
+          confirmButtonText: 'Ir al Login',
+          confirmButtonColor: 'var(--azul-universitario)',
+          background: 'var(--fondo-blanco)',
+          color: 'var(--azul-oscuro)'
+        }).then((result) => {
+          if (result.isConfirmed) navigate('/login');
+        });
       } else {
-        alert('❌ Error: ' + resultado.error);
+        Swal.fire({
+          title: 'Error de Validación',
+          text: data.error || 'Verifica que el carné o correo no estén duplicados.',
+          icon: 'error',
+          confirmButtonColor: 'var(--rojo-institucional)'
+        });
       }
     } catch (error) {
-      alert('⚠️ No se pudo conectar con el servidor Node.js. Asegúrate de que esté encendido.');
+      Swal.fire({
+        title: 'Error de Conexión',
+        text: 'El servidor de base de datos no responde.',
+        icon: 'error',
+        confirmButtonColor: 'var(--rojo-institucional)'
+      });
     }
   };
 
   return (
-    <div 
-      style={{ 
-        minHeight: '100vh', 
-        background: 'linear-gradient(to bottom, #001224, #003366)', 
-        display: 'flex', 
-        alignItems: 'center',
-        padding: '40px 0'
-      }}
-    >
+    <div style={{ backgroundColor: 'var(--fondo-general)', minHeight: '100vh', padding: '40px 0' }}>
       <Container>
         <Row className="justify-content-center">
-          <Col md={10} lg={8}>
-            
-            {/* Botón para regresar */}
-            <div className="mb-3">
-              <span 
-                style={{ cursor: 'pointer', color: '#ffffff', opacity: 0.8, fontSize: '0.9rem' }}
-                onClick={() => navigate('/login')}
-                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
-              >
-                &larr; Regresar al Login
-              </span>
-            </div>
-
-            <Card className="shadow-lg border-0" style={{ borderRadius: '15px' }}>
+          <Col md={10} lg={9}>
+            <Card className="border-0 shadow-lg liquid-card" style={{ borderRadius: '20px' }}>
+              {/* Acento visual según Guía de Diseño */}
+              <div style={{ height: '5px', backgroundColor: 'var(--azul-celeste-v2)' }} />
+              
               <Card.Body className="p-5">
-                
-                <div className="text-center mb-4">
-                  <h3 className="fw-bold" style={{ color: '#003366' }}>Registro de Parqueo</h3>
-                  <p className="text-muted">Completa los datos de tu Ficha de Parqueo UMG</p>
+                <div className="text-center mb-5">
+                  <h2 className="fw-bold" style={{ color: 'var(--azul-universitario)', fontStyle: 'italic', fontFamily: 'var(--fuente-titulos)' }}>
+                    Registro de Parqueo UMG
+                  </h2>
+                  <p className="text-muted" style={{ fontFamily: 'var(--fuente-principal)' }}>
+                    Ingresa tus datos para la asignación de marbete y acceso vehicular
+                  </p>
                 </div>
 
-                <Form onSubmit={handleRegistro}>
-                  
-                  {/* --- SECCIÓN 1: DATOS DE LA CUENTA --- */}
-                  <h5 className="mb-3 fw-bold text-primary border-bottom pb-2">1. Datos de la Cuenta</h5>
-                  <Row>
+                <Form onSubmit={handleSubmit} style={{ fontFamily: 'var(--fuente-principal)' }}>
+                  {/* Rol oculto: 1 = Estudiante */}
+                  <input type="hidden" name="id_rol" value="1" />
+
+                  {/* --- SECCIÓN 1: IDENTIDAD --- */}
+                  <h5 className="mb-3 fw-bold border-bottom pb-2" style={{ color: 'var(--azul-universitario)', fontStyle: 'italic', fontFamily: 'var(--fuente-titulos)' }}>
+                    1. Información Personal
+                  </h5>
+                  <Row className="mb-4">
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Número de Carné</Form.Label>
-                        <Form.Control 
-                          name="carne"
-                          type="text" 
-                          placeholder="Ej: 5190-24-746" 
-                          required 
-                          className="bg-light" 
-                          pattern="[0-9]{4}-[0-9]{2}-[0-9]{1,6}"
-                          maxLength={15}
-                          title="El formato debe ser 0000-00-0000 (Incluye los guiones)"
-                        />
+                        <Form.Label className="fw-bold">Nombres</Form.Label>
+                        <Form.Control name="nombres" type="text" required placeholder="Nombres completos" />
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Categoría</Form.Label>
-                        {}
-                        <Form.Select name="id_rol" required className="bg-light">
-                          <option value="">Selecciona...</option>
-                          <option value="1">Estudiante</option>
-                          <option value="2">Catedrático</option>
-                        </Form.Select>
+                        <Form.Label className="fw-bold">Apellidos</Form.Label>
+                        <Form.Control name="apellidos" type="text" required placeholder="Apellidos completos" />
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Correo Electrónico Institucional</Form.Label>
-                        <Form.Control 
-                          name="correo_electronico"
-                          type="email" 
-                          placeholder="correo@miumg.edu.gt" 
-                          required 
-                          className="bg-light"
-                          pattern=".*@miumg\.edu\.gt$"
-                          title="Debe ser un correo institucional que termine en @miumg.edu.gt" 
-                        />
+                        <Form.Label className="fw-bold">Número de Carné</Form.Label>
+                        <Form.Control name="carne" type="text" required placeholder="XXXX-XX-XXXXX" pattern="[0-9]{4}-[0-9]{2}-[0-9]{1,6}" />
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Contraseña para el sistema</Form.Label>
-                        <Form.Control 
-                          name="password"
-                          type="password" 
-                          placeholder="Mínimo 8 caracteres" 
-                          required 
-                          className="bg-light"
-                          minLength={8}
-                        />
+                        <Form.Label className="fw-bold">Correo Institucional</Form.Label>
+                        <Form.Control name="correo_electronico" type="email" required placeholder="usuario@miumg.edu.gt" />
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">Teléfono</Form.Label>
+                        <Form.Control name="telefonos" type="tel" required placeholder="8 dígitos" pattern="[0-9]{8}" />
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">Contraseña de Acceso</Form.Label>
+                        <Form.Control name="password" type="password" required placeholder="Mínimo 8 caracteres" />
                       </Form.Group>
                     </Col>
                   </Row>
 
-                  {/* --- SECCIÓN 2: DATOS PERSONALES --- */}
-                  <h5 className="mb-3 mt-4 fw-bold text-primary border-bottom pb-2">2. Datos Personales</h5>
-                  <Row>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Nombres</Form.Label>
-                        <Form.Control 
-                          name="nombres"
-                          type="text" 
-                          placeholder="Tus nombres" 
-                          required 
-                          className="bg-light"
-                          pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                          minLength={3}
-                          maxLength={100}
-                          title="Solo se permiten letras y espacios." 
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Apellidos</Form.Label>
-                        <Form.Control 
-                          name="apellidos"
-                          type="text" 
-                          placeholder="Tus apellidos" 
-                          required 
-                          className="bg-light"
-                          pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                          minLength={3}
-                          maxLength={100}
-                          title="Solo se permiten letras y espacios."  
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={12}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Dirección de residencia</Form.Label>
-                        <Form.Control 
-                          name="direccion_residencia"
-                          type="text" 
-                          placeholder="Ej: 3ra calle 4-50 Zona 2, Villa Nueva" 
-                          required
-                          className="bg-light"
-                          minLength={15}
-                          maxLength={200}
-                          title="Por favor ingresa una dirección completa y detallada." 
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Teléfono</Form.Label>
-                        <Form.Control 
-                          name="telefonos"
-                          type="text" 
-                          placeholder="Ej: 55554444" 
-                          required 
-                          className="bg-light"
-                          pattern="[0-9]{8}"
-                          maxLength={8}
-                          title="El número debe contener exactamente 8 dígitos numéricos" 
-                        />
-                      </Form.Group>
-                    </Col>
-                  </Row>
-
-                  {/* --- SECCIÓN 3: DATOS ACADÉMICOS Y EMERGENCIA --- */}
-                  <h5 className="mb-3 mt-4 fw-bold text-primary border-bottom pb-2">3. Datos Académicos y Emergencia</h5>
-                  <Row>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Sede / Campus</Form.Label>
-                        <Form.Select name="sede" required className="bg-light">
-                          <option value="">Selecciona tu campus...</option>
-                          <option value="Villa Nueva">Campus Villa Nueva</option>
-                          <option value="Central">Campus Central (Zona 2)</option>
-                          <option value="Portales">Sede Portales</option>
-                          <option value="Naranjo">Sede Naranjo</option>
-                          <option value="Boca del Monte">Sede Boca del Monte</option>
-                        </Form.Select>
-                      </Form.Group>
-                    </Col>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Facultad</Form.Label>
-                        <Form.Select name="facultad" required className="bg-light">
-                          <option value="">Selecciona tu facultad...</option>
-                          <option value="Ingeniería en Sistemas">Ingeniería en Sistemas</option>
-                          <option value="Ingeniería Civil">Ingeniería Civil</option>
-                          <option value="Ciencias de la Administración">Ciencias de la Administración</option>
-                          <option value="Ciencias Jurídicas y Sociales">Ciencias Jurídicas y Sociales</option>
-                          <option value="Psicología">Psicología</option>
-                          <option value="Arquitectura">Arquitectura</option>
-                        </Form.Select>
-                      </Form.Group>
-                    </Col>
+                  {/* --- SECCIÓN 2: UBICACIÓN (CASCADA DINÁMICA) --- */}
+                  <h5 className="mb-3 fw-bold border-bottom pb-2" style={{ color: 'var(--azul-universitario)', fontStyle: 'italic', fontFamily: 'var(--fuente-titulos)' }}>
+                    2. Dirección de Residencia
+                  </h5>
+                  <Row className="mb-4">
                     <Col md={4}>
                       <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Ciclo / Semestre</Form.Label>
-                        <Form.Select name="ciclo" required className="bg-light">
+                        <Form.Label className="fw-bold">Departamento</Form.Label>
+                        <Form.Select
+                          value={deptoSeleccionado}
+                          onChange={(e) => setDeptoSeleccionado(e.target.value)}
+                          required
+                          disabled={cargando}
+                        >
                           <option value="">Selecciona...</option>
-                          {[...Array(12)].map((_, i) => (
-                            <option key={i+1} value={i+1}>Ciclo {i+1}</option>
+                          {departamentos.map((d) => (
+                            <option key={d.ID_DEPARTAMENTO} value={d.ID_DEPARTAMENTO}>
+                              {d.NOMBRE_DEPARTAMENTO}
+                            </option>
                           ))}
                         </Form.Select>
                       </Form.Group>
                     </Col>
                     <Col md={4}>
                       <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Sección</Form.Label>
-                        <Form.Select name="seccion" required className="bg-light">
-                          <option value="">Selecciona...</option>
-                          <option value="A">A</option>
-                          <option value="B">B</option>
-                          <option value="C">C</option>
-                          <option value="D">D</option>
-                          <option value="E">E</option>
-                          <option value="U">Única (U)</option>
+                        <Form.Label className="fw-bold">Municipio</Form.Label>
+                        <Form.Select name="id_municipio" required disabled={!deptoSeleccionado}>
+                          <option value="">{deptoSeleccionado ? 'Selecciona municipio...' : 'Elige departamento primero'}</option>
+                          {municipios.map((m) => (
+                            <option key={m.ID_MUNICIPIO} value={m.ID_MUNICIPIO}>
+                              {m.NOMBRE_MUNICIPIO}
+                            </option>
+                          ))}
                         </Form.Select>
                       </Form.Group>
                     </Col>
-                    <Col md={4}>
+                    <Col md={2}>
                       <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Jornada</Form.Label>
-                        <Form.Select name="jornada" required className="bg-light">
-                          <option value="">Selecciona...</option>
-                          <option value="Matutina">Matutina</option>
-                          <option value="Vespertina">Vespertina</option>
-                          <option value="Sábado">Sábado</option>
-                          <option value="Domingo">Domingo</option>
+                        <Form.Label className="fw-bold">Zona</Form.Label>
+                        <Form.Select name="zona">
+                          <option value="">N/A</option>
+                          {[...Array(25)].map((_, i) => (
+                            <option key={i + 1} value={i + 1}>{i + 1}</option>
+                          ))}
                         </Form.Select>
                       </Form.Group>
                     </Col>
-                  </Row>
-                  
-                  <Row className="mt-2">
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label className="fw-semibold">Avisar en caso de emergencia a:</Form.Label>
-                        <Form.Control 
-                          name="emergencia_nombre"
-                          type="text" 
-                          placeholder="Nombre del contacto" 
-                          required
-                          className="bg-light"
-                          pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                          title="Solo se permiten letras y espacios."
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={6}>
-                      <Form.Group className="mb-4">
-                        <Form.Label className="fw-semibold">Teléfono de emergencia:</Form.Label>
-                        <Form.Control 
-                          name="emergencia_telefono"
-                          type="text" 
-                          placeholder="Ej: 55554444" 
-                          required
-                          className="bg-light"
-                          pattern="[0-9]{8}"
-                          maxLength={8}
-                          title="El número debe contener exactamente 8 dígitos numéricos"
-                        />
+                        <Form.Label className="fw-bold">(Casa/Apto/Calle)</Form.Label>
+                        <Form.Control name="nomenclatura" type="text" required placeholder="Ej: Umg Casa C10" />
                       </Form.Group>
                     </Col>
                   </Row>
 
-                  <div className="text-center mt-3">
-                    <Button 
-                      variant="primary" 
-                      type="submit" 
-                      className="w-75 py-2 fw-bold"
-                      style={{ background: '#003366', border: 'none', fontSize: '1.1rem' }}
-                    >
-                      Completar Registro
+                  {/* --- SECCIÓN 3: ACADÉMICO (100% DINÁMICO) --- */}
+                  <h5 className="mb-3 fw-bold border-bottom pb-2" style={{ color: 'var(--azul-universitario)', fontStyle: 'italic', fontFamily: 'var(--fuente-titulos)' }}>
+                    3. Datos Académicos
+                  </h5>
+                  <Row className="mb-4">
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">Facultad</Form.Label>
+                        <Form.Select name="id_facultad" required disabled={cargando}>
+                          <option value="" disabled hidden>Selecciona tu facultad...</option>
+                          {facultades.map((f) => (
+                            <option key={f.ID_FACULTAD} value={f.ID_FACULTAD}>
+                              {f.NOMBRE_FACULTAD}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                    <Col md={3}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">Sede</Form.Label>
+                        <Form.Select name="id_sede" required disabled={cargando}>
+                          <option value="">Selecciona...</option>
+                          {sedes.map((s) => (
+                            <option key={s.ID_SEDE} value={s.ID_SEDE}>
+                              {s.NOMBRE_SEDE}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                    <Col md={3}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">Ciclo</Form.Label>
+                        <Form.Select name="id_ciclo" required disabled={cargando}>
+                          <option value="">Selecciona...</option>
+                          {ciclos.map((c) => (
+                            <option key={c.ID_CICLO} value={c.ID_CICLO}>
+                              {c.NOMBRE_CICLO}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                    <Col md={3}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">Sección</Form.Label>
+                        <Form.Select name="id_seccion" required disabled={cargando}>
+                          <option value="">Selecciona...</option>
+                          {secciones.map((s) => (
+                            <option key={s.ID_SECCION} value={s.ID_SECCION}>
+                              {s.NOMBRE_SECCION}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                    <Col md={3}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">Jornada</Form.Label>
+                        <Form.Select name="id_jornada" required disabled={cargando}>
+                          <option value="">Selecciona...</option>
+                          {jornadas.map((j) => (
+                            <option key={j.ID_JORNADA} value={j.ID_JORNADA}>
+                              {j.NOMBRE_JORNADA}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                  </Row>
+
+                  {/* --- SECCIÓN 4: EMERGENCIA --- */}
+                  <h5 className="mb-3 fw-bold border-bottom pb-2 mt-2" style={{ color: 'var(--azul-universitario)', fontStyle: 'italic', fontFamily: 'var(--fuente-titulos)' }}>
+                    4. Contacto de Emergencia
+                  </h5>
+                  <Row className="mb-4">
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold text-danger">Nombre de Contacto</Form.Label>
+                        <Form.Control name="emergencia_nombre" type="text" required placeholder="Familiar o Contacto" />
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold text-danger">Teléfono de Emergencia</Form.Label>
+                        <Form.Control name="emergencia_telefono" type="tel" required placeholder="8 dígitos" pattern="[0-9]{8}" />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+
+                  <div className="d-grid gap-2 mt-5">
+                    <Button type="submit" size="lg" className="btn-liquid" style={{ 
+                      backgroundColor: 'var(--azul-universitario)', 
+                      border: 'none',
+                      fontFamily: 'var(--fuente-titulos)',
+                      fontStyle: 'italic',
+                      fontWeight: 'bold',
+                      padding: '12px'
+                    }}>
+                      Finalizar Registro de Estudiante
                     </Button>
                   </div>
-
+                  
+                  <div className="text-center mt-4">
+                    <Link to="/login" className="text-decoration-none fw-bold" style={{ color: 'var(--azul-celeste-v1)' }}>
+                      ¿Ya tienes cuenta? Inicia Sesión aquí
+                    </Link>
+                  </div>
                 </Form>
               </Card.Body>
             </Card>
-
           </Col>
         </Row>
       </Container>
+      <ThemeSwitcher />
     </div>
   );
-}
+};
+
+export default Registro;

@@ -1,0 +1,673 @@
+/* 1. Fuentes */
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
+
+:root {
+  /* ==========================================
+     PALETA AZUL (DEFAULT)
+     ========================================== */
+  --color-primario: #1F4E79;
+  --color-primario-profundo: #003366;
+  --color-accion: #1A6AA6;
+  --color-acento-1: #20A4D6;
+  --color-acento-2: #00CCFF;
+  --color-fondo-suave: #A7C9D6;
+  --color-fondo-claro: #CCF2FF;
+  --color-alerta: #C7352E;
+
+  /* Aliases institucionales (mantener compatibilidad) */
+  --azul-oscuro: var(--color-primario);
+  --azul-marino: var(--color-primario-profundo);
+  --azul-universitario: var(--color-accion);
+  --azul-celeste-v1: var(--color-acento-1);
+  --azul-celeste-v2: var(--color-acento-2);
+  --fondo-banner: var(--color-fondo-suave);
+  --fondo-curvas: var(--color-fondo-claro);
+  --fondo-general: #F2F2F2;
+  --fondo-blanco: #FFFFFF;
+  --rojo-institucional: #C7352E;
+
+  /* ==========================================
+     TIPOGRAFÍA
+     ========================================== */
+  --fuente-principal: 'Century Gothic', CenturyGothic, AppleGothic, sans-serif;
+  --fuente-titulos: 'Ubuntu', sans-serif;
+
+  /* ==========================================
+     LIQUID GLASS TOKENS
+     ========================================== */
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-solid: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-blur: 20px;
+  --glass-shadow: 
+    0 8px 32px rgba(31, 78, 121, 0.12),
+    0 2px 8px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 rgba(0,0,0,0.02);
+  --glass-shadow-hover:
+    0 16px 48px rgba(31, 78, 121, 0.18),
+    0 4px 12px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --glass-shadow-deep:
+    0 20px 60px rgba(31, 78, 121, 0.15),
+    0 8px 24px rgba(0,0,0,0.08),
+    inset 0 2px 0 rgba(255, 255, 255, 0.7);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================
+   TEMA ROJO UMG
+   ========================================== */
+[data-theme="rojo"] {
+  --color-primario: #A82228;
+  --color-primario-profundo: #7A1518;
+  --color-accion: #D63E38;
+  --color-acento-1: #E8655C;
+  --color-acento-2: #FF7F74;
+  --color-fondo-suave: #E0B5B5;
+  --color-fondo-claro: #FFE8E6;
+  --color-alerta: #1A6AA6;
+  --fondo-general: #F8F2F2;
+
+  --glass-shadow: 
+    0 8px 32px rgba(168, 34, 40, 0.10),
+    0 2px 8px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 rgba(0,0,0,0.02);
+  --glass-shadow-hover:
+    0 16px 48px rgba(168, 34, 40, 0.15),
+    0 4px 12px rgba(0,0,0,0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --glass-shadow-deep:
+    0 20px 60px rgba(168, 34, 40, 0.12),
+    0 8px 24px rgba(0,0,0,0.08),
+    inset 0 2px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* ==========================================
+   BASE
+   ========================================== */
+* { box-sizing: border-box; }
+
+body {
+  font-family: var(--fuente-principal);
+  background-color: var(--fondo-general);
+  color: #1a1a2e;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+}
+
+h1, h2, h3, h4, h5, .titulo-ubuntu {
+  font-family: var(--fuente-titulos) !important;
+  font-style: italic !important;
+  color: var(--color-accion);
+}
+
+::selection { background: var(--color-acento-2); color: white; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--fondo-general); }
+::-webkit-scrollbar-thumb { background: var(--color-acento-1); border-radius: 10px; }
+
+/* ==========================================
+   ANIMATED BACKGROUND MESH
+   ========================================== */
+.bg-mesh {
+  background: 
+    linear-gradient(135deg, 
+      color-mix(in srgb, var(--color-fondo-claro) 20%, var(--fondo-general)) 0%, 
+      var(--fondo-general) 35%, 
+      color-mix(in srgb, var(--color-fondo-suave) 15%, var(--fondo-general)) 65%, 
+      var(--fondo-general) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-mesh::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: 
+    radial-gradient(ellipse at 20% 50%, color-mix(in srgb, var(--color-acento-2) 6%, transparent) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, color-mix(in srgb, var(--color-accion) 5%, transparent) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, color-mix(in srgb, var(--color-fondo-suave) 8%, transparent) 0%, transparent 50%);
+  animation: meshRotate 30s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes meshRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ==========================================
+   LIQUID GLASS CARD
+   ========================================== */
+.liquid-card {
+  background: var(--glass-bg-solid) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  transition: 
+    transform 0.4s var(--spring),
+    box-shadow 0.4s var(--smooth);
+  position: relative;
+}
+
+.liquid-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+  pointer-events: none;
+}
+
+.liquid-card:hover { box-shadow: var(--glass-shadow-hover) !important; }
+
+/* INTERACTIVE CARD */
+.liquid-card-interactive {
+  background: var(--glass-bg-solid) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  border: 1.5px solid rgba(0,0,0,0.04) !important;
+  box-shadow: var(--glass-shadow) !important;
+  transition: 
+    transform 0.4s var(--spring),
+    box-shadow 0.4s var(--smooth),
+    border-color 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-card-interactive::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%);
+  background-size: 250% 100%;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.liquid-card-interactive:hover {
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: var(--glass-shadow-deep) !important;
+  border-color: var(--color-acento-1) !important;
+}
+
+.liquid-card-interactive:hover::after {
+  opacity: 1;
+  animation: shimmerSweep 0.8s ease forwards;
+}
+
+.liquid-card-interactive:active {
+  transform: translateY(-3px) scale(0.985);
+  transition-duration: 0.12s;
+}
+
+@keyframes shimmerSweep {
+  from { background-position: 200% center; }
+  to { background-position: -200% center; }
+}
+
+/* ==========================================
+   LIQUID GLASS BUTTONS
+   ========================================== */
+.btn-liquid {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+  transition: 
+    transform 0.35s var(--spring),
+    box-shadow 0.35s var(--smooth),
+    filter 0.3s ease !important;
+  box-shadow: 
+    0 4px 16px color-mix(in srgb, var(--color-accion) 25%, transparent),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.btn-liquid:hover {
+  transform: translateY(-3px);
+  box-shadow: 
+    0 8px 28px color-mix(in srgb, var(--color-accion) 35%, transparent),
+    inset 0 1px 0 rgba(255,255,255,0.3) !important;
+  filter: brightness(1.08);
+}
+
+.btn-liquid:active {
+  transform: translateY(-1px) scale(0.97);
+  transition-duration: 0.1s;
+  filter: brightness(0.95);
+}
+
+.btn-liquid::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.35) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.btn-liquid:active::after { opacity: 1; }
+
+/* ==========================================
+   FORM CONTROLS — GLASS INPUTS
+   ========================================== */
+.form-control,
+.form-select {
+  border: 1.5px solid rgba(0,0,0,0.1) !important;
+  border-radius: 12px !important;
+  padding: 0.65rem 0.9rem !important;
+  background: rgba(255,255,255,0.7) !important;
+  backdrop-filter: blur(6px);
+  transition: 
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    background 0.3s ease !important;
+  font-size: 0.92rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--color-acento-1) !important;
+  box-shadow: 
+    0 0 0 4px color-mix(in srgb, var(--color-acento-2) 12%, transparent),
+    0 0 20px color-mix(in srgb, var(--color-acento-2) 6%, transparent),
+    inset 0 1px 3px rgba(0,0,0,0.03) !important;
+  outline: none !important;
+  background: rgba(255,255,255,0.95) !important;
+}
+
+.form-control:hover,
+.form-select:hover {
+  border-color: rgba(0,0,0,0.18) !important;
+}
+
+.form-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700 !important;
+  color: var(--color-primario);
+  margin-bottom: 0.35rem !important;
+}
+
+/* ==========================================
+   ICON CONTAINERS — GLASS ORBS
+   ========================================== */
+.icon-glass {
+  background: linear-gradient(145deg, var(--color-fondo-claro), color-mix(in srgb, var(--color-fondo-claro) 35%, white));
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255,255,255,0.7);
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 
+    0 4px 16px color-mix(in srgb, var(--color-acento-2) 10%, transparent),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+  transition: 
+    transform 0.35s var(--spring),
+    box-shadow 0.35s var(--smooth);
+}
+
+.icon-glass:hover {
+  transform: scale(1.1) rotate(2deg);
+  box-shadow: 
+    0 8px 24px color-mix(in srgb, var(--color-acento-2) 15%, transparent),
+    inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes floatSoft {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-4px) rotate(0.5deg); }
+  75% { transform: translateY(4px) rotate(-0.5deg); }
+}
+
+@keyframes breatheGlow {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-acento-2) 0%, transparent), var(--glass-shadow); }
+  50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-acento-2) 6%, transparent), var(--glass-shadow); }
+}
+
+@keyframes accentPulse {
+  0%, 100% { opacity: 0.7; } 50% { opacity: 1; }
+}
+
+.animate-fade-in { animation: fadeInUp 0.55s var(--smooth) both; }
+.animate-float { animation: floatSoft 5s ease-in-out infinite; }
+.animate-breathe { animation: breatheGlow 3s ease-in-out infinite; }
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.06s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.14s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.22s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.30s; }
+
+/* ==========================================
+   HEADER — FROSTED GLASS
+   ========================================== */
+.header-glass {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primario) 95%, black) 0%, color-mix(in srgb, var(--color-primario-profundo) 92%, black) 100%);
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-acento-2) 15%, transparent);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+}
+
+/* ==========================================
+   SIDEBAR
+   ========================================== */
+.sidebar-link {
+  transition: 
+    background-color 0.3s ease,
+    transform 0.25s var(--spring),
+    padding-left 0.25s ease !important;
+  border-radius: 10px !important;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255,255,255,0.1) !important;
+  transform: translateX(4px);
+  padding-left: 22px !important;
+}
+
+.sidebar-link-active {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-acento-2) 18%, transparent), color-mix(in srgb, var(--color-acento-1) 10%, transparent)) !important;
+  border-left: 3px solid var(--color-acento-2);
+  box-shadow: inset 0 0 20px color-mix(in srgb, var(--color-acento-2) 5%, transparent);
+}
+
+/* ==========================================
+   STAT CARDS
+   ========================================== */
+.stat-card {
+  border-radius: 18px !important;
+  overflow: hidden;
+  background: var(--glass-bg-solid) !important;
+  backdrop-filter: blur(14px) saturate(1.3);
+  border: 1.5px solid rgba(0,0,0,0.04) !important;
+  box-shadow: var(--glass-shadow) !important;
+  transition: transform 0.4s var(--spring), box-shadow 0.4s var(--smooth);
+  position: relative;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--glass-shadow-hover) !important;
+}
+
+.stat-accent { height: 4px; border-radius: 0 0 4px 4px; }
+
+/* ==========================================
+   DECORATIVE GLASS ORBS
+   ========================================== */
+.deco-circle { position: absolute; border-radius: 50%; pointer-events: none; }
+
+.deco-circle-1 {
+  top: -140px; right: -140px;
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-fondo-claro) 50%, transparent) 0%, color-mix(in srgb, var(--color-fondo-claro) 10%, transparent) 40%, transparent 70%);
+  animation: floatSoft 9s ease-in-out infinite;
+  filter: blur(2px);
+}
+
+.deco-circle-2 {
+  bottom: -100px; left: -100px;
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-fondo-suave) 45%, transparent) 0%, color-mix(in srgb, var(--color-fondo-suave) 8%, transparent) 40%, transparent 70%);
+  animation: floatSoft 11s ease-in-out infinite reverse;
+  filter: blur(2px);
+}
+
+.deco-circle-3 {
+  top: 40%; left: 50%;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-acento-2) 6%, transparent) 0%, transparent 60%);
+  animation: floatSoft 7s ease-in-out infinite 2s;
+}
+
+/* ==========================================
+   SECTION DIVIDERS
+   ========================================== */
+h5.border-bottom {
+  border-bottom: none !important;
+  position: relative;
+  padding-bottom: 12px !important;
+}
+
+h5.border-bottom::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0;
+  width: 50px; height: 3px; border-radius: 3px;
+  background: linear-gradient(90deg, var(--color-accion), var(--color-acento-2));
+  animation: accentPulse 3s ease-in-out infinite;
+}
+
+/* ==========================================
+   ACCENT BAR TOP (SHIMMER)
+   ========================================== */
+.accent-bar {
+  height: 5px;
+  position: relative;
+  overflow: hidden;
+}
+
+.accent-bar::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  animation: shimmerBar 3s ease-in-out infinite;
+}
+
+@keyframes shimmerBar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ==========================================
+   LOGO VISIBILITY FIX
+   ========================================== */
+.logo-panel {
+  filter: contrast(1.8) brightness(0.85) saturate(1.3);
+  transition: filter 0.3s ease, transform 0.3s var(--spring);
+}
+
+.logo-panel:hover {
+  filter: contrast(2) brightness(0.8) saturate(1.5);
+  transform: scale(1.05);
+}
+
+.logo-halo {
+  position: relative;
+  display: inline-block;
+}
+
+.logo-halo::after {
+  content: '';
+  position: absolute; inset: -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-acento-2) 8%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+  animation: breatheGlow 4s ease-in-out infinite;
+}
+
+/* ==========================================
+   THEME SWITCHER
+   ========================================== */
+.theme-switcher {
+  display: flex;
+  gap: 6px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 20px;
+  padding: 4px;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.theme-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.4);
+  cursor: pointer;
+  transition: transform 0.3s var(--spring), box-shadow 0.3s ease, border-color 0.3s ease;
+  position: relative;
+}
+
+.theme-btn:hover {
+  transform: scale(1.15);
+}
+
+.theme-btn.active {
+  border-color: white;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.25), 0 2px 8px rgba(0,0,0,0.2);
+  transform: scale(1.1);
+}
+
+.theme-btn-azul {
+  background: linear-gradient(135deg, #1F4E79, #1A6AA6);
+}
+
+.theme-btn-rojo {
+  background: linear-gradient(135deg, #8B1A1A, #C7352E);
+}
+
+/* ==========================================
+   MODAL — GLASS OVERLAY (PREMIUM)
+   ========================================== */
+.modal-content {
+  backdrop-filter: blur(20px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
+  background: rgba(255,255,255,0.92) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 16px 64px rgba(0,0,0,0.12) !important;
+  overflow: hidden;
+}
+
+.modal-header-premium {
+  background: linear-gradient(135deg, var(--color-primario), var(--color-primario-profundo));
+  color: white;
+  padding: 24px 28px !important;
+  border-bottom: none !important;
+}
+
+.modal-header-premium .btn-close {
+  filter: brightness(0) invert(1);
+  opacity: 0.7;
+}
+
+.modal-header-premium .btn-close:hover {
+  opacity: 1;
+}
+
+.requisito-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(0,0,0,0.04);
+  margin-bottom: 8px;
+  transition: transform 0.2s var(--spring), background 0.2s ease;
+}
+
+.requisito-item:hover {
+  transform: translateX(4px);
+  background: rgba(255,255,255,0.9);
+}
+
+.requisito-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.requisito-icon-green {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #16a34a;
+}
+
+.requisito-icon-blue {
+  background: linear-gradient(135deg, var(--color-fondo-claro), color-mix(in srgb, var(--color-fondo-claro) 50%, white));
+  color: var(--color-accion);
+}
+
+/* ==========================================
+   FOOTER
+   ========================================== */
+.footer-glass {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primario-profundo) 97%, black), color-mix(in srgb, var(--color-primario) 95%, black));
+  backdrop-filter: blur(12px);
+  border-top: 1px solid color-mix(in srgb, var(--color-acento-2) 10%, transparent);
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.06);
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+@media (max-width: 768px) {
+  .header-glass .container {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .header-glass h4 {
+    font-size: 1rem !important;
+  }
+
+  .liquid-card-interactive {
+    margin-bottom: 0;
+  }
+
+  .deco-circle-1 { width: 250px; height: 250px; top: -80px; right: -80px; }
+  .deco-circle-2 { width: 180px; height: 180px; bottom: -60px; left: -60px; }
+  .deco-circle-3 { display: none; }
+
+  .theme-switcher {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    padding: 6px;
+  }
+}
+
+@media (max-width: 576px) {
+  .form-label {
+    font-size: 0.72rem;
+  }
+
+  .btn-liquid {
+    font-size: 0.9rem !important;
+    padding: 0.6rem !important;
+  }
+}

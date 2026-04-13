@@ -1,104 +1,170 @@
+import React, { useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import Swal from 'sweetalert2';
+import ThemeSwitcher from '../components/ThemeSwitcher';
+import '../index.css'; 
 
-export default function Login() {
+const Login = () => {
+  // Apply saved theme
+  useEffect(() => {
+    const t = localStorage.getItem('umg-theme') || 'azul';
+    document.documentElement.setAttribute('data-theme', t);
+  }, []);
+
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Aquí luego conectaremos con el backend para validar el carné...");
+    
+    const formData = new FormData(e.currentTarget);
+    const credenciales = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch('http://localhost:3001/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credenciales),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('usuarioParqueo', JSON.stringify(data.usuario));
+        const primerNombre = data.usuario.nombres.split(' ')[0];
+
+        Swal.fire({
+          title: `¡Bienvenido, ${primerNombre}!`,
+          text: 'Autenticación exitosa. Redirigiendo al sistema...',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+          background: 'var(--fondo-blanco)',
+          color: 'var(--azul-universitario)'
+        }).then(() => {
+          navigate('/dashboard');
+        });
+
+      } else {
+        Swal.fire({
+          title: 'Acceso Denegado',
+          text: data.error || 'Carné o contraseña incorrectos.',
+          icon: 'error',
+          confirmButtonText: 'Reintentar',
+          confirmButtonColor: 'var(--rojo-institucional)'
+        });
+      }
+    } catch (error) {
+      console.error("Error de conexión:", error);
+      Swal.fire({
+        title: 'Error de Servidor',
+        text: 'No se pudo conectar con la base de datos Oracle.',
+        icon: 'error',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: 'var(--rojo-institucional)'
+      });
+    }
   };
 
   return (
-    <div 
-      style={{ 
-        minHeight: '100vh', 
-        background: 'linear-gradient(to bottom, #001224, #003366)',
-        display: 'flex', 
-        alignItems: 'center' 
-      }}
-    >
-      <Container>
+    <div className="bg-mesh" style={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      
+      {/* Decorative glass circles */}
+      <div className="deco-circle deco-circle-1" />
+      <div className="deco-circle deco-circle-2" />
+      <div className="deco-circle deco-circle-3" />
+
+      <Container style={{ position: 'relative', zIndex: 1 }}>
         <Row className="justify-content-center">
-          <Col md={6} lg={5}>
+          <Col md={5} lg={4}>
             
-            {/* Botón para regresar - Ahora en blanco para que resalte en el fondo oscuro */}
-            <div className="mb-3">
-              <span 
-                style={{ cursor: 'pointer', color: '#ffffff', opacity: 0.8, fontSize: '0.9rem' }}
-                onClick={() => navigate('/')}
-                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
-              >
+            <div className="text-center mb-3 animate-fade-in">
+              <Link to="/" className="text-decoration-none" style={{ 
+                color: 'var(--color-primario)', 
+                fontSize: '0.9rem',
+                fontWeight: 'bold'
+              }}>
                 &larr; Regresar a selección de rol
-              </span>
+              </Link>
             </div>
 
-            {/* Tarjeta del Formulario (Se mantiene blanca para contraste) */}
-            <Card className="shadow-lg border-0" style={{ borderRadius: '15px' }}>
-              <Card.Body className="p-5">
-                
-                {/* Encabezado del Login */}
+            <Card className="border-0 liquid-card animate-fade-in" style={{ 
+              borderRadius: '20px', 
+              overflow: 'hidden'
+            }}>
+              {/* Barra de acento con Azul Celeste Brillante 2 [cite: 6] */}
+              <div className="accent-bar" style={{ backgroundColor: 'var(--azul-celeste-v2)' }} />
+              
+              <Card.Body className="p-4 pt-5 pb-5">
                 <div className="text-center mb-4">
-                  <img 
-                    src="/logo.png" 
-                    alt="Logo UMG" 
-                    style={{ width: '80px', marginBottom: '15px' }} 
-                  />
-                  <h3 className="fw-bold" style={{ color: '#003366' }}>Inicio de Sesión</h3>
-                  <p className="text-muted">Estudiantes y Catedráticos</p>
+                  <div className="mb-3 animate-float logo-halo">
+                    <img src="/logo.png" alt="Logo UMG" className="logo-panel" style={{ width: '120px', height: 'auto' }} />
+                  </div>
+                  <h2 className="mb-1" style={{ color: 'var(--color-accion)' }}>
+                    MiUMG Parqueo
+                  </h2>
+                  <p style={{ color: 'var(--color-primario)', fontSize: '0.88rem', marginBottom: 0 }}>
+                    Portal de acceso para estudiantes
+                  </p>
                 </div>
 
-                {/* Formulario */}
-                <Form onSubmit={handleLogin}>
-                  <Form.Group className="mb-3" controlId="formCarne">
-                    <Form.Label className="fw-semibold text-dark">Número de Carné</Form.Label>
+                <Form onSubmit={handleSubmit} style={{ fontFamily: 'var(--fuente-principal)' }}>
+                  <Form.Group className="mb-3">
+                    <Form.Label style={{ color: 'var(--color-accion)', fontWeight: 'bold' }}>Número de Carné</Form.Label>
                     <Form.Control 
-                      type="text" 
-                      placeholder="Ej: 5190-24-746" 
-                      required 
-                      className="py-2 bg-light"
+                      name="carne" type="text" required 
+                      placeholder="Ej: 5190-24-1234" 
+                      pattern="[0-9]{4}-[0-9]{2}-[0-9]{1,6}" 
                     />
                   </Form.Group>
 
-                  <Form.Group className="mb-4" controlId="formPassword">
-                    <Form.Label className="fw-semibold text-dark">Contraseña</Form.Label>
+                  <Form.Group className="mb-4">
+                    <Form.Label style={{ color: 'var(--color-accion)', fontWeight: 'bold' }}>Contraseña</Form.Label>
                     <Form.Control 
-                      type="password" 
-                      placeholder="********" 
-                      required 
-                      className="py-2 bg-light"
+                      name="password" type="password" required 
+                      placeholder="Ingresa tu contraseña"
                     />
                   </Form.Group>
 
-                  <Button 
-                    variant="primary" 
-                    type="submit" 
-                    className="w-100 mb-3 py-2 fw-bold"
-                    style={{ background: '#003366', border: 'none' }}
-                  >
-                    Ingresar al Parqueo
-                  </Button>
-
-                  {/* Enlace al Registro */}
-                  <div className="text-center mt-4 pt-3 border-top">
-                    <p className="mb-1 text-muted">¿Aún no tienes cuenta de parqueo?</p>
-                    <Button 
-                      variant="link" 
-                      onClick={() => navigate('/registro')}
-                      style={{ color: '#005b9f', fontWeight: 'bold', textDecoration: 'none', padding: 0 }}
-                    >
-                      Regístrate aquí
+                  <div className="d-grid mt-4">
+                    <Button type="submit" size="lg" className="btn-liquid" style={{ 
+                      backgroundColor: 'var(--color-accion)', 
+                      border: 'none',
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      padding: '0.75rem',
+                      fontFamily: 'var(--fuente-titulos)',
+                      fontStyle: 'italic'
+                    }}>
+                      Iniciar Sesión
                     </Button>
                   </div>
+                  
+                  <div className="text-center mt-4">
+                    <span style={{ color: 'var(--color-primario)', fontSize: '0.88rem' }}>¿Aún no tienes tu acceso? </span>
+                    <Link to="/registro" className="text-decoration-none" style={{ 
+                      color: 'var(--color-acento-1)', 
+                      fontSize: '0.9rem',
+                      fontWeight: 'bold' 
+                    }}>
+                      Regístrate aquí
+                    </Link>
+                  </div>
                 </Form>
-
               </Card.Body>
             </Card>
-
           </Col>
         </Row>
       </Container>
+      <ThemeSwitcher />
     </div>
   );
-}
+};
+
+export default Login;
