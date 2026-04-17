@@ -28,7 +28,8 @@ const LoginAdmin = () => {
       const data = await response.json();
 
       if (response.ok) {
-        if (data.usuario.rol === 1) {
+        // 🔥 EL ARREGLO ESTÁ AQUÍ: Si NO es 1, lo rebotamos.
+        if (data.usuario.rol !== 1) {
           Swal.fire({
             title: 'Acceso Restringido',
             text: 'Esta área es solo para personal administrativo.',
@@ -50,7 +51,8 @@ const LoginAdmin = () => {
           background: 'var(--fondo-blanco)',
           color: 'var(--color-primario)'
         }).then(() => {
-          navigate('/dashboard'); 
+          // 🔥 Redirigimos al nuevo Dashboard de Admin
+          navigate('/dashboard-admin'); 
         });
 
       } else {

@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Registro from './pages/Registro';
 import LoginAdmin from './pages/LoginAdmin';
 import Dashboard from './pages/Dashboard';
+import DashboardAdmin from './pages/DashboardAdmin';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/registro" element={<Registro />} />
         <Route path="/login-admin" element={<LoginAdmin />} /> 
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard-admin" element={<DashboardAdmin />} />
       </Routes>
     </BrowserRouter>
   );
