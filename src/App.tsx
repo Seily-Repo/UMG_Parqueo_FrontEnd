@@ -5,6 +5,7 @@ import Registro from './pages/Registro';
 import LoginAdmin from './pages/LoginAdmin';
 import Dashboard from './pages/Dashboard';
 import DashboardAdmin from './pages/DashboardAdmin';
+import CambiarPassword from './pages/CambiarPassword';
 
 function App() {
   return (
@@ -16,6 +17,8 @@ function App() {
         <Route path="/login-admin" element={<LoginAdmin />} /> 
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/dashboard-admin" element={<DashboardAdmin />} />
+        <Route path="/cambiar-password" element={<CambiarPassword />} />
+        <Route path="/cambiar-password" element={<CambiarPassword />} />
       </Routes>
     </BrowserRouter>
   );

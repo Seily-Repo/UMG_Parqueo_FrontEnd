@@ -6,17 +6,15 @@ import ThemeSwitcher from '../components/ThemeSwitcher';
 import '../index.css'; 
 
 const Login = () => {
-  // Apply saved theme
+  const navigate = useNavigate();
+
   useEffect(() => {
     const t = localStorage.getItem('umg-theme') || 'azul';
     document.documentElement.setAttribute('data-theme', t);
   }, []);
 
-  const navigate = useNavigate();
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
     const formData = new FormData(e.currentTarget);
     const credenciales = Object.fromEntries(formData.entries());
 
@@ -30,20 +28,39 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('usuarioParqueo', JSON.stringify(data.usuario));
-        const primerNombre = data.usuario.nombres.split(' ')[0];
+        
+        // 🔥 DESVÍO DE SEGURIDAD (Si es contraseña temporal)
+        if (data.usuario.requiereCambioPass === true) {
+          localStorage.setItem('usuarioPendiente', JSON.stringify(data.usuario));
+          
+          Swal.fire({
+            title: 'Atención requerida',
+            text: 'Estás usando una contraseña temporal. Por seguridad, debes cambiarla ahora mismo.',
+            icon: 'info',
+            confirmButtonColor: 'var(--azul-universitario)',
+            background: 'var(--fondo-blanco)',
+            color: 'var(--azul-oscuro)'
+          }).then(() => {
+            navigate('/cambiar-password'); 
+          });
 
-        Swal.fire({
-          title: `¡Bienvenido, ${primerNombre}!`,
-          text: 'Autenticación exitosa. Redirigiendo al sistema...',
-          icon: 'success',
-          timer: 1500,
-          showConfirmButton: false,
-          background: 'var(--fondo-blanco)',
-          color: 'var(--azul-universitario)'
-        }).then(() => {
-          navigate('/dashboard');
-        });
+        } else {
+          // 🔥 EL FIX: Guardamos exactamente con la llave que pide TU Dashboard ('usuarioParqueo')
+          localStorage.setItem('usuarioParqueo', JSON.stringify(data.usuario));
+          const primerNombre = data.usuario.nombres.split(' ')[0];
+
+          Swal.fire({
+            title: `¡Bienvenido, ${primerNombre}!`,
+            text: 'Acceso concedido al sistema de parqueo.',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false,
+            background: 'var(--fondo-blanco)',
+            color: 'var(--color-primario)'
+          }).then(() => {
+            navigate('/dashboard'); 
+          });
+        }
 
       } else {
         Swal.fire({
@@ -55,12 +72,10 @@ const Login = () => {
         });
       }
     } catch (error) {
-      console.error("Error de conexión:", error);
       Swal.fire({
         title: 'Error de Servidor',
-        text: 'No se pudo conectar con la base de datos Oracle.',
+        text: 'No se pudo conectar con la base de datos.',
         icon: 'error',
-        confirmButtonText: 'Entendido',
         confirmButtonColor: 'var(--rojo-institucional)'
       });
     }
@@ -75,7 +90,6 @@ const Login = () => {
       overflow: 'hidden'
     }}>
       
-      {/* Decorative glass circles */}
       <div className="deco-circle deco-circle-1" />
       <div className="deco-circle deco-circle-2" />
       <div className="deco-circle deco-circle-3" />
@@ -90,7 +104,7 @@ const Login = () => {
                 fontSize: '0.9rem',
                 fontWeight: 'bold'
               }}>
-                &larr; Regresar a selección de rol
+                &larr; Regresar al inicio
               </Link>
             </div>
 
@@ -98,34 +112,35 @@ const Login = () => {
               borderRadius: '20px', 
               overflow: 'hidden'
             }}>
-              {/* Barra de acento con Azul Celeste Brillante 2 [cite: 6] */}
-              <div className="accent-bar" style={{ backgroundColor: 'var(--azul-celeste-v2)' }} />
+              <div className="accent-bar" style={{ backgroundColor: 'var(--color-primario)' }} />
               
               <Card.Body className="p-4 pt-5 pb-5">
                 <div className="text-center mb-4">
                   <div className="mb-3 animate-float logo-halo">
-                    <img src="/logo.png" alt="Logo UMG" className="logo-panel" style={{ width: '120px', height: 'auto' }} />
+                    <img src="/logo.png" alt="Logo UMG" className="logo-panel" style={{ width: '110px', height: 'auto' }} />
                   </div>
-                  <h2 className="mb-1" style={{ color: 'var(--color-accion)' }}>
-                    MiUMG Parqueo
+                  <h2 className="mb-1" style={{ color: 'var(--color-primario)' }}>
+                    Portal Estudiantil
                   </h2>
-                  <p style={{ color: 'var(--color-primario)', fontSize: '0.88rem', marginBottom: 0 }}>
-                    Portal de acceso para estudiantes
+                  <p style={{ color: 'var(--color-accion)', fontSize: '0.88rem', marginBottom: 0 }}>
+                    Control de Parqueo UMG
                   </p>
                 </div>
 
                 <Form onSubmit={handleSubmit} style={{ fontFamily: 'var(--fuente-principal)' }}>
-                  <Form.Group className="mb-3">
-                    <Form.Label style={{ color: 'var(--color-accion)', fontWeight: 'bold' }}>Número de Carné</Form.Label>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Número de Carné</Form.Label>
                     <Form.Control 
-                      name="carne" type="text" required 
-                      placeholder="Ej: 5190-24-1234" 
-                      pattern="[0-9]{4}-[0-9]{2}-[0-9]{1,6}" 
+                      name="carne"
+                      type="text" 
+                      required 
+                      placeholder="XXXX-XX-XXXXX" 
+                      className="py-2"
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-4">
-                    <Form.Label style={{ color: 'var(--color-accion)', fontWeight: 'bold' }}>Contraseña</Form.Label>
+                    <Form.Label style={{ color: 'var(--color-primario)', fontWeight: 'bold' }}>Contraseña de Seguridad</Form.Label>
                     <Form.Control 
                       name="password" type="password" required 
                       placeholder="Ingresa tu contraseña"
@@ -134,7 +149,7 @@ const Login = () => {
 
                   <div className="d-grid mt-4">
                     <Button type="submit" size="lg" className="btn-liquid" style={{ 
-                      backgroundColor: 'var(--color-accion)', 
+                      backgroundColor: 'var(--color-primario)', 
                       border: 'none',
                       fontSize: '1rem',
                       fontWeight: 'bold',
@@ -147,13 +162,8 @@ const Login = () => {
                   </div>
                   
                   <div className="text-center mt-4">
-                    <span style={{ color: 'var(--color-primario)', fontSize: '0.88rem' }}>¿Aún no tienes tu acceso? </span>
-                    <Link to="/registro" className="text-decoration-none" style={{ 
-                      color: 'var(--color-acento-1)', 
-                      fontSize: '0.9rem',
-                      fontWeight: 'bold' 
-                    }}>
-                      Regístrate aquí
+                    <Link to="/registro" className="text-decoration-none fw-bold" style={{ color: 'var(--color-accion)' }}>
+                      ¿No tienes cuenta? Regístrate aquí
                     </Link>
                   </div>
                 </Form>

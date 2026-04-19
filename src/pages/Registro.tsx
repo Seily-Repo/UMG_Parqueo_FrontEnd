@@ -10,13 +10,11 @@ const API_BASE = 'http://localhost:3001/api';
 const Registro = () => {
   const navigate = useNavigate();
 
-  // Apply saved theme
   useEffect(() => {
     const t = localStorage.getItem('umg-theme') || 'azul';
     document.documentElement.setAttribute('data-theme', t);
   }, []);
 
-  // --- ESTADOS PARA CATÁLOGOS DINÁMICOS ---
   const [facultades, setFacultades] = useState<any[]>([]);
   const [sedes, setSedes] = useState<any[]>([]);
   const [ciclos, setCiclos] = useState<any[]>([]);
@@ -27,7 +25,6 @@ const Registro = () => {
   const [cargando, setCargando] = useState(true);
   const [deptoSeleccionado, setDeptoSeleccionado] = useState('');
 
-  // --- CARGA PARALELA DE TODOS LOS CATÁLOGOS ---
   useEffect(() => {
     const cargarCatalogos = async () => {
       try {
@@ -60,7 +57,6 @@ const Registro = () => {
     cargarCatalogos();
   }, []);
 
-  // --- CASCADA: Departamento → Municipios ---
   useEffect(() => {
     if (!deptoSeleccionado) {
       setMunicipios([]);
@@ -86,11 +82,19 @@ const Registro = () => {
     const formData = new FormData(e.currentTarget);
     const datosUsuario = Object.fromEntries(formData.entries());
 
-    // 🔥 Detectar si quien está registrando es el Admin
-    const adminGuardado = localStorage.getItem('usuarioAdmin');
+    // 🌟 DEBUG NUEVO E INDESTRUCTIBLE 🌟
+    console.log("🌟 --- INICIANDO VALIDACIÓN DE SESIÓN --- 🌟");
+    const sessionAdmin = localStorage.getItem('usuarioAdmin');
+    console.log("🌟 1. Texto encontrado en memoria:", sessionAdmin);
+    
+    // Si la variable sessionAdmin tiene ALGO adentro, esAdmin será true. Si está vacía (null), será false. ¡No hay pierde!
+    const esAdmin = sessionAdmin ? true : false; 
+    console.log("🌟 2. Evaluación Final (¿Es Admin?):", esAdmin);
+    console.log("🌟 ------------------------------------- 🌟");
+
     const payload = {
       ...datosUsuario,
-      creadoPorAdmin: adminGuardado ? true : false // Bandera para el Backend
+      creadoPorAdmin: esAdmin // Mandamos el true o false al backend
     };
 
     try {
@@ -104,10 +108,9 @@ const Registro = () => {
 
       if (response.ok) {
         Swal.fire({
-          title: '¡Registro Exitoso!',
-          text: 'El perfil ha sido creado exitosamente.',
+          title: '¡Registro Completado!',
+          text: esAdmin ? 'Usuario administrativo creado con éxito.' : 'Tu perfil ha sido creado exitosamente.',
           icon: 'success',
-          confirmButtonText: 'Continuar',
           confirmButtonColor: 'var(--azul-universitario)',
           background: 'var(--fondo-blanco)',
           color: 'var(--azul-oscuro)'
@@ -126,6 +129,8 @@ const Registro = () => {
       Swal.fire('Error de Conexión', 'El servidor de base de datos no responde.', 'error');
     }
   };
+
+  const adminActivo = localStorage.getItem('usuarioAdmin') ? true : false;
 
   return (
     <div style={{ backgroundColor: 'var(--fondo-general)', minHeight: '100vh', padding: '40px 0' }}>
@@ -375,7 +380,7 @@ const Registro = () => {
                     </Button>
                   </div>
                   
-                  {!localStorage.getItem('usuarioAdmin') && (
+                  {!adminActivo && (
                     <div className="text-center mt-4">
                       <Link to="/login" className="text-decoration-none fw-bold" style={{ color: 'var(--azul-celeste-v1)' }}>
                         ¿Ya tienes cuenta? Inicia Sesión aquí
