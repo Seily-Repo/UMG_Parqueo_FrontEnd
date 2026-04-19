@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
 import { useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 
@@ -26,7 +27,7 @@ const Registro = () => {
   const [cargando, setCargando] = useState(true);
   const [deptoSeleccionado, setDeptoSeleccionado] = useState('');
 
-  // --- CARGA PARALELA DE TODOS LOS CATÁLOGOS (Promise.all nativo) ---
+  // --- CARGA PARALELA DE TODOS LOS CATÁLOGOS ---
   useEffect(() => {
     const cargarCatalogos = async () => {
       try {
@@ -85,11 +86,18 @@ const Registro = () => {
     const formData = new FormData(e.currentTarget);
     const datosUsuario = Object.fromEntries(formData.entries());
 
+    // 🔥 Detectar si quien está registrando es el Admin
+    const adminGuardado = localStorage.getItem('usuarioAdmin');
+    const payload = {
+      ...datosUsuario,
+      creadoPorAdmin: adminGuardado ? true : false // Bandera para el Backend
+    };
+
     try {
       const response = await fetch(`${API_BASE}/auth/registro`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosUsuario),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -97,14 +105,14 @@ const Registro = () => {
       if (response.ok) {
         Swal.fire({
           title: '¡Registro Exitoso!',
-          text: 'Tu perfil ha sido creado. Ya puedes iniciar sesión con tu carné.',
+          text: 'El perfil ha sido creado exitosamente.',
           icon: 'success',
-          confirmButtonText: 'Ir al Login',
+          confirmButtonText: 'Continuar',
           confirmButtonColor: 'var(--azul-universitario)',
           background: 'var(--fondo-blanco)',
           color: 'var(--azul-oscuro)'
         }).then((result) => {
-          if (result.isConfirmed) navigate('/login');
+          if (result.isConfirmed) navigate(-1); 
         });
       } else {
         Swal.fire({
@@ -115,12 +123,7 @@ const Registro = () => {
         });
       }
     } catch (error) {
-      Swal.fire({
-        title: 'Error de Conexión',
-        text: 'El servidor de base de datos no responde.',
-        icon: 'error',
-        confirmButtonColor: 'var(--rojo-institucional)'
-      });
+      Swal.fire('Error de Conexión', 'El servidor de base de datos no responde.', 'error');
     }
   };
 
@@ -130,24 +133,50 @@ const Registro = () => {
         <Row className="justify-content-center">
           <Col md={10} lg={9}>
             <Card className="border-0 shadow-lg liquid-card" style={{ borderRadius: '20px' }}>
-              {/* Acento visual según Guía de Diseño */}
               <div style={{ height: '5px', backgroundColor: 'var(--azul-celeste-v2)' }} />
-              
-              <Card.Body className="p-5">
+
+              <Card.Body className="p-4 p-md-5">
+                
+                {/* BOTÓN REGRESAR MODERNO */}
+                <div className="d-flex justify-content-start mb-4 animate-fade-in">
+                  <Button 
+                    onClick={() => navigate(-1)} 
+                    className="d-flex align-items-center shadow-sm rounded-pill px-4 py-2"
+                    style={{ 
+                      backgroundColor: 'var(--fondo-blanco)', 
+                      color: 'var(--azul-oscuro)', 
+                      border: '1px solid rgba(0,0,0,0.08)',
+                      transition: 'all 0.3s ease',
+                      fontWeight: 'bold'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--azul-universitario)';
+                      e.currentTarget.style.color = '#fff';
+                      e.currentTarget.style.transform = 'translateX(-5px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'var(--fondo-blanco)';
+                      e.currentTarget.style.color = 'var(--azul-oscuro)';
+                      e.currentTarget.style.transform = 'translateX(0)';
+                    }}
+                  >
+                    <ArrowLeft size={20} className="me-2" />
+                    Regresar
+                  </Button>
+                </div>
+
                 <div className="text-center mb-5">
                   <h2 className="fw-bold" style={{ color: 'var(--azul-universitario)', fontStyle: 'italic', fontFamily: 'var(--fuente-titulos)' }}>
                     Registro de Parqueo UMG
                   </h2>
                   <p className="text-muted" style={{ fontFamily: 'var(--fuente-principal)' }}>
-                    Ingresa tus datos para la asignación de marbete y acceso vehicular
+                    Ingresa los datos para la asignación de marbete y acceso vehicular
                   </p>
                 </div>
 
                 <Form onSubmit={handleSubmit} style={{ fontFamily: 'var(--fuente-principal)' }}>
-                  {/* Rol oculto: 1 = Estudiante */}
                   <input type="hidden" name="id_rol" value="1" />
 
-                  {/* --- SECCIÓN 1: IDENTIDAD --- */}
                   <h5 className="mb-3 fw-bold border-bottom pb-2" style={{ color: 'var(--azul-universitario)', fontStyle: 'italic', fontFamily: 'var(--fuente-titulos)' }}>
                     1. Información Personal
                   </h5>
@@ -190,7 +219,6 @@ const Registro = () => {
                     </Col>
                   </Row>
 
-                  {/* --- SECCIÓN 2: UBICACIÓN (CASCADA DINÁMICA) --- */}
                   <h5 className="mb-3 fw-bold border-bottom pb-2" style={{ color: 'var(--azul-universitario)', fontStyle: 'italic', fontFamily: 'var(--fuente-titulos)' }}>
                     2. Dirección de Residencia
                   </h5>
@@ -245,7 +273,6 @@ const Registro = () => {
                     </Col>
                   </Row>
 
-                  {/* --- SECCIÓN 3: ACADÉMICO (100% DINÁMICO) --- */}
                   <h5 className="mb-3 fw-bold border-bottom pb-2" style={{ color: 'var(--azul-universitario)', fontStyle: 'italic', fontFamily: 'var(--fuente-titulos)' }}>
                     3. Datos Académicos
                   </h5>
@@ -317,7 +344,6 @@ const Registro = () => {
                     </Col>
                   </Row>
 
-                  {/* --- SECCIÓN 4: EMERGENCIA --- */}
                   <h5 className="mb-3 fw-bold border-bottom pb-2 mt-2" style={{ color: 'var(--azul-universitario)', fontStyle: 'italic', fontFamily: 'var(--fuente-titulos)' }}>
                     4. Contacto de Emergencia
                   </h5>
@@ -345,15 +371,17 @@ const Registro = () => {
                       fontWeight: 'bold',
                       padding: '12px'
                     }}>
-                      Finalizar Registro de Estudiante
+                      Finalizar Registro
                     </Button>
                   </div>
                   
-                  <div className="text-center mt-4">
-                    <Link to="/login" className="text-decoration-none fw-bold" style={{ color: 'var(--azul-celeste-v1)' }}>
-                      ¿Ya tienes cuenta? Inicia Sesión aquí
-                    </Link>
-                  </div>
+                  {!localStorage.getItem('usuarioAdmin') && (
+                    <div className="text-center mt-4">
+                      <Link to="/login" className="text-decoration-none fw-bold" style={{ color: 'var(--azul-celeste-v1)' }}>
+                        ¿Ya tienes cuenta? Inicia Sesión aquí
+                      </Link>
+                    </div>
+                  )}
                 </Form>
               </Card.Body>
             </Card>

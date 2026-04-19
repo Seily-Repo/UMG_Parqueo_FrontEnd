@@ -671,3 +671,8 @@ h5.border-bottom::after {
     padding: 0.6rem !important;
   }
 }
+
+.admin-logout-hover:hover {
+  background-color: rgba(220, 53, 69, 0.2) !important;
+  color: #dc3545 !important;
+}
