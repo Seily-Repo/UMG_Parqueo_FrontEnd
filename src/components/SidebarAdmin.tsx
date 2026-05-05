@@ -12,11 +12,12 @@ import {
   PersonCircle,
   PencilSquare,
 } from "react-bootstrap-icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 
 const SideBarAdmin = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [vistaActual, setVistaActual] = useState("usuarios");
@@ -43,7 +44,7 @@ const SideBarAdmin = () => {
   }
 
   const SidebarItem = ({ icon: Icon, label, vista }: any) => {
-    const isActive = vistaActual === vista;
+    const isActive = location.pathname === `/dashboard-admin${vista}`;
     return (
       <Nav.Link
         onClick={() => handleChangeVista(vista)}

@@ -283,10 +283,6 @@ const DashboardAdmin = () => {
             </div>
           )}
 
-          {vistaActual === 'pagos' && <h4 className="text-muted mt-5 text-center">Módulo de Pagos en Construcción 🚧</h4>}
-          {vistaActual === 'reportes' && <h4 className="text-muted mt-5 text-center">Módulo de Reportes en Construcción 🚧</h4>}
-          {vistaActual === 'disponibilidad' && <h4 className="text-muted mt-5 text-center">Módulo de Disponibilidad en Construcción 🚧</h4>}
-
         </div>
       </div>
     </div>
