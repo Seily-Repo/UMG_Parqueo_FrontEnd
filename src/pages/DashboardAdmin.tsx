@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Badge, Button, Form, InputGroup, Spinner, Nav } from 'react-bootstrap';
-import { Search, PencilSquare, Trash, PersonLinesFill, CarFrontFill, Scooter, CashStack, PieChartFill, List, Speedometer2, ArrowRepeat, BoxArrowRight, ChevronLeft, PersonCircle } from 'react-bootstrap-icons';
+import { Search, PencilSquare, Trash, PersonLinesFill, CarFrontFill, Scooter, CashStack, PieChartFill, List, Speedometer2, ArrowRepeat, BoxArrowRight, ChevronLeft, PersonCircle, CarFront } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import SidebarAdmin from '../components/SidebarAdmin';
 
 const DashboardAdmin = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const DashboardAdmin = () => {
   const [busqueda, setBusqueda] = useState('');
 
   // --- EFECTOS DE INICIO ---
+  /*
   useEffect(() => {
     const adminGuardado = localStorage.getItem('usuarioAdmin');
     if (adminGuardado) {
@@ -26,8 +28,9 @@ const DashboardAdmin = () => {
       navigate('/login-admin');
     }
     cargarUsuarios();
-  }, [navigate]);
+  }, [navigate]); */
 
+  /*
   const cargarUsuarios = async () => {
     setCargando(true);
     try {
@@ -41,7 +44,7 @@ const DashboardAdmin = () => {
     } finally {
       setCargando(false);
     }
-  };
+  };*/
 
   // --- ACCIONES INTERACTIVAS ---
   
@@ -101,21 +104,6 @@ const DashboardAdmin = () => {
     navigate('/registro');
   };
 
-  const handleLogout = () => {
-    Swal.fire({
-      title: '¿Cerrar Sesión?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: 'var(--azul-universitario)',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, salir'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        localStorage.removeItem('usuarioAdmin');
-        navigate('/login-admin');
-      }
-    });
-  };
 
   // 🔥 NUEVO: Lógica de filtrado para la tabla
   const usuariosFiltrados = usuarios.filter(u => 
@@ -123,27 +111,6 @@ const DashboardAdmin = () => {
     u.NOMBRE.toLowerCase().includes(busqueda.toLowerCase()) ||
     u.CORREO.toLowerCase().includes(busqueda.toLowerCase())
   );
-
-  // --- COMPONENTES VISUALES ---
-  const SidebarItem = ({ icon: Icon, label, vista }: any) => {
-    const isActive = vistaActual === vista;
-    return (
-      <Nav.Link 
-        onClick={() => setVistaActual(vista)}
-        className={`d-flex align-items-center px-4 py-3 text-white mb-1`}
-        style={{ 
-          cursor: 'pointer', transition: '0.2s',
-          backgroundColor: isActive ? 'rgba(255,255,255,0.05)' : 'transparent',
-          borderLeft: isActive ? '4px solid var(--color-accion, #00d2ff)' : '4px solid transparent'
-        }}
-      >
-        <Icon size={20} className="me-3" style={{ color: isActive ? 'var(--color-accion, #00d2ff)' : 'rgba(255,255,255,0.7)' }} />
-        <span style={{ display: sidebarOpen ? 'block' : 'none', fontWeight: isActive ? 'bold' : 'normal', color: isActive ? '#fff' : 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>
-          {label}
-        </span>
-      </Nav.Link>
-    );
-  };
 
   const StatCard = ({ title, value, icon: Icon, color }: any) => (
     <Col lg={3} sm={6} className="mb-4">
@@ -168,36 +135,7 @@ const DashboardAdmin = () => {
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--fondo-general, #f4f7f6)' }}>
       
       {/* ================= BARRA LATERAL (SIDEBAR) ================= */}
-      <div style={{ width: sidebarOpen ? '260px' : '80px', backgroundColor: 'var(--azul-oscuro, #002b5c)', transition: 'width 0.3s ease', zIndex: 1000 }} className="d-flex flex-column">
-        <div className="text-center py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-          <img src="/logo.png" alt="UMG" style={{ width: sidebarOpen ? '55px' : '40px', transition: '0.3s' }} />
-          {sidebarOpen && (
-            <div className="mt-2 animate-fade-in">
-              <h4 className="mb-0 fw-bold" style={{ color: 'var(--color-accion, #00d2ff)', fontStyle: 'italic' }}>MiUMG</h4>
-              <small style={{ color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', fontSize: '0.65rem' }}>CONTROL DE PARQUEO</small>
-            </div>
-          )}
-        </div>
-        
-        <Nav className="flex-column mt-3 flex-grow-1">
-          <SidebarItem icon={Speedometer2} label="Inicio" vista="dashboard" />
-          <SidebarItem icon={PersonLinesFill} label="Gestión de Usuarios" vista="usuarios" />
-          <SidebarItem icon={CashStack} label="Pagos y Cobros" vista="pagos" />
-          <SidebarItem icon={PieChartFill} label="Reportes" vista="reportes" />
-        </Nav>
-
-        <div className="mt-auto" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <Nav.Link onClick={() => setSidebarOpen(!sidebarOpen)} className="d-flex align-items-center px-4 py-3 text-white" style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.6)' }}>
-            <ChevronLeft size={20} className="me-3" style={{ transform: sidebarOpen ? 'rotate(0deg)' : 'rotate(180deg)', transition: '0.3s' }} />
-            <span style={{ display: sidebarOpen ? 'block' : 'none', whiteSpace: 'nowrap' }}>Minimizar</span>
-          </Nav.Link>
-          <Nav.Link onClick={handleLogout} className="d-flex align-items-center px-4 py-3 admin-logout-hover" style={{ cursor: 'pointer', transition: '0.2s', color: '#ff6b6b' }}>
-            <BoxArrowRight size={20} className="me-3" />
-            <span style={{ display: sidebarOpen ? 'block' : 'none', fontWeight: 'bold', whiteSpace: 'nowrap' }}>Cerrar Sesión</span>
-          </Nav.Link>
-        </div>
-      </div>
-
+     <SidebarAdmin />
       {/* ================= CONTENIDO PRINCIPAL ================= */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         
@@ -268,7 +206,7 @@ const DashboardAdmin = () => {
                       </InputGroup>
                     </Col>
                     <Col md={6} className="text-md-end mt-3 mt-md-0">
-                      <Button variant="light" className="me-2" onClick={cargarUsuarios} title="Recargar datos">
+                      <Button variant="light" className="me-2" /*onClick={cargarUsuarios}*/ title="Recargar datos">
                         <ArrowRepeat size={20} className={cargando ? 'text-muted' : 'text-primary'} />
                       </Button>
                       <Button 
@@ -347,6 +285,7 @@ const DashboardAdmin = () => {
 
           {vistaActual === 'pagos' && <h4 className="text-muted mt-5 text-center">Módulo de Pagos en Construcción 🚧</h4>}
           {vistaActual === 'reportes' && <h4 className="text-muted mt-5 text-center">Módulo de Reportes en Construcción 🚧</h4>}
+          {vistaActual === 'disponibilidad' && <h4 className="text-muted mt-5 text-center">Módulo de Disponibilidad en Construcción 🚧</h4>}
 
         </div>
       </div>
