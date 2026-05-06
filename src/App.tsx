@@ -9,6 +9,9 @@ import CambiarPassword from './pages/CambiarPassword';
 import Disponibilidad from './pages/DashboardAdmin/disponibilidad';
 import Pagos from './pages/DashboardAdmin/pagos';
 import Reportes from './pages/DashboardAdmin/reportes';
+import ReporteFinanciero from './pages/DashboardAdmin/reportes/financieros';
+import ReporteGerencial from './pages/DashboardAdmin/reportes/gerenciales';
+import ReporteAdministrativo from './pages/DashboardAdmin/reportes/administrativos';
 
 function App() {
   return (
@@ -25,6 +28,9 @@ function App() {
         <Route path="/dashboard-admin/disponibilidad" element={<Disponibilidad />} />
         <Route path="/dashboard-admin/pagos" element={<Pagos />} />
         <Route path="/dashboard-admin/reportes" element={<Reportes />} />
+        <Route path="/reportes/financieros" element={<ReporteFinanciero />} />
+        <Route path="/reportes/gerenciales" element={<ReporteGerencial />} />
+        <Route path="/reportes/administrativos" element={<ReporteAdministrativo />} />
       </Routes>
     </BrowserRouter>
   );
