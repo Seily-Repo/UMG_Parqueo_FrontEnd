@@ -1,154 +1,272 @@
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
+import axios from "axios";
 import SideBarAdmin from "../../../components/SidebarAdmin";
 
-function ReporteAdministrativo() {
-  const [data, setData] = useState(null);
-  const [fechaInicio, setFechaInicio] = useState("");
-  const [fechaFin, setFechaFin] = useState("");
+const API_URL = "http://localhost:3001/api/reportes";
 
-  useEffect(() => {
-    obtenerDatos();
-  }, []);
+function PanelParqueo() {
+  const [anio, setAnio] = useState("");
+  const [mes, setMes] = useState("");
+  const [dia, setDia] = useState("");
 
-  const obtenerDatos = async () => {
+  const [datos, setDatos] = useState([]);
+  const [total, setTotal] = useState(0);
+
+  const [loading, setLoading] = useState(false);
+
+  // ============================================
+  // VALIDAR
+  // ============================================
+
+  const validar = () => {
+    if (!anio) {
+      alert("Selecciona un año");
+      return false;
+    }
+
+    return true;
+  };
+
+  // ============================================
+  // BUSCAR
+  // ============================================
+
+  const buscar = async () => {
+    if (!validar()) return;
+
+    setLoading(true);
+
     try {
-      const res = await fetch("http://localhost:4000/api/reportes/reporte-administrativo");
-      const json = await res.json();
-      setData(json);
-    } catch (err) {
-      console.error(err);
+      const response = await axios.get(`${API_URL}/reporte-administrativo`, {
+        params: {
+          anio,
+          mes,
+          dia,
+        },
+      });
+
+      setDatos(response.data.datos);
+      setTotal(response.data.total);
+    } catch (error) {
+      console.error("Error:", error);
+
+      alert("Error al obtener datos");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filtrar = async () => {
-    try {
-      const url = new URL("http://localhost:4000/api/reportes/reporte-administrativo");
-      url.searchParams.append("fecha_inicio", fechaInicio);
-      url.searchParams.append("fecha_fin", fechaFin);
+  // ============================================
+  // EXCEL
+  // ============================================
 
-      const res = await fetch(url);
-      const json = await res.json();
-      setData(json);
-    } catch (err) {
-      console.error(err);
-    }
+  const excel = () => {
+    if (!validar()) return;
+
+    window.open(`${API_URL}/excel?anio=${anio}&mes=${mes}&dia=${dia}`);
   };
 
-  const limpiarFiltros = () => {
-    setFechaInicio("");
-    setFechaFin("");
-    obtenerDatos();
+  // ============================================
+  // PDF
+  // ============================================
+
+  const pdf = () => {
+    if (!validar()) return;
+
+    window.open(`${API_URL}/pdf?anio=${anio}&mes=${mes}&dia=${dia}`);
   };
 
-  /*if (!data) {
-    return (
-      <div className="d-flex justify-content-center align-items-center vh-100">
-        <div className="spinner-border text-primary"></div>
-      </div>
-    );
-  }*/
+  // ============================================
+  // LIMPIAR
+  // ============================================
+
+  const limpiar = () => {
+    setAnio("");
+    setMes("");
+    setDia("");
+
+    setDatos([]);
+    setTotal(0);
+  };
 
   return (
-    <div style={{
+    <div
+      style={{
         display: "flex",
         minHeight: "100vh",
         backgroundColor: "var(--fondo-general, #f4f7f6)",
-      }}>
-    <SideBarAdmin />
-    <div className="card report-card p-4 w-100 mt-3 container py-4">
-      
-      <div className="text-center mb-4">
-        <h1 className="fw-bold uppercase">📊 DASHBOARD ADMINISTRATIVO</h1>
-        <p className="text-muted">Resumen general del sistema</p>
-      </div>
+      }}
+    >
+      <SideBarAdmin />
 
-      <div className="card shadow-sm mb-4 p-3">
-        <div className="row g-2 align-items-center">
-          <div className="col-md">
-            <input
-              type="datetime-local"
-              className="form-control"
-              value={fechaInicio}
-              onChange={e => setFechaInicio(e.target.value)}
-            />
+      <div className="bg-light min-vh-100 w-100">
+        {/* TOPBAR */}
+        <div className="bg-primary text-white text-center py-3 shadow">
+          <h3 className="m-0">
+            <i className="bi bi-car-front-fill me-2"></i>
+            PANEL ADMINISTRATIVO - PARQUEO UMG VILLA NUEVA
+          </h3>
+        </div>
+
+        {/* CONTENIDO */}
+        <div className="container py-4">
+          {/* CARD FILTROS */}
+          <div className="card shadow border-0 mb-4">
+            <div className="card-body">
+              <h4 className="mb-4">
+                <i className="bi bi-funnel-fill me-2"></i>
+                Filtros
+              </h4>
+
+              <div className="row g-3">
+                {/* AÑO */}
+                <div className="col-md-4">
+                  <label className="form-label">Año</label>
+
+                  <select
+                    className="form-select"
+                    value={anio}
+                    onChange={(e) => setAnio(e.target.value)}
+                  >
+                    <option value="">Seleccionar año</option>
+
+                    <option value="2025">2025</option>
+
+                    <option value="2026">2026</option>
+                  </select>
+                </div>
+
+                {/* MES */}
+                <div className="col-md-4">
+                  <label className="form-label">Mes</label>
+
+                  <select
+                    className="form-select"
+                    value={mes}
+                    onChange={(e) => setMes(e.target.value)}
+                  >
+                    <option value="">Seleccionar mes</option>
+
+                    <option value="1">Enero</option>
+                    <option value="2">Febrero</option>
+                    <option value="3">Marzo</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Mayo</option>
+                    <option value="6">Junio</option>
+                    <option value="7">Julio</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                  </select>
+                </div>
+
+                {/* DÍA */}
+                <div className="col-md-4">
+                  <label className="form-label">Día</label>
+
+                  <select
+                    className="form-select"
+                    value={dia}
+                    onChange={(e) => setDia(e.target.value)}
+                  >
+                    <option value="">Seleccionar día</option>
+
+                    {[...Array(31)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {i + 1}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* BOTONES */}
+              <div className="mt-4 d-flex flex-wrap gap-2">
+                <button className="btn btn-primary" onClick={buscar}>
+                  <i className="bi bi-search me-2"></i>
+                  Buscar
+                </button>
+
+                <button className="btn btn-success" onClick={excel}>
+                  <i className="bi bi-file-earmark-excel-fill me-2"></i>
+                  Excel
+                </button>
+
+                <button className="btn btn-danger" onClick={pdf}>
+                  <i className="bi bi-file-earmark-pdf-fill me-2"></i>
+                  PDF
+                </button>
+
+                <button className="btn btn-secondary" onClick={limpiar}>
+                  <i className="bi bi-eraser-fill me-2"></i>
+                  Limpiar
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="col-md">
-            <input
-              type="datetime-local"
-              className="form-control"
-              value={fechaFin}
-              onChange={e => setFechaFin(e.target.value)}
-            />
+          {/* CONTADOR */}
+          <div className="alert alert-primary shadow-sm">
+            <h5 className="m-0">
+              <i className="bi bi-database-fill me-2"></i>
+              Total de registros: {total}
+            </h5>
           </div>
 
-          <div className="col-md-auto">
-            <button className="btn btn-primary w-100" onClick={filtrar}>
-              <i className="fi fi-rr-filter me-2"></i>
-              Filtrar
-            </button>
-          </div>
+          {/* TABLA */}
+          <div className="card shadow border-0">
+            <div className="card-body">
+              <div className="table-responsive">
+                <table className="table table-hover align-middle">
+                  <thead className="table-primary">
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Placa</th>
+                      <th>Vehículo</th>
+                      <th>Jornada</th>
+                      <th>Fecha Asignación</th>
+                    </tr>
+                  </thead>
 
-          <div className="col-md-auto">
-            <button className="btn btn-danger w-100" onClick={limpiarFiltros}>
-              <i className="fi fi-rr-cross-circle me-2"></i>
-              Limpiar
-            </button>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan="5" className="text-center py-4">
+                          <div className="spinner-border text-primary"></div>
+                        </td>
+                      </tr>
+                    ) : datos.length > 0 ? (
+                      datos.map((r, index) => (
+                        <tr key={index}>
+                          <td>{r.usuario}</td>
+
+                          <td>{r.placa}</td>
+
+                          <td>{r.vehiculo}</td>
+
+                          <td>{r.jornada}</td>
+
+                          <td>{r.fecha}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="text-center text-muted py-4">
+                          No hay datos disponibles
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-      <div className="text-center mb-4">
-        <button
-          onClick={() => window.open("http://localhost:3001/reporte-pdf")}
-          className="btn btn-dark px-4 py-2 shadow"
-        >
-          <i className="fi fi-rr-file-pdf me-2"></i>
-          Descargar Reporte PDF
-        </button>
-      </div>
-      {/*
-      <div className="row g-4">
-        <Card title="Usuarios Totales" value={data.total_usuarios} icon="fi fi-rr-users" />
-        <Card title="Usuarios Activos" value={data.usuarios_activos} icon="fi fi-rr-user-check" />
-        <Card title="Usuarios Inactivos" value={data.usuarios_inactivos} icon="fi fi-rr-user-delete" />
-        <Card title="Accesos Totales" value={data.total_accesos} icon="fi fi-rr-door-open" />
-        <Card title="Accesos Permitidos" value={data.accesos_permitidos} icon="fi fi-rr-shield-check" />
-        <Card title="Accesos Denegados" value={data.accesos_denegados} icon="fi fi-rr-shield-exclamation" />
-        <Card title="Vehículos" value={data.total_vehiculos} icon="fi fi-rr-car" />
-        <Card title="Tarjetas Activas" value={data.tarjetas_activas} icon="fi fi-rr-id-badge" />
-      </div>*/}
-      <div className="row g-4">
-        <Card title="Usuarios Totales" value={5} icon="fi fi-rr-users" />
-        <Card title="Usuarios Activos" value={5} icon="fi fi-rr-user-check" />
-        <Card title="Usuarios Inactivos" value={0} icon="fi fi-rr-delete-user" />
-        <Card title="Accesos Totales" value={5} icon="fi fi-rr-door-open" />
-        <Card title="Accesos Permitidos" value={5} icon="fi fi-rr-shield-check" />
-        <Card title="Accesos Denegados" value={0} icon="fi fi-rr-shield-exclamation" />
-        <Card title="Vehículos" value={5} icon="fi fi-rr-car" />
-        <Card title="Tarjetas Activas" value={4} icon="fi fi-rr-id-badge" />
-      </div>
-    </div>
-    
-    </div>
-  );
-}
-function Card({ title, value, icon }) {
-  return (
-    <div className="col-md-6 col-lg-3">
-      <div className="card shadow h-100 border-0 card-hover text-bg-light">
-        <div className="card-body text-center">
-          
-          <div className="mb-4">
-            <i className={`${icon} fs-2 text-primary`}></i>
-          </div>
-
-          <h6 className="text-muted">{title}</h6>
-          <h3 className="fw-bold">{value}</h3>
-        </div>
-      </div>
     </div>
   );
 }
 
-export default ReporteAdministrativo;
+export default PanelParqueo;
