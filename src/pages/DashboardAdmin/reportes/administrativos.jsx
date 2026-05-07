@@ -32,7 +32,7 @@ function PanelParqueo() {
   // ============================================
 
   const buscar = async () => {
-    if (!validar()) return;
+    //if (!validar()) return;
 
     setLoading(true);
 
@@ -61,7 +61,7 @@ function PanelParqueo() {
   // ============================================
 
   const excel = () => {
-    if (!validar()) return;
+    //if (!validar()) return;
 
     window.open(`${API_URL}/excel?anio=${anio}&mes=${mes}&dia=${dia}`);
   };
@@ -71,7 +71,7 @@ function PanelParqueo() {
   // ============================================
 
   const pdf = () => {
-    if (!validar()) return;
+    //if (!validar()) return;
 
     window.open(`${API_URL}/pdf?anio=${anio}&mes=${mes}&dia=${dia}`);
   };
@@ -128,7 +128,7 @@ function PanelParqueo() {
                     value={anio}
                     onChange={(e) => setAnio(e.target.value)}
                   >
-                    <option value="">Seleccionar año</option>
+                    <option value="">Todos</option>
 
                     <option value="2025">2025</option>
 
@@ -222,11 +222,14 @@ function PanelParqueo() {
                 <table className="table table-hover align-middle">
                   <thead className="table-primary">
                     <tr>
-                      <th>Nombre</th>
+                      <th>Carné</th>
+                      <th>Usuario</th>
                       <th>Placa</th>
                       <th>Vehículo</th>
                       <th>Jornada</th>
-                      <th>Fecha Asignación</th>
+                      <th>Fecha Registro</th>
+                      <th>Pago Aprobado</th>
+                      <th>Espacio Asignado</th>
                     </tr>
                   </thead>
 
@@ -240,6 +243,8 @@ function PanelParqueo() {
                     ) : datos.length > 0 ? (
                       datos.map((r, index) => (
                         <tr key={index}>
+                          <td>{r.carne}</td>
+
                           <td>{r.usuario}</td>
 
                           <td>{r.placa}</td>
@@ -248,7 +253,19 @@ function PanelParqueo() {
 
                           <td>{r.jornada}</td>
 
-                          <td>{r.fecha}</td>
+                          <td>{r.fecha_registro}</td>
+                          <td>
+                            {r.pago_aprobado == 'SI' ? (
+                              <span className="badge bg-success">Sí</span>
+                            ) : (
+                              <span className="badge bg-danger">No</span>
+                            )}
+                          </td>
+                          <td>{r.espacio_asignado == 'SI' ? (
+                              <span className="badge bg-success">Sí</span>
+                            ) : (
+                              <span className="badge bg-danger">No</span>
+                            )}</td> 
                         </tr>
                       ))
                     ) : (
