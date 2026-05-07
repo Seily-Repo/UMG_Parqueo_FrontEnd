@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Alert, Button, Card, Spinner, Table } from 'react-bootstrap';
-import { AlertTriangle, ArrowLeft, CreditCard, Receipt, Search } from 'lucide-react';
+import { AlertTriangle, CreditCard, Receipt, Search } from 'lucide-react';
 import { useRegistration } from '../../context/RegistrationContext';
 import { getReadableApiError } from '../../../../../shared/api';
 import type { BackendEstudianteMulta } from '../../../../../shared/models/backend';
@@ -107,9 +107,14 @@ export function UserFines() {
   }
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      <Card className="shadow-sm">
-        <Card.Header className="bg-white border-bottom">
+    <div className="parking-user-view">
+      <div className="parking-payments-page__heading">
+        <h1>Disponibilidad</h1>
+        <p>Consulta multas, restricciones y disponibilidad de acceso al parqueo.</p>
+      </div>
+
+      <Card className="parking-dashboard-panel">
+        <Card.Header>
           <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div>
               <Card.Title className="mb-1 h4">Consulta de Multas</Card.Title>
@@ -117,13 +122,9 @@ export function UserFines() {
                 Revise sus multas y abra el formulario de pago para las que sigan activas
               </Card.Subtitle>
             </div>
-            <Button variant="outline-secondary" onClick={() => navigate('/parking')}>
-              <ArrowLeft size={16} className="me-2" />
-              Volver
-            </Button>
           </div>
         </Card.Header>
-        <Card.Body className="p-4">
+        <Card.Body>
           <div className="d-flex flex-wrap gap-3 mb-4">
             <Card className="border-0" style={{ backgroundColor: '#FFFFFF', minWidth: 220 }}>
               <Card.Body>

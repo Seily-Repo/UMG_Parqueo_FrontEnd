@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { Card, Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
-import { CreditCard, ArrowLeft, DollarSign, CheckCircle } from 'lucide-react';
+import { CreditCard, ArrowLeft, DollarSign, Info, WalletCards } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useRegistration } from '../../context/RegistrationContext';
 import { getReadableApiError } from '../../../../../shared/api';
@@ -40,14 +40,14 @@ function FormLayout({ amount, children }: { amount: number; children: ReactNode 
   const { currentRegistration } = useRegistration();
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      <Card className="shadow-sm">
-        <Card.Header className="bg-white border-bottom">
+    <div className="parking-payment-flow">
+      <Card className="parking-payment-card">
+        <Card.Header>
           <Card.Title className="mb-1 h4">Informacion de Pago</Card.Title>
-          <Card.Subtitle className="text-muted">Complete su pago seguro con Stripe</Card.Subtitle>
+          <Card.Subtitle>Complete su pago seguro con Stripe</Card.Subtitle>
         </Card.Header>
-        <Card.Body className="p-4">
-          <div className="p-4 rounded mb-4 text-white" style={{ background: 'linear-gradient(135deg, #0d47a1 0%, #C41230 100%)' }}>
+        <Card.Body>
+          <div className="parking-payment-summary">
             <div className="d-flex align-items-center gap-2 mb-3" style={{ opacity: 0.9 }}>
               <DollarSign size={16} />
               <small>Resumen de Pago</small>
@@ -70,8 +70,8 @@ function FormLayout({ amount, children }: { amount: number; children: ReactNode 
             </Row>
           </div>
 
-          <div className="d-flex align-items-center gap-3 mb-4 p-3 rounded" style={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6' }}>
-            <CreditCard size={20} color="#0d47a1" />
+          <div className="parking-payment-method">
+            <CreditCard size={20} />
             <div>
               <div className="fw-medium">Pago con tarjeta</div>
               <small className="text-muted">Stripe se encarga de capturar y tokenizar los datos bancarios.</small>
@@ -391,7 +391,7 @@ export function Payment() {
 
   if (missingRequirements) {
     return (
-      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+      <div className="parking-payment-flow">
         <Alert variant={currentRegistration.isDelinquent ? 'danger' : 'warning'} className="mb-4">
           {currentRegistration.isDelinquent ? <strong>No puede realizar el pago.</strong> : null} {missingRequirements}
         </Alert>
@@ -424,7 +424,20 @@ export function Payment() {
   }
 
   return (
-    <FormLayout amount={amount}>
+    <div className="parking-payments-page">
+      <div className="parking-payments-page__heading">
+        <h1>Modulo de Pagos</h1>
+        <p>Consulta tu estado de cuenta y realiza los pagos de tus planes de parqueo.</p>
+      </div>
+
+      <div className="parking-system-notice" role="status">
+        <Info size={22} />
+        <span>
+          <strong>Aviso de Sistema:</strong> Tienes un pago pendiente por registro de vehiculo. Si no se registra en los
+          proximos <strong>10 dias habiles</strong>, el acceso sera bloqueado.
+        </span>
+      </div>
+
       {planError && <Alert variant="danger" className="mb-4">{planError}</Alert>}
 
       {loadError && <Alert variant="danger" className="mb-4">{loadError}</Alert>}
@@ -438,64 +451,60 @@ export function Payment() {
         </div>
       )}
 
-      <Form onSubmit={handleCreateIntent}>
-        <Row className="g-3 mb-4">
-          <Col md={4}>
-            <Form.Group>
-              <Form.Label>ID de Pago</Form.Label>
-              <Form.Control type="number" value={paymentData.paymentId} readOnly />
-              <Form.Text className="text-muted">
-                {isLoadingNextId ? 'Consultando siguiente correlativo...' : 'Se propone automaticamente el siguiente ID disponible.'}
-              </Form.Text>
-            </Form.Group>
-          </Col>
-          <Col md={8}>
-            <Form.Group>
-              <Form.Label>Carnet</Form.Label>
+      <Form onSubmit={handleCreateIntent} className="parking-pending-charges">
+        <Card className="parking-pending-charges__card">
+          <Card.Header>
+            <Card.Title>Cargos Pendientes en Cuenta</Card.Title>
+          </Card.Header>
+          <Card.Body>
+            <div className="parking-charge-table">
+              <div className="parking-charge-table__head">
+                <span>Concepto del Cargo</span>
+                <span>Estado</span>
+                <span>Monto</span>
+                <span>Accion</span>
+              </div>
+              <div className="parking-charge-table__row">
+                <div>
+                  <strong>{planLabel}</strong>
+                  <small>{planDescription}</small>
+                </div>
+                <div>
+                  <span className="parking-charge-table__badge">Pendiente</span>
+                </div>
+                <div className="parking-charge-table__amount">Q.{amount.toFixed(2)}</div>
+                <div>
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    className="parking-charge-table__pay"
+                    disabled={loadingPlan || !!planError || isLoadingIntent || isLoadingNextId}
+                  >
+                    {isLoadingIntent ? <Spinner size="sm" className="me-2" /> : <WalletCards size={16} className="me-2" />}
+                    Pagar
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="parking-payment-hidden-fields" aria-hidden="true">
+              <Form.Control type="number" value={paymentData.paymentId} readOnly tabIndex={-1} />
               <Form.Control
                 type="text"
                 value={paymentData.carnet}
                 onChange={(e) => setPaymentData((prev) => ({ ...prev, carnet: e.target.value }))}
-                placeholder="5190-23-10007"
+                tabIndex={-1}
               />
-            </Form.Group>
-          </Col>
-          <Col md={6}>
-            <Form.Group>
-              <Form.Label>Fecha de Pago</Form.Label>
               <Form.Control
                 type="date"
                 value={paymentData.paymentDate}
                 onChange={(e) => setPaymentData((prev) => ({ ...prev, paymentDate: e.target.value }))}
+                tabIndex={-1}
               />
-            </Form.Group>
-          </Col>
-          <Col md={6}>
-            <Form.Group>
-              <Form.Label>Monto</Form.Label>
-              <Form.Control type="text" value={`Q${amount}`} readOnly />
-            </Form.Group>
-          </Col>
-        </Row>
-
-        <Alert variant="info" className="mb-4">
-          El sistema usara monto fijo de Q600 y dejara el siguiente ID listo automaticamente despues de crear el pago.
-        </Alert>
-
-        <Row className="g-3">
-          <Col xs={6}>
-            <Button variant="outline-secondary" size="lg" className="w-100 d-flex align-items-center justify-content-center" onClick={() => navigate('/parking/user')}>
-              <ArrowLeft size={16} className="me-2" />
-              Atras
-            </Button>
-          </Col>
-          <Col xs={6}>
-            <Button variant="primary" type="submit" size="lg" className="w-100" disabled={loadingPlan || !!planError || isLoadingIntent || isLoadingNextId}>
-              Crear Pago
-            </Button>
-          </Col>
-        </Row>
+            </div>
+          </Card.Body>
+        </Card>
       </Form>
-    </FormLayout>
+    </div>
   );
 }

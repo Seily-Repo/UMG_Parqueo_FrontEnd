@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useRegistration } from '../../context/RegistrationContext';
 import { Card, Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
-import { Car, Bike, Calendar, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Car, Bike, Calendar, CheckCircle, CreditCard, WalletCards } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getReadableApiError } from '../../../../../shared/api';
 import type { BackendPlanParqueo } from '../../../../../shared/models/backend';
@@ -118,27 +118,73 @@ export function UserStart() {
     { value: 'moto', label: 'Moto', icon: Bike },
     { value: 'carro', label: 'Carro', icon: Car },
   ] as const;
+  const firstName = (currentRegistration.fullName || 'Cristian Estrada').split(' ')[0] || 'Usuario';
+  const registeredVehicles = currentRegistration.vehicles?.length || 0;
+  const paymentStatus = currentRegistration.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente';
+
+  const dashboardHeader = (
+    <>
+      <h1 className="parking-user-greeting">Buenas tardes, {firstName}</h1>
+      <div className="parking-dashboard-grid">
+        <Card className="parking-dashboard-stat">
+          <Card.Body>
+            <div className="parking-dashboard-stat__icon">
+              <Car size={34} />
+            </div>
+            <div>
+              <span>VEHICULOS</span>
+              <strong>{registeredVehicles || 1}</strong>
+            </div>
+          </Card.Body>
+        </Card>
+
+        <Card className="parking-dashboard-stat">
+          <Card.Body>
+            <div className="parking-dashboard-stat__icon">
+              <WalletCards size={34} />
+            </div>
+            <div>
+              <span>ESTADO DE PAGO</span>
+              <strong className={paymentStatus === 'Pendiente' ? 'parking-dashboard-stat__danger' : ''}>
+                {paymentStatus}
+              </strong>
+            </div>
+          </Card.Body>
+        </Card>
+
+        <Card className="parking-dashboard-cta">
+          <Card.Body>
+            <div className="d-flex align-items-center gap-2 mb-2">
+              <Car size={25} />
+              <h2>Nuevo Vehiculo?</h2>
+            </div>
+            <p>Registra tu placa y modelo para habilitar tu acceso.</p>
+            <Button variant="light" onClick={() => navigate('/parking/user/vehiculos')}>
+              Registrar ahora →
+            </Button>
+          </Card.Body>
+        </Card>
+      </div>
+    </>
+  );
 
   if (currentRegistration.vehicleType && currentRegistration.parkingPlan) {
     const selectedVehicle = vehicleTypes.find((v) => v.value === currentRegistration.vehicleType);
     const VehicleIcon = selectedVehicle?.icon || Car;
 
     return (
-      <div style={{ maxWidth: 700, margin: '0 auto' }}>
-        <Card className="shadow-sm">
-          <Card.Header className="bg-white border-bottom">
+      <div className="parking-user-view">
+        {dashboardHeader}
+        <Card className="parking-dashboard-panel">
+          <Card.Header>
             <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
               <div>
                 <Card.Title className="mb-1 h4">Verificacion de Registro</Card.Title>
                 <Card.Subtitle className="text-muted">Confirme sus datos de registro</Card.Subtitle>
               </div>
-              <Button variant="outline-secondary" onClick={() => navigate('/parking')}>
-                <ArrowLeft size={16} className="me-2" />
-                Volver
-              </Button>
             </div>
           </Card.Header>
-          <Card.Body className="p-4">
+          <Card.Body>
             <div className="mb-4">
               <h5 className="mb-3">Tipo de Vehiculo</h5>
               <div
@@ -212,6 +258,7 @@ export function UserStart() {
             </div>
 
             <Button variant="primary" size="lg" className="w-100" onClick={() => navigate('/parking/user/pago')}>
+              <CreditCard size={18} className="me-2" />
               Continuar
             </Button>
           </Card.Body>
@@ -221,9 +268,10 @@ export function UserStart() {
   }
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      <Card className="shadow-sm">
-        <Card.Header className="bg-white border-bottom">
+    <div className="parking-user-view">
+      {dashboardHeader}
+      <Card className="parking-dashboard-panel">
+        <Card.Header>
           <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div>
               <Card.Title className="mb-1 h4">Registro de Parqueo</Card.Title>
@@ -231,13 +279,9 @@ export function UserStart() {
                 Ingrese sus datos para comenzar el proceso de registro
               </Card.Subtitle>
             </div>
-            <Button variant="outline-secondary" onClick={() => navigate('/parking')}>
-              <ArrowLeft size={16} className="me-2" />
-              Volver
-            </Button>
           </div>
         </Card.Header>
-        <Card.Body className="p-4">
+        <Card.Body>
           {plansError && (
             <Alert variant="danger" className="mb-4">
               {plansError}

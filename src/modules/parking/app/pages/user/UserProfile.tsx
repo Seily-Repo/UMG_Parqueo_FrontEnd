@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { Alert, Button, Card, Col, Row, Spinner, Table } from 'react-bootstrap';
-import { ArrowLeft, BadgeCheck, CreditCard, FileText, ShieldAlert } from 'lucide-react';
+import { Alert, Card, Col, Row, Spinner, Table } from 'react-bootstrap';
+import { BadgeCheck, CreditCard, FileText, ShieldAlert } from 'lucide-react';
 import { useRegistration } from '../../context/RegistrationContext';
 import { getReadableApiError } from '../../../../../shared/api';
 import type {
@@ -53,7 +52,6 @@ function getFineStatus(status?: string) {
 
 function UserProfile() {
   const { currentRegistration, updateRegistration } = useRegistration();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [student, setStudent] = useState<BackendEstudiante | null>(null);
@@ -136,30 +134,11 @@ function UserProfile() {
   }
 
   return (
-    <div
-      className="parking-shell parking-shell--photo"
-      style={{
-        backgroundImage: 'url(/assets/villanueva.webp)',
-      }}
-    >
-      <div className="container py-4">
-        <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
-          <div>
-            <p className="parking-finance-heading text-uppercase fw-semibold mb-2" style={{ letterSpacing: '0.12em', fontSize: 12 }}>
-              Modulo Financiero
-            </p>
-            <h1 className="parking-finance-heading mb-1" style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 800 }}>
-              Estado de Cuenta
-            </h1>
-            <p className="parking-finance-subheading mb-0">
-              Resumen consolidado de pagos, multas y estado administrativo.
-            </p>
-          </div>
-          <Button variant="outline-secondary" onClick={() => navigate('/parking')}>
-            <ArrowLeft size={16} className="me-2" />
-            Volver
-          </Button>
-        </div>
+    <div className="parking-user-view parking-account-view">
+      <div className="parking-payments-page__heading">
+        <h1>Estado de Cuenta</h1>
+        <p>Resumen consolidado de pagos, multas y estado administrativo.</p>
+      </div>
 
         {profileError && <Alert variant="warning">{profileError}</Alert>}
 
@@ -386,7 +365,6 @@ function UserProfile() {
             </Card>
           </Col>
         </Row>
-      </div>
     </div>
   );
 }

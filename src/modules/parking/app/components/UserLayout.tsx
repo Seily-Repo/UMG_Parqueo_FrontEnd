@@ -1,92 +1,78 @@
-import { Outlet, useLocation } from 'react-router';
-import { Container } from 'react-bootstrap';
-import { AppHeader } from './AppHeader';
-import { AppFooter } from './AppFooter';
-import villanueva from '../../../../assets/villanueva.webp';
+import { NavLink, Outlet, useNavigate } from 'react-router';
+import { Building2, Car, ChevronLeft, CreditCard, Home, LogOut, Menu, UserCircle } from 'lucide-react';
+import umgLogo from '../../../../assets/umg_logo.png';
+import { useRegistration } from '../context/RegistrationContext';
 
 export function UserLayout() {
-  const location = useLocation();
+  const navigate = useNavigate();
+  const { currentRegistration } = useRegistration();
 
-  const steps = [
-    { path: '/parking/user', label: 'Datos del vehiculo' },
-    { path: '/parking/user/pago', label: 'Pago' },
-    { path: '/parking/user/firma', label: 'Firma' },
+  const userName = currentRegistration.fullName || 'Cristian Estrada';
+
+  const navItems = [
+    { to: '/parking/user', label: 'Inicio', icon: Home },
+    { to: '/parking/user/vehiculos', label: 'Mis Vehiculos', icon: Car },
+    { to: '/parking/user/pago', label: 'Pago', icon: CreditCard },
+    { to: '/parking/user/multas', label: 'Disponibilidad', icon: Building2 },
   ];
 
-  const currentStepIndex = steps.findIndex((step) => step.path === location.pathname);
-
   return (
-    <div
-      className="parking-shell parking-shell--photo"
-      style={{
-        backgroundImage: `url(${villanueva})`,
-      }}
-    >
-      <AppHeader subtitle="Registro de Parqueo" />
+    <div className="parking-user-app">
+      <aside className="parking-user-sidebar">
+        <div className="parking-user-sidebar__brand">
+          <img src={umgLogo} alt="UMG Logo" />
+          <span>MiUMG</span>
+        </div>
 
-      <main>
-        {currentStepIndex !== -1 && location.pathname !== '/parking/user/confirmacion' && (
-          <div className="parking-progress-shell">
-            <Container className="py-4">
-              <div className="d-flex align-items-center justify-content-between">
-                {steps.map((step, index) => (
-                  <div key={step.path} className="d-flex align-items-center" style={{ flex: 1 }}>
-                    <div className="d-flex flex-column align-items-center" style={{ flex: 1 }}>
-                      <div
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: '50%',
-                          backgroundColor: index <= currentStepIndex ? '#1A6AA6' : '#A7C9D6',
-                          color: '#FFFFFF',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 14,
-                          fontWeight: 700,
-                          transition: 'all 0.3s',
-                          boxShadow: index <= currentStepIndex ? '0 8px 18px rgba(26, 106, 166, 0.22)' : 'none',
-                        }}
-                      >
-                        {index + 1}
-                      </div>
-                      <span
-                        className="mt-2 text-center"
-                        style={{
-                          fontSize: 12,
-                          color: index <= currentStepIndex ? '#003366' : '#4b6478',
-                          fontWeight: index <= currentStepIndex ? 700 : 500,
-                        }}
-                      >
-                        {step.label}
-                      </span>
-                    </div>
-                    {index < steps.length - 1 && (
-                      <div
-                        style={{
-                          height: 2,
-                          flex: 1,
-                          backgroundColor: index < currentStepIndex ? '#1A6AA6' : '#A7C9D6',
-                          marginBottom: 30,
-                          marginLeft: 8,
-                          marginRight: 8,
-                          transition: 'all 0.3s',
-                        }}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </Container>
+        <nav className="parking-user-sidebar__nav" aria-label="Navegacion principal">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/parking/user'}
+                className={({ isActive }) =>
+                  `parking-user-sidebar__link${isActive ? ' parking-user-sidebar__link--active' : ''}`
+                }
+              >
+                <Icon size={21} />
+                <span>{item.label}</span>
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        <div className="parking-user-sidebar__footer">
+          <button type="button" className="parking-user-sidebar__ghost">
+            <ChevronLeft size={20} />
+            <span>Minimizar</span>
+          </button>
+          <button type="button" className="parking-user-sidebar__logout" onClick={() => navigate('/parking')}>
+            <LogOut size={20} />
+            <span>Cerrar Sesion</span>
+          </button>
+        </div>
+      </aside>
+
+      <div className="parking-user-main">
+        <header className="parking-user-topbar">
+          <button type="button" className="parking-user-topbar__menu" aria-label="Abrir menu">
+            <Menu size={24} />
+          </button>
+          <div className="parking-user-topbar__profile">
+            <div className="text-end">
+              <strong>{userName}</strong>
+              <span>Mi Perfil</span>
+            </div>
+            <UserCircle size={44} />
           </div>
-        )}
+        </header>
 
-        <Container className="parking-content-container py-4">
+        <main className="parking-user-content">
           <Outlet />
-        </Container>
-      </main>
-
-      <AppFooter />
+        </main>
+      </div>
     </div>
   );
 }

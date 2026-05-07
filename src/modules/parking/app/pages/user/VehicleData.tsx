@@ -68,15 +68,19 @@ export function VehicleData() {
 
   if (currentRegistration.vehicles && currentRegistration.vehicles.length > 0) {
     return (
-      <div style={{ maxWidth: 700, margin: '0 auto' }}>
-        <Card className="shadow-sm">
-          <Card.Header className="bg-white border-bottom">
+      <div className="parking-user-view">
+        <div className="parking-payments-page__heading">
+          <h1>Mis Vehiculos</h1>
+          <p>Administra las placas registradas para tu acceso al parqueo.</p>
+        </div>
+        <Card className="parking-dashboard-panel">
+          <Card.Header>
             <Card.Title className="mb-1 h4">Verificación de Vehículos</Card.Title>
             <Card.Subtitle className="text-muted">
               Confirme sus vehículos registrados
             </Card.Subtitle>
           </Card.Header>
-          <Card.Body className="p-4">
+          <Card.Body>
             <div className="d-flex flex-column gap-3">
               {currentRegistration.vehicles.map((vehicle) => (
                 <div
@@ -135,15 +139,19 @@ export function VehicleData() {
   }
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto' }}>
-      <Card className="shadow-sm mb-4">
-        <Card.Header className="bg-white border-bottom">
+    <div className="parking-user-view">
+      <div className="parking-payments-page__heading">
+        <h1>Mis Vehiculos</h1>
+        <p>Registra las placas y datos de tus vehiculos autorizados.</p>
+      </div>
+      <Card className="parking-dashboard-panel mb-4">
+        <Card.Header>
           <Card.Title className="mb-1 h4">Información de Vehículos</Card.Title>
           <Card.Subtitle className="text-muted">
             Registre sus vehículos (máximo 3)
           </Card.Subtitle>
         </Card.Header>
-        <Card.Body className="p-4">
+        <Card.Body>
           <Row className="g-3 mb-3">
             <Col md={6}>
               <Form.Group>
@@ -211,8 +219,8 @@ export function VehicleData() {
       </Card>
 
       {vehicles.length > 0 && (
-        <Card className="shadow-sm mb-4">
-          <Card.Header className="bg-white border-bottom">
+        <Card className="parking-dashboard-panel mb-4">
+          <Card.Header>
             <Card.Title className="mb-0">Vehículos Registrados</Card.Title>
           </Card.Header>
           <Card.Body className="p-3">
