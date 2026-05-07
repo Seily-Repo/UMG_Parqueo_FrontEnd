@@ -28,7 +28,7 @@ const LoginAdmin = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // 🔥 EL ARREGLO ESTÁ AQUÍ: Si NO es 1, lo rebotamos.
+        // Validación de que solo entre el administrador (Rol 1)
         if (data.usuario.rol !== 1) {
           Swal.fire({
             title: 'Acceso Restringido',
@@ -39,7 +39,10 @@ const LoginAdmin = () => {
           return;
         }
 
+        // 🔥 AQUÍ ESTÁ LA MAGIA: Guardamos el usuario Y EL TOKEN
         localStorage.setItem('usuarioAdmin', JSON.stringify(data.usuario));
+        localStorage.setItem('token', data.token); // <-- ¡El Gafete VIP!
+
         const primerNombre = data.usuario.nombres.split(' ')[0];
 
         Swal.fire({
@@ -51,7 +54,7 @@ const LoginAdmin = () => {
           background: 'var(--fondo-blanco)',
           color: 'var(--color-primario)'
         }).then(() => {
-          // 🔥 Redirigimos al nuevo Dashboard de Admin
+          // Redirigimos al nuevo Dashboard de Admin
           navigate('/dashboard-admin'); 
         });
 

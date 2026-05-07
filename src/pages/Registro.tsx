@@ -109,7 +109,7 @@ const Registro = () => {
       if (response.ok) {
         Swal.fire({
           title: '¡Registro Completado!',
-          text: esAdmin ? 'Usuario administrativo creado con éxito.' : 'Tu perfil ha sido creado exitosamente.',
+          text: esAdmin ? 'Usuario creado con éxito.' : 'Tu perfil ha sido creado exitosamente.',
           icon: 'success',
           confirmButtonColor: 'var(--azul-universitario)',
           background: 'var(--fondo-blanco)',

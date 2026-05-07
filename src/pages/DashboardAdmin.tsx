@@ -1,164 +1,193 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Badge, Button, Form, InputGroup, Spinner, Nav } from 'react-bootstrap';
-import { Search, PencilSquare, Trash, PersonLinesFill, CarFrontFill, Scooter, CashStack, PieChartFill, List, Speedometer2, ArrowRepeat, BoxArrowRight, ChevronLeft, PersonCircle } from 'react-bootstrap-icons';
+import { Container, Row, Col, Card, Table, Badge, Button, Form, InputGroup, Spinner, Nav, Modal, Tabs, Tab } from 'react-bootstrap';
+import { Search, PencilSquare, Trash, PersonLinesFill, CarFrontFill, Scooter, CashStack, PieChartFill, List, Speedometer2, ArrowRepeat, BoxArrowRight, ChevronLeft, PersonCircle, Envelope, Telephone, Save, CheckCircleFill, ExclamationOctagonFill, Receipt, ExclamationTriangleFill, Download } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+
+// 🔥 IMPORTAMOS LAS LIBRERÍAS DEL PDF
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const DashboardAdmin = () => {
   const navigate = useNavigate();
   
-  // --- ESTADOS ---
-  const [usuarios, setUsuarios] = useState<any[]>([]);
+  // --- ESTADOS PRINCIPALES ---
   const [cargando, setCargando] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [vistaActual, setVistaActual] = useState('usuarios'); // Lo dejé en usuarios para que veas rápido los cambios
+  const [vistaActual, setVistaActual] = useState('reportes'); 
   const [adminLogueado, setAdminLogueado] = useState<any>({});
   
-  // 🔥 NUEVO: Estado para la barra de búsqueda
-  const [busqueda, setBusqueda] = useState('');
+  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [busquedaUsuarios, setBusquedaUsuarios] = useState('');
+  
+  const [showProfile, setShowProfile] = useState(false);
+  const [stats, setStats] = useState({ carros: 0, motos: 0, ingresos: 0 });
 
-  // --- EFECTOS DE INICIO ---
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [roles, setRoles] = useState<any[]>([]);
+  const [editForm, setEditForm] = useState({ carne: '', nombres: '', apellidos: '', correo_institucional: '', telefono: '', id_rol: '' });
+
+  const [pagosAdmin, setPagosAdmin] = useState<any[]>([]);
+  const [multasCatalogo, setMultasCatalogo] = useState<any[]>([]);
+  const [busquedaPagos, setBusquedaPagos] = useState('');
+  const [formMulta, setFormMulta] = useState({ carne: '', placa: '', id_multa: '' });
+
+  const [reportes, setReportes] = useState<any>({ demografia: [], ingresosPorPlan: [], morosos: [] });
+
+  // --- EFECTOS ---
   useEffect(() => {
     const adminGuardado = localStorage.getItem('usuarioAdmin');
-    if (adminGuardado) {
-      setAdminLogueado(JSON.parse(adminGuardado));
-    } else {
-      navigate('/login-admin');
+    const token = localStorage.getItem('token'); // Verificamos que exista el token
+    if (adminGuardado && token) { 
+        setAdminLogueado(JSON.parse(adminGuardado)); 
+    } else { 
+        navigate('/login-admin'); 
     }
-    cargarUsuarios();
+    cargarTodo();
   }, [navigate]);
 
-  const cargarUsuarios = async () => {
+  useEffect(() => {
+    if (vistaActual === 'pagos') cargarPagosYMultas();
+    if (vistaActual === 'reportes') cargarReportes(); 
+  }, [vistaActual]);
+
+  // 🔥 NUEVO: Función maestra para inyectar el token en todas las peticiones
+  const obtenerHeaders = (conJson = false) => {
+    const token = localStorage.getItem('token');
+    const headers: any = { 'Authorization': `Bearer ${token}` };
+    if (conJson) headers['Content-Type'] = 'application/json';
+    return headers;
+  };
+
+  const cargarTodo = () => {
+    cargarUsuarios();
+    cargarEstadisticas();
+    cargarRoles();
+  };
+
+  const cargarRoles = async () => { try { const res = await fetch('http://localhost:3001/api/roles'); if (res.ok) setRoles(await res.json()); } catch (error) {} };
+  
+  const cargarUsuarios = async () => { 
+      setCargando(true); 
+      try { 
+          // 🔥 Aquí le pasamos el token
+          const respuesta = await fetch('http://localhost:3001/api/admin/usuarios', { headers: obtenerHeaders() }); 
+          if (respuesta.ok) setUsuarios(await respuesta.json()); 
+          else if (respuesta.status === 401 || respuesta.status === 403) { Swal.fire('Sesión Expirada', 'Por favor inicia sesión de nuevo', 'warning'); handleLogout(); }
+      } catch (error) {} finally { setCargando(false); } 
+  };
+  
+  const cargarEstadisticas = async () => { try { const respuesta = await fetch('http://localhost:3001/api/admin/estadisticas', { headers: obtenerHeaders() }); if (respuesta.ok) setStats(await respuesta.json()); } catch (error) {} };
+  
+  const cargarPagosYMultas = async () => {
     setCargando(true);
     try {
-      const respuesta = await fetch('http://localhost:3001/api/admin/usuarios');
-      const data = await respuesta.json();
-      if (respuesta.ok) {
-        setUsuarios(data);
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setCargando(false);
-    }
+      const resPagos = await fetch('http://localhost:3001/api/admin/pagos', { headers: obtenerHeaders() }); if (resPagos.ok) setPagosAdmin(await resPagos.json());
+      const resMultas = await fetch('http://localhost:3001/api/admin/multas-catalogo', { headers: obtenerHeaders() }); if (resMultas.ok) setMultasCatalogo(await resMultas.json());
+    } catch (error) {} finally { setCargando(false); }
+  };
+
+  const cargarReportes = async () => {
+    setCargando(true);
+    try {
+      const res = await fetch('http://localhost:3001/api/admin/reportes', { headers: obtenerHeaders() });
+      if (res.ok) setReportes(await res.json());
+    } catch (error) {} finally { setCargando(false); }
   };
 
   // --- ACCIONES INTERACTIVAS ---
+  const abrirModalEdicion = (usr: any) => { setEditForm({ carne: usr.CARNE, nombres: usr.NOMBRES, apellidos: usr.APELLIDOS, correo_institucional: usr.CORREO, telefono: usr.TELEFONO || '', id_rol: usr.ID_ROL }); setShowEditModal(true); };
   
-  // 🔥 NUEVO: Conexión real a Oracle para cambiar estado
+  const handleGuardarEdicion = async () => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/admin/usuarios/${editForm.carne}`, { method: 'PUT', headers: obtenerHeaders(true), body: JSON.stringify(editForm) });
+      if (res.ok) { Swal.fire({ title: '¡Actualizado!', icon: 'success', timer: 1500, showConfirmButton: false }); setShowEditModal(false); cargarUsuarios(); } else Swal.fire('Error', 'No se pudo guardar.', 'error');
+    } catch (error) { Swal.fire('Error', 'Sin conexión al servidor.', 'error'); }
+  };
+
   const handleCambiarEstado = (carne: string, estadoActual: string, nombre: string) => {
-    if (carne === adminLogueado.carne) {
-      Swal.fire('Acción Denegada', 'Por seguridad, no puedes desactivar tu propia cuenta de Administrador.', 'error');
-      return;
+    if (carne === adminLogueado.carne) return Swal.fire('Denegado', 'No puedes desactivar tu propia cuenta.', 'error');
+    const nuevoEstado = estadoActual === 'Activo' ? 0 : 1;
+    Swal.fire({ title: `¿${estadoActual === 'Activo' ? 'Desactivar' : 'Activar'} a ${nombre}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: estadoActual === 'Activo' ? '#d33' : '#28a745', confirmButtonText: 'Sí, proceder' }).then(async (result) => {
+      if (result.isConfirmed) { try { const res = await fetch(`http://localhost:3001/api/admin/usuarios/${carne}/estado`, { method: 'PUT', headers: obtenerHeaders(true), body: JSON.stringify({ nuevoEstado }) }); if (res.ok) { cargarUsuarios(); Swal.fire({ title: '¡Estado Modificado!', icon: 'success', timer: 1500, showConfirmButton: false }); } } catch (error) { Swal.fire('Error', 'Sin conexión al servidor.', 'error'); } }
+    });
+  };
+
+  const handleAprobarPago = (id_pago: number, nombre: string) => {
+    Swal.fire({ title: '⚠️ MODO DE EMERGENCIA', html: `Estás a punto de forzar el pago de <b>${nombre}</b>.<br/><br/><small>Solo debes usar esta opción si el sistema del banco falló.</small>`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Sí, Forzar Aprobación' }).then(async (result) => {
+      if (result.isConfirmed) { try { const res = await fetch(`http://localhost:3001/api/admin/pagos/${id_pago}/aprobar`, { method: 'PUT', headers: obtenerHeaders() }); if (res.ok) { cargarPagosYMultas(); cargarEstadisticas(); cargarReportes(); Swal.fire('¡Forzado!', 'El pago ha sido aprobado manualmente.', 'success'); } } catch (error) { Swal.fire('Error', 'No se pudo conectar.', 'error'); } }
+    });
+  };
+
+  const handleAsignarMulta = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`http://localhost:3001/api/admin/multas`, { method: 'POST', headers: obtenerHeaders(true), body: JSON.stringify(formMulta) });
+      if (res.ok) { Swal.fire('¡Multa Aplicada!', 'Cargo asignado exitosamente.', 'success'); setFormMulta({ carne: '', placa: '', id_multa: '' }); cargarPagosYMultas(); cargarReportes(); cargarEstadisticas(); } else { Swal.fire('Error', 'No se pudo asignar la multa.', 'error'); }
+    } catch (error) { Swal.fire('Error', 'Sin conexión al servidor.', 'error'); }
+  };
+
+  const handleLogout = () => { 
+      Swal.fire({ title: '¿Cerrar Sesión?', icon: 'question', showCancelButton: true, confirmButtonColor: 'var(--azul-universitario)', confirmButtonText: 'Sí, salir' }).then((result) => { 
+          if (result.isConfirmed) { 
+              localStorage.removeItem('usuarioAdmin'); 
+              localStorage.removeItem('token'); // 🔥 Borramos el token al salir
+              navigate('/login-admin'); 
+          } 
+      }); 
+  };
+
+  const generarPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.setTextColor(0, 43, 92);
+    doc.text('Reporte de Inteligencia de Negocios - Parqueo UMG', 14, 22);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generado el: ${new Date().toLocaleDateString()} a las ${new Date().toLocaleTimeString()}`, 14, 30);
+    doc.text(`Administrador responsable: ${adminLogueado.nombres} ${adminLogueado.apellidos}`, 14, 36);
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Resumen Ejecutivo', 14, 50);
+    doc.setFontSize(11);
+    doc.text(`• Total de Ingresos Recaudados: Q. ${stats.ingresos}.00`, 20, 60);
+    doc.text(`• Vehículos Registrados (Automóviles): ${stats.carros}`, 20, 68);
+    doc.text(`• Vehículos Registrados (Motocicletas): ${stats.motos}`, 20, 76);
+    doc.setFontSize(14);
+    doc.text('Listado de Estudiantes con Pagos Pendientes (Morosos)', 14, 95);
+    const tableColumn = ["Estudiante / Carné", "Monto Pendiente (GTQ)"];
+    const tableRows = reportes.morosos.map((m: any) => [m.usuario, `Q. ${m.deuda}.00`]);
+
+    if (tableRows.length > 0) {
+      autoTable(doc, { head: [tableColumn], body: tableRows, startY: 102, theme: 'striped', headStyles: { fillColor: [220, 53, 69] } });
+    } else {
+      doc.setFontSize(11); doc.setTextColor(40, 167, 69); doc.text('Actualmente no hay estudiantes con morosidad o pagos pendientes.', 14, 105);
     }
-
-    const nuevoEstadoTexto = estadoActual === 'Activo' ? 'Desactivar' : 'Activar';
-    const nuevoEstadoNumerico = estadoActual === 'Activo' ? 0 : 1;
-    const colorBoton = estadoActual === 'Activo' ? '#d33' : '#28a745';
-
-    Swal.fire({
-      title: `¿${nuevoEstadoTexto} a ${nombre}?`,
-      text: `El usuario pasará a estar ${estadoActual === 'Activo' ? 'Inactivo' : 'Activo'}.`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: colorBoton,
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: `Sí, ${nuevoEstadoTexto}`,
-      cancelButtonText: 'Cancelar'
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        
-        try {
-          // Petición al Backend
-          const res = await fetch(`http://localhost:3001/api/admin/usuarios/${carne}/estado`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nuevoEstado: nuevoEstadoNumerico })
-          });
-
-          if (res.ok) {
-            // Si Oracle dijo que sí, actualizamos la tabla en pantalla
-            const usuariosActualizados = usuarios.map(u => {
-              if (u.CARNE === carne) {
-                return { ...u, ESTADO: estadoActual === 'Activo' ? 'Inactivo' : 'Activo' };
-              }
-              return u;
-            });
-            setUsuarios(usuariosActualizados);
-            Swal.fire('¡Actualizado!', 'El estado del usuario ha sido modificado en la base de datos.', 'success');
-          } else {
-            Swal.fire('Error', 'No se pudo actualizar en la base de datos.', 'error');
-          }
-        } catch (error) {
-          Swal.fire('Error', 'No hay conexión con el servidor.', 'error');
-        }
-      }
-    });
+    doc.save(`Reporte_Parqueo_UMG_${new Date().getTime()}.pdf`);
+    Swal.fire({ title: '¡Reporte Generado!', text: 'Tu documento PDF ha sido descargado exitosamente.', icon: 'success', timer: 2000, showConfirmButton: false });
   };
 
-  // 🔥 NUEVO: Redirigir al registro
-  const handleNuevoUsuario = () => {
-    navigate('/registro');
-  };
+  const usuariosFiltrados = usuarios.filter(u => u.CARNE.toLowerCase().includes(busquedaUsuarios.toLowerCase()) || u.NOMBRE.toLowerCase().includes(busquedaUsuarios.toLowerCase()) || u.CORREO.toLowerCase().includes(busquedaUsuarios.toLowerCase()));
+  const pagosFiltrados = pagosAdmin.filter(p => p.CARNE_USUARIO.toLowerCase().includes(busquedaPagos.toLowerCase()) || p.NOMBRE.toLowerCase().includes(busquedaPagos.toLowerCase()));
+  const COLORES_PASTEL = ['#0098db', '#f5a623', '#28a745', '#dc3545'];
 
-  const handleLogout = () => {
-    Swal.fire({
-      title: '¿Cerrar Sesión?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: 'var(--azul-universitario)',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, salir'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        localStorage.removeItem('usuarioAdmin');
-        navigate('/login-admin');
-      }
-    });
-  };
-
-  // 🔥 NUEVO: Lógica de filtrado para la tabla
-  const usuariosFiltrados = usuarios.filter(u => 
-    u.CARNE.toLowerCase().includes(busqueda.toLowerCase()) || 
-    u.NOMBRE.toLowerCase().includes(busqueda.toLowerCase()) ||
-    u.CORREO.toLowerCase().includes(busqueda.toLowerCase())
-  );
-
-  // --- COMPONENTES VISUALES ---
   const SidebarItem = ({ icon: Icon, label, vista }: any) => {
     const isActive = vistaActual === vista;
     return (
-      <Nav.Link 
-        onClick={() => setVistaActual(vista)}
-        className={`d-flex align-items-center px-4 py-3 text-white mb-1`}
-        style={{ 
-          cursor: 'pointer', transition: '0.2s',
-          backgroundColor: isActive ? 'rgba(255,255,255,0.05)' : 'transparent',
-          borderLeft: isActive ? '4px solid var(--color-accion, #00d2ff)' : '4px solid transparent'
-        }}
-      >
+      <Nav.Link onClick={() => setVistaActual(vista)} className={`d-flex align-items-center px-4 py-3 text-white mb-1`} style={{ cursor: 'pointer', transition: '0.2s', backgroundColor: isActive ? 'rgba(255,255,255,0.05)' : 'transparent', borderLeft: isActive ? '4px solid var(--color-accion, #00d2ff)' : '4px solid transparent' }}>
         <Icon size={20} className="me-3" style={{ color: isActive ? 'var(--color-accion, #00d2ff)' : 'rgba(255,255,255,0.7)' }} />
-        <span style={{ display: sidebarOpen ? 'block' : 'none', fontWeight: isActive ? 'bold' : 'normal', color: isActive ? '#fff' : 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>
-          {label}
-        </span>
+        <span style={{ display: sidebarOpen ? 'block' : 'none', fontWeight: isActive ? 'bold' : 'normal', color: isActive ? '#fff' : 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>{label}</span>
       </Nav.Link>
     );
   };
 
   const StatCard = ({ title, value, icon: Icon, color }: any) => (
     <Col lg={3} sm={6} className="mb-4">
-      <Card className="border-0 shadow-sm rounded-4 h-100" style={{ transition: 'transform 0.2s', cursor: 'default' }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+      <Card className="border-0 shadow-sm rounded-4 h-100" style={{ transition: 'transform 0.2s', cursor: 'default' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
         <Card.Body className="p-4 d-flex align-items-center">
-          <div className="rounded-3 d-flex align-items-center justify-content-center me-3" 
-               style={{ width: '60px', height: '60px', backgroundColor: `${color}15`, color: color }}>
-            <Icon size={28} />
-          </div>
-          <div>
-            <div className="text-muted small fw-bold mb-1" style={{ letterSpacing: '0.5px' }}>{title.toUpperCase()}</div>
-            <h3 className="mb-0 fw-bold" style={{ color: 'var(--azul-oscuro, #002b5c)' }}>{value}</h3>
-          </div>
+          <div className="rounded-3 d-flex align-items-center justify-content-center me-3" style={{ width: '60px', height: '60px', backgroundColor: `${color}15`, color: color }}><Icon size={28} /></div>
+          <div><div className="text-muted small fw-bold mb-1" style={{ letterSpacing: '0.5px' }}>{title.toUpperCase()}</div><h3 className="mb-0 fw-bold" style={{ color: 'var(--azul-oscuro, #002b5c)' }}>{value}</h3></div>
         </Card.Body>
       </Card>
     </Col>
@@ -166,8 +195,7 @@ const DashboardAdmin = () => {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--fondo-general, #f4f7f6)' }}>
-      
-      {/* ================= BARRA LATERAL (SIDEBAR) ================= */}
+      {/* ================= BARRA LATERAL ================= */}
       <div style={{ width: sidebarOpen ? '260px' : '80px', backgroundColor: 'var(--azul-oscuro, #002b5c)', transition: 'width 0.3s ease', zIndex: 1000 }} className="d-flex flex-column">
         <div className="text-center py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
           <img src="/logo.png" alt="UMG" style={{ width: sidebarOpen ? '55px' : '40px', transition: '0.3s' }} />
@@ -178,14 +206,12 @@ const DashboardAdmin = () => {
             </div>
           )}
         </div>
-        
         <Nav className="flex-column mt-3 flex-grow-1">
           <SidebarItem icon={Speedometer2} label="Inicio" vista="dashboard" />
           <SidebarItem icon={PersonLinesFill} label="Gestión de Usuarios" vista="usuarios" />
           <SidebarItem icon={CashStack} label="Pagos y Cobros" vista="pagos" />
           <SidebarItem icon={PieChartFill} label="Reportes" vista="reportes" />
         </Nav>
-
         <div className="mt-auto" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <Nav.Link onClick={() => setSidebarOpen(!sidebarOpen)} className="d-flex align-items-center px-4 py-3 text-white" style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.6)' }}>
             <ChevronLeft size={20} className="me-3" style={{ transform: sidebarOpen ? 'rotate(0deg)' : 'rotate(180deg)', transition: '0.3s' }} />
@@ -200,142 +226,66 @@ const DashboardAdmin = () => {
 
       {/* ================= CONTENIDO PRINCIPAL ================= */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        
         <div className="bg-white px-4 py-3 shadow-sm d-flex justify-content-between align-items-center">
-          <Button variant="link" className="text-dark p-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <List size={28} />
-          </Button>
-          
-          <div className="d-flex align-items-center" style={{ cursor: 'pointer' }}>
+          <Button variant="link" className="text-dark p-0" onClick={() => setSidebarOpen(!sidebarOpen)}><List size={28} /></Button>
+          <div className="d-flex align-items-center" style={{ cursor: 'pointer' }} onClick={() => setShowProfile(true)}>
             <div className="text-end me-3 d-none d-sm-block">
-              <div className="fw-bold" style={{ color: 'var(--azul-oscuro, #002b5c)', fontSize: '0.95rem' }}>
-                {adminLogueado.nombres || 'Administrador'}
-              </div>
-              <div style={{ color: 'var(--color-accion, #0098db)', fontSize: '0.8rem', fontWeight: '500' }}>
-                Mi Perfil <PencilSquare size={12} className="ms-1" />
-              </div>
+              <div className="fw-bold" style={{ color: 'var(--azul-oscuro, #002b5c)', fontSize: '0.95rem' }}>{adminLogueado.nombres || 'Administrador'}</div>
+              <div style={{ color: 'var(--color-accion, #0098db)', fontSize: '0.8rem', fontWeight: '500' }}>Mi Perfil <PencilSquare size={12} className="ms-1" /></div>
             </div>
             <PersonCircle size={40} style={{ color: 'var(--azul-oscuro, #002b5c)' }} />
           </div>
         </div>
 
         <div className="p-4 p-md-5" style={{ overflowY: 'auto' }}>
-          
-          {/* VISTA: DASHBOARD */}
           {vistaActual === 'dashboard' && (
             <div className="animate-fade-in">
-              <Row className="mb-4">
-                <Col>
-                  <h2 className="fw-bold" style={{ color: 'var(--color-accion, #0098db)', fontStyle: 'italic' }}>Visión General</h2>
-                  <p className="text-muted">Resumen del estado del sistema de parqueo</p>
-                </Col>
-              </Row>
+              <Row className="mb-4"><Col><h2 className="fw-bold" style={{ color: 'var(--color-accion, #0098db)', fontStyle: 'italic' }}>Visión General</h2><p className="text-muted">Resumen del estado del sistema</p></Col></Row>
               <Row className="mb-4">
                 <StatCard title="Ocupación" value="78%" icon={PieChartFill} color="#0098db" />
-                <StatCard title="Carros" value="850" icon={CarFrontFill} color="#28a745" />
-                <StatCard title="Motos" value="342" icon={Scooter} color="#f5a623" />
-                <StatCard title="Ingresos" value="Q 1,250" icon={CashStack} color="#6f42c1" />
+                <StatCard title="Carros" value={stats.carros} icon={CarFrontFill} color="#28a745" />
+                <StatCard title="Motos" value={stats.motos} icon={Scooter} color="#f5a623" />
+                <StatCard title="Ingresos" value={`Q ${stats.ingresos}`} icon={CashStack} color="#6f42c1" />
               </Row>
             </div>
           )}
 
-          {/* VISTA: USUARIOS */}
           {vistaActual === 'usuarios' && (
             <div className="animate-fade-in">
-              <Row className="mb-4">
-                <Col>
-                  <h2 className="fw-bold" style={{ color: 'var(--color-accion, #0098db)', fontStyle: 'italic' }}>Gestión de Usuarios</h2>
-                  <p className="text-muted">Control total de accesos y roles del parqueo.</p>
-                </Col>
-              </Row>
-
+              <Row className="mb-4"><Col><h2 className="fw-bold" style={{ color: 'var(--color-accion, #0098db)', fontStyle: 'italic' }}>Gestión de Usuarios</h2><p className="text-muted">Control total de accesos y roles del parqueo.</p></Col></Row>
               <Card className="border-0 shadow-sm rounded-4">
                 <Card.Body className="p-4">
                   <Row className="mb-4 align-items-center">
                     <Col md={6}>
                       <InputGroup>
                         <InputGroup.Text className="bg-light border-end-0"><Search className="text-muted"/></InputGroup.Text>
-                        
-                        {/* 🔥 NUEVO: Input conectado al estado de búsqueda */}
-                        <Form.Control 
-                          placeholder="Buscar carné, nombre o correo..." 
-                          className="bg-light border-start-0 ps-0 bg-transparent" 
-                          style={{ boxShadow: 'none' }} 
-                          value={busqueda}
-                          onChange={(e) => setBusqueda(e.target.value)}
-                        />
-                        
+                        <Form.Control placeholder="Buscar carné, nombre o correo..." className="bg-light border-start-0 ps-0 bg-transparent" style={{ boxShadow: 'none' }} value={busquedaUsuarios} onChange={(e) => setBusquedaUsuarios(e.target.value)} />
                       </InputGroup>
                     </Col>
                     <Col md={6} className="text-md-end mt-3 mt-md-0">
-                      <Button variant="light" className="me-2" onClick={cargarUsuarios} title="Recargar datos">
-                        <ArrowRepeat size={20} className={cargando ? 'text-muted' : 'text-primary'} />
-                      </Button>
-                      <Button 
-                        onClick={handleNuevoUsuario}
-                        style={{ backgroundColor: 'var(--azul-oscuro, #002b5c)', border: 'none', borderRadius: '8px', padding: '0.5rem 1.5rem' }}>
-                        + Nuevo Usuario
-                      </Button>
+                      <Button variant="light" className="me-2" onClick={cargarUsuarios} title="Recargar datos"><ArrowRepeat size={20} className={cargando ? 'text-muted' : 'text-primary'} /></Button>
+                      <Button onClick={() => navigate('/registro')} style={{ backgroundColor: 'var(--azul-oscuro, #002b5c)', border: 'none', borderRadius: '8px', padding: '0.5rem 1.5rem' }}>+ Nuevo Usuario</Button>
                     </Col>
                   </Row>
-
                   <div className="table-responsive">
-                    {cargando ? (
-                      <div className="text-center py-5">
-                        <Spinner animation="border" style={{ color: 'var(--color-accion, #0098db)' }} />
-                      </div>
-                    ) : (
+                    {cargando ? <div className="text-center py-5"><Spinner animation="border" style={{ color: 'var(--color-accion, #0098db)' }} /></div> : (
                       <Table hover className="align-middle" style={{ borderCollapse: 'separate', borderSpacing: '0 8px' }}>
-                        <thead className="text-muted" style={{ fontSize: '0.85rem' }}>
-                          <tr>
-                            <th className="border-0">Carné</th>
-                            <th className="border-0">Nombre Completo</th>
-                            <th className="border-0">Correo</th>
-                            <th className="border-0">Rol</th>
-                            <th className="border-0">Estado</th>
-                            <th className="border-0 text-center">Acciones</th>
-                          </tr>
-                        </thead>
+                        <thead className="text-muted" style={{ fontSize: '0.85rem' }}><tr><th className="border-0">Carné</th><th className="border-0">Nombre Completo</th><th className="border-0">Correo</th><th className="border-0">Rol</th><th className="border-0">Estado</th><th className="border-0 text-center">Acciones</th></tr></thead>
                         <tbody>
-                          {/* 🔥 NUEVO: Usamos el array usuariosFiltrados en vez del original */}
                           {usuariosFiltrados.map((usr, index) => (
                             <tr key={index}>
-                              <td className="fw-bold border-bottom-0" style={{ color: 'var(--azul-oscuro)' }}>{usr.CARNE}</td>
-                              <td className="border-bottom-0">{usr.NOMBRE}</td>
-                              <td className="border-bottom-0 text-muted">{usr.CORREO}</td>
-                              <td className="border-bottom-0">
-                                <Badge bg={usr.ROL === 'ADMINISTRADOR' ? 'danger' : 'primary'} className="rounded-pill px-3">
-                                  {usr.ROL}
-                                </Badge>
-                              </td>
-                              <td className="border-bottom-0">
-                                <Badge bg={usr.ESTADO === 'Activo' ? 'success' : 'secondary'} className="rounded-pill px-3">
-                                  {usr.ESTADO}
-                                </Badge>
-                              </td>
+                              <td className="fw-bold border-bottom-0" style={{ color: 'var(--azul-oscuro)' }}>{usr.CARNE}</td><td className="border-bottom-0">{usr.NOMBRE}</td><td className="border-bottom-0 text-muted">{usr.CORREO}</td>
+                              <td className="border-bottom-0"><Badge bg={usr.ROL === 'ADMINISTRADOR' ? 'danger' : 'primary'} className="rounded-pill px-3">{usr.ROL}</Badge></td>
+                              <td className="border-bottom-0"><Badge bg={usr.ESTADO === 'Activo' ? 'success' : 'secondary'} className="rounded-pill px-3">{usr.ESTADO}</Badge></td>
                               <td className="text-center border-bottom-0">
-                                <Button variant="light" size="sm" className="me-2 text-primary border-0 bg-transparent" title="Editar Rol">
-                                  <PencilSquare size={18} />
-                                </Button>
-                                <Button 
-                                  variant="light" size="sm" 
-                                  className={`border-0 bg-transparent ${usr.ESTADO === 'Activo' ? 'text-danger' : 'text-success'}`} 
-                                  title={usr.ESTADO === 'Activo' ? 'Desactivar' : 'Activar'}
-                                  onClick={() => handleCambiarEstado(usr.CARNE, usr.ESTADO, usr.NOMBRE)}
-                                >
+                                <Button variant="light" size="sm" className="me-2 text-primary border-0 bg-transparent" onClick={() => abrirModalEdicion(usr)}><PencilSquare size={18} /></Button>
+                                <Button variant="light" size="sm" className={`border-0 bg-transparent ${usr.ESTADO === 'Activo' ? 'text-danger' : 'text-success'}`} onClick={() => handleCambiarEstado(usr.CARNE, usr.ESTADO, usr.NOMBRE)}>
                                   {usr.ESTADO === 'Activo' ? <Trash size={18} /> : <ArrowRepeat size={18} />}
                                 </Button>
                               </td>
                             </tr>
                           ))}
-                          {/* 🔥 NUEVO: Mensaje si la búsqueda no encuentra a nadie */}
-                          {usuariosFiltrados.length === 0 && (
-                            <tr>
-                              <td colSpan={6} className="text-center py-4 text-muted">
-                                No se encontraron usuarios con esa búsqueda.
-                              </td>
-                            </tr>
-                          )}
+                          {usuariosFiltrados.length === 0 && <tr><td colSpan={6} className="text-center py-4 text-muted">No se encontraron usuarios.</td></tr>}
                         </tbody>
                       </Table>
                     )}
@@ -345,11 +295,199 @@ const DashboardAdmin = () => {
             </div>
           )}
 
-          {vistaActual === 'pagos' && <h4 className="text-muted mt-5 text-center">Módulo de Pagos en Construcción 🚧</h4>}
-          {vistaActual === 'reportes' && <h4 className="text-muted mt-5 text-center">Módulo de Reportes en Construcción 🚧</h4>}
+          {vistaActual === 'pagos' && (
+            <div className="animate-fade-in">
+              <Row className="mb-4"><Col><h2 className="fw-bold" style={{ color: 'var(--color-accion, #0098db)', fontStyle: 'italic' }}>Centro de Control Financiero</h2><p className="text-muted">Auditoría de pagos automáticos y panel de emergencias.</p></Col></Row>
+              <Tabs defaultActiveKey="auditoria" className="mb-4 custom-tabs">
+                <Tab eventKey="auditoria" title={<><Receipt className="me-2"/> Auditoría de Pagos</>}>
+                  <Card className="border-0 shadow-sm rounded-4 mt-3">
+                    <Card.Body className="p-4">
+                      <Row className="mb-4 align-items-center">
+                        <Col md={6}><InputGroup><InputGroup.Text className="bg-light border-end-0"><Search className="text-muted"/></InputGroup.Text><Form.Control placeholder="Buscar por carné o nombre..." className="bg-light border-start-0 ps-0 bg-transparent" style={{ boxShadow: 'none' }} value={busquedaPagos} onChange={(e) => setBusquedaPagos(e.target.value)} /></InputGroup></Col>
+                        <Col md={6} className="text-md-end mt-3 mt-md-0"><Button variant="light" onClick={cargarPagosYMultas} title="Recargar"><ArrowRepeat size={20} className={cargando ? 'text-muted' : 'text-primary'} /></Button></Col>
+                      </Row>
+                      <div className="table-responsive">
+                        {cargando ? <div className="text-center py-5"><Spinner animation="border" style={{ color: 'var(--color-accion, #0098db)' }} /></div> : (
+                          <Table hover className="align-middle">
+                            <thead className="text-muted" style={{ fontSize: '0.85rem' }}><tr><th className="border-0">Fecha</th><th className="border-0">Usuario</th><th className="border-0">Concepto</th><th className="border-0">Monto</th><th className="border-0">Estado</th><th className="border-0 text-center">Intervención (Emergencia)</th></tr></thead>
+                            <tbody>
+                              {pagosFiltrados.map((p, index) => (
+                                <tr key={index}>
+                                  <td className="text-muted small">{p.FECHA}</td><td><strong>{p.CARNE_USUARIO}</strong><br/><small className="text-muted">{p.NOMBRE}</small></td><td>{p.CONCEPTO}</td><td className="fw-bold">Q.{p.PAG_MONTO_TOTAL}.00</td>
+                                  <td><Badge bg={p.PAG_ESTADO === 'C' ? 'success' : 'warning'} text={p.PAG_ESTADO === 'C' ? 'light' : 'dark'}>{p.PAG_ESTADO === 'C' ? 'Completado' : 'Pendiente'}</Badge></td>
+                                  <td className="text-center">{p.PAG_ESTADO === 'P' ? (<Button variant="outline-danger" size="sm" title="Usar solo si el cobro automático falló" onClick={() => handleAprobarPago(p.PAG_PAGO, p.NOMBRE)}><ExclamationTriangleFill className="me-1"/> Forzar Aprobación</Button>) : (<span className="text-success small fw-bold"><CheckCircleFill className="me-1"/> Procesado Auto.</span>)}</td>
+                                </tr>
+                              ))}
+                              {pagosFiltrados.length === 0 && <tr><td colSpan={6} className="text-center py-4 text-muted">No hay transacciones registradas.</td></tr>}
+                            </tbody>
+                          </Table>
+                        )}
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Tab>
+                <Tab eventKey="multas" title={<><ExclamationOctagonFill className="me-2"/> Asignar Multa</>}>
+                  <Row className="mt-3 justify-content-center">
+                    <Col md={8}>
+                      <Card className="border-0 shadow-sm rounded-4" style={{ borderTop: '5px solid #dc3545' }}>
+                        <Card.Body className="p-4 p-md-5">
+                          <div className="text-center mb-4"><ExclamationOctagonFill size={50} className="text-danger mb-3" /><h4 className="fw-bold text-danger">Imponer Multa Disciplinaria</h4><p className="text-muted">El cargo se reflejará inmediatamente en el portal del estudiante.</p></div>
+                          <Form onSubmit={handleAsignarMulta}>
+                            <Form.Group className="mb-3"><Form.Label className="fw-bold">Carné del Estudiante</Form.Label><Form.Control type="text" placeholder="Ej. 5190-23-XXXXX" required value={formMulta.carne} onChange={(e) => setFormMulta({...formMulta, carne: e.target.value})} /></Form.Group>
+                            <Form.Group className="mb-3"><Form.Label className="fw-bold">Placa del Vehículo Infractor</Form.Label><Form.Control type="text" placeholder="Ej. P123ABC" required value={formMulta.placa} onChange={(e) => setFormMulta({...formMulta, placa: e.target.value.toUpperCase()})} /></Form.Group>
+                            <Form.Group className="mb-4"><Form.Label className="fw-bold">Motivo de la Multa</Form.Label><Form.Select required value={formMulta.id_multa} onChange={(e) => setFormMulta({...formMulta, id_multa: e.target.value})}><option value="" disabled hidden>Seleccione la infracción...</option>{multasCatalogo.map(m => (<option key={m.MUL_MULTA} value={m.MUL_MULTA}>{m.MUL_DESCRIPCION} - Q.{m.MUL_MONTO_TOTAL}.00</option>))}</Form.Select></Form.Group>
+                            <Button variant="danger" type="submit" size="lg" className="w-100 fw-bold rounded-3 shadow-sm">Aplicar Multa al Usuario</Button>
+                          </Form>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  </Row>
+                </Tab>
+              </Tabs>
+            </div>
+          )}
 
+          {vistaActual === 'reportes' && (
+            <div className="animate-fade-in">
+              <Row className="mb-4">
+                <Col md={8}>
+                  <h2 className="fw-bold" style={{ color: 'var(--color-accion, #0098db)', fontStyle: 'italic' }}>Inteligencia de Negocios</h2>
+                  <p className="text-muted">Análisis en tiempo real de ingresos, morosidad y demografía de vehículos.</p>
+                </Col>
+                <Col md={4} className="text-md-end mt-3 mt-md-0">
+                  <Button variant="light" className="me-2 shadow-sm border-0" onClick={cargarReportes} title="Recargar"><ArrowRepeat size={20} className={cargando ? 'text-muted' : 'text-primary'} /></Button>
+                  <Button variant="outline-primary" className="shadow-sm border-0 bg-white" onClick={generarPDF}><Download className="me-2" /> Descargar PDF Oficial</Button>
+                </Col>
+              </Row>
+              {cargando ? (
+                <div className="text-center py-5"><Spinner animation="border" style={{ color: 'var(--color-accion, #0098db)' }} /></div>
+              ) : (
+                <Row className="g-4">
+                  <Col lg={8}>
+                    <Card className="border-0 shadow-sm rounded-4 h-100">
+                      <Card.Body className="p-4">
+                        <h5 className="fw-bold mb-4" style={{ color: 'var(--azul-oscuro)' }}><CashStack className="me-2 text-success"/> Ingresos Monetarios por Plan de Parqueo</h5>
+                        <div style={{ width: '100%', height: 300 }}>
+                          {reportes.ingresosPorPlan && reportes.ingresosPorPlan.length > 0 ? (
+                            <ResponsiveContainer>
+                              <BarChart data={reportes.ingresosPorPlan} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                                <XAxis dataKey="plan" tick={{ fill: '#666' }} axisLine={false} tickLine={false} />
+                                <YAxis tickFormatter={(val) => `Q${val}`} tick={{ fill: '#666' }} axisLine={false} tickLine={false} />
+                                <ChartTooltip formatter={(value) => [`Q ${value}`, 'Total Recaudado']} cursor={{ fill: '#f8f9fa' }} />
+                                <Bar dataKey="total" fill="var(--color-accion, #0098db)" radius={[6, 6, 0, 0]} barSize={50} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div className="d-flex h-100 align-items-center justify-content-center text-muted">No hay ingresos procesados aún.</div>
+                          )}
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col lg={4}>
+                    <Card className="border-0 shadow-sm rounded-4 h-100">
+                      <Card.Body className="p-4">
+                        <h5 className="fw-bold mb-4 text-center" style={{ color: 'var(--azul-oscuro)' }}><PieChartFill className="me-2 text-warning"/> Tipo de Vehículos</h5>
+                        <div style={{ width: '100%', height: 250 }}>
+                          {reportes.demografia && reportes.demografia.length > 0 ? (
+                            <ResponsiveContainer>
+                              <PieChart>
+                                <Pie data={reportes.demografia} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="cantidad" nameKey="nombre">
+                                  {reportes.demografia.map((entry: any, index: number) => (
+                                    <Cell key={`cell-${index}`} fill={COLORES_PASTEL[index % COLORES_PASTEL.length]} />
+                                  ))}
+                                </Pie>
+                                <ChartTooltip formatter={(value) => [value, 'Unidades Registradas']} />
+                                <Legend verticalAlign="bottom" height={36} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div className="d-flex h-100 align-items-center justify-content-center text-muted">No hay vehículos registrados.</div>
+                          )}
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col lg={12}>
+                    <Card className="border-0 shadow-sm rounded-4 border-top-danger" style={{ borderTop: '4px solid #dc3545' }}>
+                      <Card.Body className="p-4">
+                        <div className="d-flex justify-content-between align-items-center mb-4">
+                          <h5 className="fw-bold mb-0 text-danger"><ExclamationTriangleFill className="me-2"/> Top Usuarios con Pagos Atrasados</h5>
+                        </div>
+                        <Table hover className="align-middle border-0">
+                          <thead className="bg-light text-muted">
+                            <tr><th className="border-0 rounded-start">Usuario</th><th className="border-0 text-end rounded-end">Deuda Total Acumulada</th></tr>
+                          </thead>
+                          <tbody>
+                            {reportes.morosos.map((m: any, index: number) => (
+                              <tr key={index}>
+                                <td className="border-bottom-0 fw-bold" style={{ color: 'var(--azul-oscuro)' }}>{m.usuario}</td>
+                                <td className="border-bottom-0 text-end fw-bold text-danger">Q.{m.deuda}.00</td>
+                              </tr>
+                            ))}
+                            {reportes.morosos.length === 0 && <tr><td colSpan={2} className="text-center py-4 text-success fw-bold"><CheckCircleFill className="me-2"/> No hay estudiantes con deudas pendientes en este momento.</td></tr>}
+                          </tbody>
+                        </Table>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                </Row>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
+        <div style={{ borderRadius: '22px', overflow: 'hidden', backgroundColor: '#fff' }}>
+          <div style={{ background: 'var(--azul-oscuro, #002b5c)', padding: '24px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h5 className="mb-0 text-white fw-bold" style={{ fontStyle: 'italic' }}>Editar Usuario</h5>
+            <button type="button" className="btn-close btn-close-white" onClick={() => setShowEditModal(false)}></button>
+          </div>
+          <div style={{ padding: '28px' }}>
+            <Form.Group className="mb-3"><Form.Label className="fw-bold text-muted small">Carné (No editable)</Form.Label><Form.Control type="text" value={editForm.carne} disabled style={{ backgroundColor: '#f4f7f6' }} /></Form.Group>
+            <Row>
+              <Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold text-muted small">Nombres</Form.Label><Form.Control type="text" value={editForm.nombres} onChange={(e) => setEditForm({...editForm, nombres: e.target.value})} /></Form.Group></Col>
+              <Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold text-muted small">Apellidos</Form.Label><Form.Control type="text" value={editForm.apellidos} onChange={(e) => setEditForm({...editForm, apellidos: e.target.value})} /></Form.Group></Col>
+            </Row>
+            <Form.Group className="mb-3"><Form.Label className="fw-bold text-muted small">Correo Institucional</Form.Label><Form.Control type="email" value={editForm.correo_institucional} onChange={(e) => setEditForm({...editForm, correo_institucional: e.target.value})} /></Form.Group>
+            <Row>
+              <Col md={6}><Form.Group className="mb-4"><Form.Label className="fw-bold text-muted small">Teléfono</Form.Label><Form.Control type="tel" value={editForm.telefono} onChange={(e) => setEditForm({...editForm, telefono: e.target.value})} /></Form.Group></Col>
+              <Col md={6}><Form.Group className="mb-4"><Form.Label className="fw-bold text-muted small">Rol del Sistema</Form.Label><Form.Select value={editForm.id_rol} onChange={(e) => setEditForm({...editForm, id_rol: e.target.value})}>{roles.map(r => (<option key={r.ID_ROL} value={r.ID_ROL}>{r.NOMBRE_ROL}</option>))}</Form.Select></Form.Group></Col>
+            </Row>
+            <div className="d-flex gap-2">
+              <Button variant="outline-secondary" onClick={() => setShowEditModal(false)} style={{ flex: 1, borderRadius: '8px' }}>Cancelar</Button>
+              <Button onClick={handleGuardarEdicion} style={{ flex: 2, backgroundColor: 'var(--color-accion, #0098db)', border: 'none', borderRadius: '8px' }}><Save size={18} className="me-2" /> Guardar Cambios</Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal show={showProfile} onHide={() => setShowProfile(false)} centered>
+        <div style={{ borderRadius: '22px', overflow: 'hidden', backgroundColor: 'var(--fondo-blanco)' }}>
+          <div style={{ background: 'var(--azul-oscuro, #002b5c)', padding: '30px', textAlign: 'center', position: 'relative' }}>
+            <button type="button" className="btn-close btn-close-white" onClick={() => setShowProfile(false)} style={{ position: 'absolute', top: '15px', right: '15px', opacity: 0.7 }}></button>
+            <PersonCircle size={70} color="white" className="mb-2 opacity-75" />
+            <h4 className="mb-0" style={{ color: 'white', fontFamily: 'var(--fuente-titulos)', fontStyle: 'italic' }}>Perfil Administrativo</h4>
+            <Badge bg="danger" text="white" className="mt-2 px-3 py-1 rounded-pill">Administrador del Sistema</Badge>
+          </div>
+          <div style={{ padding: '30px' }}>
+            <div className="mb-4">
+              <h6 className="text-uppercase text-muted fw-bold mb-3" style={{ fontSize: '0.8rem', letterSpacing: '1px' }}>Información Interna</h6>
+              <div className="d-flex align-items-center mb-2"><span className="text-muted" style={{ width: '120px' }}>ID / Carné:</span><strong style={{ color: 'var(--azul-oscuro)' }}>{adminLogueado?.carne}</strong></div>
+              <div className="d-flex align-items-center"><span className="text-muted" style={{ width: '120px' }}>Nombre:</span><strong style={{ color: 'var(--azul-oscuro)' }}>{adminLogueado?.nombres} {adminLogueado?.apellidos}</strong></div>
+            </div>
+            <hr style={{ borderColor: 'rgba(0,0,0,0.1)' }} />
+            <div className="mt-4">
+              <h6 className="text-uppercase text-muted fw-bold mb-3" style={{ fontSize: '0.8rem', letterSpacing: '1px' }}>Información de Contacto</h6>
+              <div className="d-flex align-items-center mb-3"><Envelope className="me-3 text-muted" size={18} /><span style={{ color: 'var(--azul-oscuro)' }}>{adminLogueado?.correo_institucional || adminLogueado?.correo_electronico || 'No registrado'}</span></div>
+              <div className="d-flex align-items-center"><Telephone className="me-3 text-muted" size={18} /><span style={{ color: 'var(--azul-oscuro)' }}>{adminLogueado?.telefonos || adminLogueado?.telefono || '+502 (No registrado)'}</span></div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 };
