@@ -4,7 +4,6 @@ import { useRegistration } from '../../context/RegistrationContext';
 import { Card, Form, Button, Alert, Container, Spinner } from 'react-bootstrap';
 import { LogIn } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { AppHeader } from '../../components/AppHeader';
 import { AppFooter } from '../../components/AppFooter';
 import { getReadableApiError } from '../../../../../shared/api';
 import { delinquentStudentService, studentService } from '../../../../../shared/services';
@@ -54,33 +53,33 @@ export function LoginUser() {
   };
 
   return (
-    <div
-      className="parking-shell parking-shell--photo"
-      style={{
-        minHeight: '100vh',
-        backgroundImage: 'url(/villanueva.webp)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-      }}
-    >
-      <AppHeader />
+    <div className="bg-mesh d-flex flex-column" style={{ minHeight: '100vh' }}>
+      <div className="deco-circle deco-circle-1" />
+      <div className="deco-circle deco-circle-2" />
 
-      <main>
-      <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: 'calc(100vh - 170px)' }}>
-        <div style={{ width: '100%', maxWidth: 450 }}>
-          <Card className="shadow-lg border-0 rounded-3">
+      <main className="flex-grow-1 d-flex align-items-center justify-content-center py-5">
+        <Container style={{ maxWidth: 520 }}>
+          <div className="text-center mb-4 animate-fade-in">
+            <div className="icon-glass d-inline-flex align-items-center justify-content-center mb-3" style={{ width: 80, height: 80 }}>
+              <LogIn size={32} color="var(--color-primario)" />
+            </div>
+            <h2 className="mb-1" style={{ color: 'var(--color-primario)' }}>Portal de Parqueo</h2>
+            <p className="text-muted mb-0">Universidad Mariano Gálvez de Guatemala</p>
+          </div>
+
+          <Card className="liquid-card border-0 shadow-lg" style={{ overflow: 'hidden' }}>
+            <div className="accent-bar" />
             <Card.Body className="p-4 p-md-5">
               <div className="text-center mb-4">
-                <h4 className="fw-bold text-primary mb-1">Portal de Parqueo</h4>
-                <p className="text-muted small">Universidad Nacional</p>
+                <h4 className="fw-bold mb-1">Bienvenido</h4>
+                <p className="text-muted small mb-0">Ingresa tu carné para continuar al sistema.</p>
               </div>
 
               {error && <Alert variant="danger">{error}</Alert>}
 
               <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Número de Carnet</Form.Label>
+                <Form.Group className="mb-4">
+                  <Form.Label className="form-label">Número de Carnet</Form.Label>
                   <Form.Control
                     type="text"
                     placeholder="5190-23-XXXX"
@@ -97,24 +96,27 @@ export function LoginUser() {
                   </small>
                 </Alert>
 
-                <Button variant="primary" type="submit" size="lg" className="w-100" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  className="btn-liquid"
+                  disabled={isSubmitting}
+                  style={{ fontWeight: 700 }}
+                >
                   {isSubmitting ? (
                     <>
                       <Spinner animation="border" size="sm" className="me-2" />
                       Validando carnet...
                     </>
                   ) : (
-                    <>
-                      <LogIn size={16} className="me-2" /> Ingresar
-                    </>
+                    'Ingresar'
                   )}
                 </Button>
               </Form>
             </Card.Body>
           </Card>
-        </div>
-      </Container>
+        </Container>
       </main>
+
       <AppFooter />
     </div>
   );

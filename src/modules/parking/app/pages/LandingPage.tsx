@@ -1,148 +1,113 @@
 import { useNavigate } from 'react-router';
-import { useEffect } from 'react';
-import { Row, Col, Card, Button, Container } from 'react-bootstrap';
-import { Car, AlertTriangle, FileText, LogOut } from 'lucide-react';
-import { AppHeader } from '../components/AppHeader';
+import { Row, Col, Button, Container } from 'react-bootstrap';
+import { Car, AlertTriangle, FileText } from 'lucide-react';
 import { AppFooter } from '../components/AppFooter';
 import { useRegistration } from '../context/RegistrationContext';
 import villanueva from '../../../../assets/villanueva.webp';
+import umgLogo from '../../../../assets/umg_logo.png';
 
 export function LandingPage() {
   const navigate = useNavigate();
-  const { currentRegistration, logout } = useRegistration();
-
-  useEffect(() => {
-    if (!currentRegistration || !currentRegistration.carnet) {
-      navigate('/parking/login');
-    }
-  }, [currentRegistration, navigate]);
-
-  if (!currentRegistration || !currentRegistration.carnet) return null;
-
-  const handleLogout = () => {
-    logout();
-    navigate('/parking/login');
-  };
+  const { currentRegistration } = useRegistration();
+  const displayName = currentRegistration?.fullName || 'Estudiante';
 
   return (
-    <div
-      className="parking-shell parking-shell--photo"
-      style={{
-        backgroundImage: `url(${villanueva})`,
-      }}
-    >
-      <AppHeader />
+    <div className="bg-mesh" style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+      <div className="deco-circle deco-circle-1" />
+      <div className="deco-circle deco-circle-2" />
 
-      <main>
-        <Container className="py-5">
-          <div className="text-center mb-5">
-            <h1 className="display-4 fw-bold mb-3" style={{ color: '#003366' }}>
-              Portal de Autogestion
-            </h1>
-            <p className="lead" style={{ maxWidth: 700, margin: '0 auto', color: '#1F4E79' }}>
-              Bienvenid@, {currentRegistration.fullName || 'Estudiante'}. Elige el tramite que deseas realizar.
+      <div className="header-glass" style={{ position: 'sticky', top: 0, zIndex: 20, padding: '1rem 0' }}>
+        <Container className="d-flex align-items-center justify-content-between">
+          <div className="d-flex align-items-center gap-3">
+            <img src={umgLogo} alt="UMG Logo" style={{ height: 48, width: 'auto', objectFit: 'contain' }} />
+            <div>
+              <h5 className="mb-0" style={{ color: '#ffffff', fontFamily: 'var(--fuente-titulos)', fontStyle: 'italic' }}>
+                Universidad Mariano Gálvez De Guatemala
+              </h5>
+              <small style={{ color: 'rgba(255,255,255,0.8)' }}>Sistema de Parqueo</small>
+            </div>
+          </div>
+        </Container>
+      </div>
+
+      <div
+        className="landing-shell"
+        style={{
+          backgroundImage: `url(${villanueva})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative',
+          padding: '6rem 1rem 4rem',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.05))',
+            pointerEvents: 'none',
+          }}
+        />
+
+        <Container style={{ position: 'relative', zIndex: 2 }}>
+          <div className="landing-hero text-center">
+            <p className="landing-tag">Universidad Mariano Gálvez</p>
+            <h1>Portal de Autogestión</h1>
+            <p className="landing-subtitle">
+              Bienvenid@, {displayName}. Elige el trámite que deseas realizar.
             </p>
           </div>
 
-          <Row className="g-4 justify-content-center" style={{ maxWidth: 1000, margin: '0 auto' }}>
-            <Col md={4}>
-              <Card
-                className="h-100 shadow-sm"
-                style={{ border: '2px solid #A7C9D6', transition: 'all 0.3s' }}
+          <div className="landing-grid">
+            <div className="landing-card">
+              <div className="landing-card-icon" style={{ background: '#FFE8E8' }}>
+                <AlertTriangle size={28} color="#C7352E" />
+              </div>
+              <h3>Consultas y Pago Multas</h3>
+              <p>Consulta tus multas activas y registra su pago desde el portal.</p>
+              <Button
+                className="btn-liquid"
+                style={{ maxWidth: 220, backgroundColor: 'var(--rojo-institucional)', border: 'none', marginTop: 'auto' }}
                 onClick={() => navigate('/parking/user/multas')}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 51, 102, 0.12)';
-                  e.currentTarget.style.cursor = 'pointer';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 51, 102, 0.08)';
-                  e.currentTarget.style.borderColor = '#A7C9D6';
-                }}
               >
-                <Card.Body className="text-center p-4">
-                  <div className="d-flex align-items-center justify-content-center mx-auto mb-4">
-                    <AlertTriangle size={40} color="#C7352E" />
-                  </div>
-                  <Card.Title className="h5 mb-2">Consultas y Pago Multas</Card.Title>
-                  <Card.Subtitle className="mb-4 text-muted small">
-                    Consulta tus multas activas y registra su pago desde el portal
-                  </Card.Subtitle>
-                  <Button variant="danger" className="w-100">
-                    Consultar y Pagar
-                  </Button>
-                </Card.Body>
-              </Card>
-            </Col>
+                Consultar y Pagar
+              </Button>
+            </div>
 
-            <Col md={4}>
-              <Card
-                className="h-100 shadow-sm"
-                style={{ border: '2px solid #A7C9D6', transition: 'all 0.3s' }}
+            <div className="landing-card">
+              <div className="landing-card-icon" style={{ background: '#E7F0FF' }}>
+                <Car size={28} color="#1F4E79" />
+              </div>
+              <h3>Pagar Parqueo</h3>
+              <p>Inscripción y pago de cuota mensual.</p>
+              <Button
+                className="btn-liquid"
+                style={{ maxWidth: 220, backgroundColor: 'var(--color-accion)', border: 'none', marginTop: 'auto' }}
                 onClick={() => navigate('/parking/user')}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 51, 102, 0.12)';
-                  e.currentTarget.style.borderColor = '#1A6AA6';
-                  e.currentTarget.style.cursor = 'pointer';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 51, 102, 0.08)';
-                  e.currentTarget.style.borderColor = '#A7C9D6';
-                }}
               >
-                <Card.Body className="text-center p-4">
-                  <div className="d-flex align-items-center justify-content-center mx-auto mb-4">
-                    <Car size={40} color="#1A6AA6" />
-                  </div>
-                  <Card.Title className="h5 mb-2">Pagar Parqueo</Card.Title>
-                  <Card.Subtitle className="mb-4 text-muted small">
-                    Inscripcion y pago de cuota mensual
-                  </Card.Subtitle>
-                  <Button variant="primary" className="w-100">
-                    Pagar
-                  </Button>
-                </Card.Body>
-              </Card>
-            </Col>
+                Pagar
+              </Button>
+            </div>
 
-            <Col md={4}>
-              <Card
-                className="h-100 shadow-sm"
-                style={{ border: '2px solid #A7C9D6', transition: 'all 0.3s' }}
+            <div className="landing-card">
+              <div className="landing-card-icon" style={{ background: '#F1F6FF' }}>
+                <FileText size={28} color="#1F4E79" />
+              </div>
+              <h3>Estado de Cuenta</h3>
+              <p>Revisa tu historial y pagos realizados.</p>
+              <Button
+                variant="outline-primary"
+                className="w-100"
+                style={{ maxWidth: 220, marginTop: 'auto' }}
                 onClick={() => navigate('/parking/user/perfil')}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 51, 102, 0.12)';
-                  e.currentTarget.style.borderColor = '#003366';
-                  e.currentTarget.style.cursor = 'pointer';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 51, 102, 0.08)';
-                  e.currentTarget.style.borderColor = '#A7C9D6';
-                }}
               >
-                <Card.Body className="text-center p-4">
-                  <div className="d-flex align-items-center justify-content-center mx-auto mb-4">
-                    <FileText size={40} color="#003366" />
-                  </div>
-                  <Card.Title className="h5 mb-2">Estado de Cuenta</Card.Title>
-                  <Card.Subtitle className="mb-4 text-muted small">
-                    Revisa tu historial y pagos realizados
-                  </Card.Subtitle>
-                  <Button variant="outline-primary" className="w-100">
-                    Ver
-                  </Button>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-
-          <div className="d-flex justify-content-center mt-5">
-            <Button variant="light" onClick={handleLogout} className="px-4">
-              <LogOut size={16} className="me-2" />
-              Cerrar Sesion
-            </Button>
+                Ver
+              </Button>
+            </div>
           </div>
         </Container>
-      </main>
+      </div>
 
       <AppFooter />
     </div>

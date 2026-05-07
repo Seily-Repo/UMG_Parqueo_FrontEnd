@@ -172,11 +172,8 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
         otpVerifiedAt: parsed.otpVerifiedAt ? new Date(parsed.otpVerifiedAt) : undefined,
       };
     }
-    // Inicializar vacío para requerir login
-    return {
-      vehicles: [],
-      paymentStatus: 'pending',
-    };
+    // Si no hay login, cargamos un registro simulado por defecto
+    return { ...simulatedUsers[0] };
   });
   
   const [registrations, setRegistrations] = useState<Registration[]>(() => {

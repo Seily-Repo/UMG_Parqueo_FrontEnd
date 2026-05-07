@@ -9,21 +9,15 @@ import { VehicleData } from "./pages/user/VehicleData";
 import { Payment } from "./pages/user/Payment";
 import { Signature } from "./pages/user/Signature";
 import { Confirmation } from "./pages/user/Confirmation";
-import { LoginUser } from "./pages/user/LoginUser";
 import { UserProfile } from "./pages/user/UserProfile";
 import { UserFines } from "./pages/user/UserFines";
 import { UserFinePayment } from "./pages/user/UserFinePayment";
 
 // Admin Pages
-import { AdminLogin } from "./pages/admin/AdminLogin";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { RegistrationDetail } from "./pages/admin/RegistrationDetail";
 
 export const parkingRoutes = [
-  {
-    path: "login",
-    Component: LoginUser,
-  },
   {
     index: true,
     Component: LandingPage,
@@ -45,16 +39,10 @@ export const parkingRoutes = [
   },
   {
     path: "admin",
+    Component: AdminLayout,
     children: [
-      { index: true, Component: AdminLogin },
-      {
-        path: "dashboard",
-        Component: AdminLayout,
-        children: [
-          { index: true, Component: AdminDashboard },
-          { path: "registro/:id", Component: RegistrationDetail },
-        ],
-      },
+      { index: true, Component: AdminDashboard },
+      { path: "registro/:id", Component: RegistrationDetail },
     ],
   },
 ];
