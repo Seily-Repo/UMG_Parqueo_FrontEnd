@@ -19,7 +19,7 @@ const Login = () => {
     const credenciales = Object.fromEntries(formData.entries());
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const response = await fetch('http://10.0.40.10/api/reportes/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credenciales),

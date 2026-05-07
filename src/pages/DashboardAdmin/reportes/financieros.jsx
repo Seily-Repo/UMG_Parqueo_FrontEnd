@@ -19,7 +19,7 @@ function ReporteFinanciero() {
 
     try {
       const response = await axios.get(
-        "http://localhost:3001/api/reportes/pagos-aceptados",
+        "http://10.0.40.10/api/reportes/api/reportes/pagos-aceptados",
       );
 
       if (response.data.success) {
@@ -40,7 +40,7 @@ function ReporteFinanciero() {
 
     try {
       const response = await axios.get(
-        "http://localhost:3001/api/reportes/reporte-financiero",
+        "http://10.0.40.10/api/reportes/api/reportes/reporte-financiero",
       );
 
       if (response.data.success) {

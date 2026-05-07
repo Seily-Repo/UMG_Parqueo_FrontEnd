@@ -5,7 +5,7 @@ import { ArrowLeft } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = 'http://10.0.40.10/api/reportes';
 
 const Registro = () => {
   const navigate = useNavigate();

@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import SideBarAdmin from "../../../components/SidebarAdmin";
 
-const API_URL = "http://localhost:3001/api/reportes";
+const API_URL = "http://10.0.40.10/api/reportes/reportes";
 
 function PanelParqueo() {
   const [anio, setAnio] = useState("");

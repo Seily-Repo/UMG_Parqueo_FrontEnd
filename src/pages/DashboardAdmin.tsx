@@ -34,7 +34,7 @@ const DashboardAdmin = () => {
   const cargarUsuarios = async () => {
     setCargando(true);
     try {
-      const respuesta = await fetch('http://localhost:3001/api/admin/usuarios');
+      const respuesta = await fetch('http://10.0.40.10/api/reportes/admin/usuarios');
       const data = await respuesta.json();
       if (respuesta.ok) {
         setUsuarios(data);
@@ -73,7 +73,7 @@ const DashboardAdmin = () => {
         
         try {
           // Petición al Backend
-          const res = await fetch(`http://localhost:3001/api/admin/usuarios/${carne}/estado`, {
+          const res = await fetch(`http://10.0.40.10/api/reportes/admin/usuarios/${carne}/estado`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nuevoEstado: nuevoEstadoNumerico })
