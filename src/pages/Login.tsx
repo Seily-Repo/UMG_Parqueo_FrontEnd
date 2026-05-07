@@ -48,7 +48,7 @@ const Login = () => {
       if (response.ok) {
         localStorage.setItem('token', data.token);
 
-        if (data.usuario.rol === 1) {
+        if (data.usuario.rol === 'ADMINISTRADOR') {
           localStorage.setItem('usuarioAdmin', JSON.stringify(data.usuario));
           const primerNombre = data.usuario.nombres.split(' ')[0];
           Swal.fire({ title: `¡Hola, ${primerNombre}!`, text: 'Acceso administrativo concedido.', icon: 'success', timer: 1500, showConfirmButton: false, background: 'var(--fondo-blanco)', color: 'var(--color-primario)' }).then(() => navigate('/dashboard-admin'));

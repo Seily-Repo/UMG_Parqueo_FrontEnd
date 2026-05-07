@@ -29,7 +29,7 @@ const LoginAdmin = () => {
 
       if (response.ok) {
         // Validación de que solo entre el administrador (Rol 1)
-        if (data.usuario.rol !== 1) {
+        if (data.usuario.rol !== 'ADMINISTRADOR') {
           Swal.fire({
             title: 'Acceso Restringido',
             text: 'Esta área es solo para personal administrativo.',

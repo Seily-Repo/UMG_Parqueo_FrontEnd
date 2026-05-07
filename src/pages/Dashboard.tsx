@@ -10,6 +10,7 @@ import Swal from 'sweetalert2';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 
 const API_BASE = 'http://localhost:3001/api';
+const COBROS_URL = 'http://localhost:4000';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -134,14 +135,19 @@ const Dashboard = () => {
       });
 
       if (response.ok) {
+        const resData = await response.json();
+        const planIdParaCobros = resData.plan_id || nuevoVehiculo.plan_id;
+
         Swal.fire({
           title: '¡Vehículo Registrado!',
-          text: 'Tu vehículo se guardó exitosamente. Se ha generado un cobro pendiente en tu estado de cuenta.',
+          text: planIdParaCobros
+            ? 'Tu vehículo se guardó exitosamente. Serás redirigido al portal de pagos.'
+            : 'Tu vehículo se guardó exitosamente.',
           icon: 'success',
-          showCancelButton: true,
+          showCancelButton: !!planIdParaCobros,
           confirmButtonColor: 'var(--color-accion)',
           cancelButtonColor: '#6c757d',
-          confirmButtonText: 'Ir a pagar',
+          confirmButtonText: planIdParaCobros ? 'Ir a pagar ahora' : 'Aceptar',
           cancelButtonText: 'Ver mis vehículos'
         }).then((result) => {
           setShowVehiculoModal(false);
@@ -149,8 +155,9 @@ const Dashboard = () => {
           cargarVehiculos(); 
           cargarDeuda();
           
-          if (result.isConfirmed) {
-            setActiveSection('pago');
+          if (result.isConfirmed && planIdParaCobros) {
+            // Opción B: Redirigir al portal de cobros-dev con parámetros por URL
+            window.location.href = `${COBROS_URL}/parking/user?carne=${carneUsuario}&plan_id=${planIdParaCobros}&vehiculo=nuevo`;
           } else {
             setActiveSection('vehiculos');
           }
@@ -276,7 +283,9 @@ const Dashboard = () => {
                           <td><Badge bg={cargo.TIPO === 'MULTA' ? 'danger' : 'warning'} text={cargo.TIPO === 'MULTA' ? 'white' : 'dark'}>Pendiente</Badge></td>
                           <td className="text-end fw-bold">Q.{cargo.MONTO}.00</td>
                           <td className="text-center">
-                            <Button size="sm" style={{ backgroundColor: 'var(--color-accion)', border: 'none' }} onClick={() => navigate('/parking/user')}>
+                            <Button size="sm" style={{ backgroundColor: 'var(--color-accion)', border: 'none' }} onClick={() => {
+                              window.location.href = `${COBROS_URL}/parking/user?carne=${carneUsuario}`;
+                            }}>
                               <CreditCardFill className="me-1"/> Pagar
                             </Button>
                           </td>
