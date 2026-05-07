@@ -1,9 +1,15 @@
 import Espacio from "./Espacio";
 
-export default function Isla({ carros = 5, motos = 5, espaciosBackend = [] }) {
+export default function Isla({
+  carros = 8,
+  motos = 5,
+  discapacitados = 2,
+  espaciosBackend = [],
+  offsetIndex = 0
+}) {
 
-  //  Genera dinámicamente los espacios
   const espacios = [
+    ...Array(discapacitados).fill("discapacitado"),
     ...Array(carros).fill("carro"),
     ...Array(motos).fill("moto")
   ];
@@ -17,14 +23,18 @@ export default function Isla({ carros = 5, motos = 5, espaciosBackend = [] }) {
         justifyContent: "center"
       }}
     >
-      {espacios.map((tipo, index) => (
-        <Espacio
-          key={index}
-          numero={index + 1}
-          tipo={tipo}
-          ocupado={espaciosBackend[index]?.ES_Estado === 0} // backend
-        />
-      ))}
+      {espacios.map((tipo, index) => {
+        const backendIndex = offsetIndex + index;
+        return (
+          <Espacio
+            key={index}
+            numero={backendIndex + 1}
+            tipo={tipo === "discapacitado" ? "carro" : tipo}
+            discapacitado={tipo === "discapacitado"}
+            ocupado={index === 0}
+          />
+        );
+      })}
     </div>
   );
 }
