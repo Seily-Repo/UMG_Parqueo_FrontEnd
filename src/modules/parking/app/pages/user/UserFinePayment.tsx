@@ -144,6 +144,7 @@ export function UserFinePayment() {
     try {
       const paymentResponse = await paymentService.create({
         EST_CARNE: currentRegistration.carnet,
+        LR_CARNE: currentRegistration.carnet,
         PLN_PLAN: currentRegistration.selectedPlanId || 1,
         FPG_FORMA_PAGO: formData.paymentMethodId,
         MUL_MULTA: Number(fineRelation.MUL_MULTA),

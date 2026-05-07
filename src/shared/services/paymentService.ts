@@ -1,13 +1,55 @@
-import { apiRequest } from "../api";
+import { apiRequest, ApiError } from "../api";
 import type { BackendCreatePagoPayload, BackendPago, BackendPagoCreationResponse } from "../models/backend";
 
+type BackendPagoCobros = BackendPago & {
+  LR_CARNE?: string;
+  EMU_USUARIO_MULTA?: number | null;
+};
+
+function normalizePago(pago: BackendPagoCobros): BackendPago {
+  return {
+    ...pago,
+    EST_CARNE: pago.EST_CARNE || pago.LR_CARNE || "",
+    MUL_MULTA: pago.MUL_MULTA ?? pago.EMU_USUARIO_MULTA ?? null,
+  };
+}
+
 export const paymentService = {
-  getAll() {
-    return apiRequest<BackendPago[]>("/api/pago");
+  async getAll() {
+    const pagos = await apiRequest<BackendPagoCobros[]>("/api/pago");
+    return pagos.map(normalizePago);
   },
 
-  getById(id: number) {
-    return apiRequest<BackendPago>(`/api/pago/${id}`);
+  async getByCarne(carne: string) {
+    try {
+      const pagos = await apiRequest<BackendPagoCobros[]>(`/api/pago/carne/${encodeURIComponent(carne)}`);
+      return pagos.map(normalizePago);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) {
+        return [];
+      }
+
+      throw error;
+    }
+  },
+
+  async getNextPaymentId(start = 1) {
+    try {
+      const pagos = await this.getAll();
+      const maxPaymentId = pagos.reduce((max, pago) => {
+        const currentId = Number(pago.PAG_PAGO);
+        return Number.isFinite(currentId) ? Math.max(max, currentId) : max;
+      }, start - 1);
+
+      return Math.max(start, maxPaymentId + 1);
+    } catch {
+      return start;
+    }
+  },
+
+  async getById(id: number) {
+    const pago = await apiRequest<BackendPagoCobros>(`/api/pago/${id}`);
+    return normalizePago(pago);
   },
 
   create(payload: BackendCreatePagoPayload) {

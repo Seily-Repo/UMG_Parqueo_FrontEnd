@@ -9,12 +9,12 @@ function normalizeMorosoResponse(
 
 export const delinquentStudentService = {
   getAll() {
-    return apiRequest<BackendEstudianteMoroso[]>("/api/estudiante_moroso");
+    return apiRequest<BackendEstudianteMoroso[]>("/api/usuario_moroso");
   },
 
   getByCarne(carne: string) {
     return apiRequest<BackendEstudianteMoroso | BackendEstudianteMoroso[]>(
-      `/api/estudiante_moroso/carne/${encodeURIComponent(carne)}`
+      `/api/usuario_moroso/carne/${encodeURIComponent(carne)}`
     );
   },
 

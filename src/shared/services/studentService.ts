@@ -1,31 +1,53 @@
 import { apiRequest } from "../api";
 import type { BackendEstudiante } from "../models/backend";
 
+type BackendUsuarioCobros = BackendEstudiante & {
+  LR_CARNE?: string;
+  LR_NOMBRES?: string;
+  LR_APELLIDOS?: string;
+  LR_CORREO_INSTITUCIONAL?: string;
+  LR_FECHA_CREACION?: string;
+};
+
+function normalizeStudent(student: BackendUsuarioCobros): BackendEstudiante {
+  return {
+    ...student,
+    EST_CARNE: student.EST_CARNE || student.LR_CARNE || "",
+    EST_NOMBRE_COMPLETO:
+      student.EST_NOMBRE_COMPLETO ||
+      `${student.LR_NOMBRES || ""} ${student.LR_APELLIDOS || ""}`.trim(),
+    EST_EMAIL: student.EST_EMAIL || student.LR_CORREO_INSTITUCIONAL || "",
+    EST_FECHA_CREACION: student.EST_FECHA_CREACION || student.LR_FECHA_CREACION || new Date().toISOString(),
+  };
+}
+
 export const studentService = {
-  getAll() {
-    return apiRequest<BackendEstudiante[]>("/api/estudiantes");
+  async getAll() {
+    const students = await apiRequest<BackendUsuarioCobros[]>("/api/usuario");
+    return students.map(normalizeStudent);
   },
 
-  getByCarne(carne: string) {
-    return apiRequest<BackendEstudiante>(`/api/estudiantes/carne/${encodeURIComponent(carne)}`);
+  async getByCarne(carne: string) {
+    const student = await apiRequest<BackendUsuarioCobros>(`/api/usuario/carne/${encodeURIComponent(carne)}`);
+    return normalizeStudent(student);
   },
 
   create(payload: BackendEstudiante) {
-    return apiRequest<BackendEstudiante>("/api/estudiantes", {
+    return apiRequest<BackendEstudiante>("/api/usuario", {
       method: "POST",
       body: payload,
     });
   },
 
   update(carne: string, payload: BackendEstudiante) {
-    return apiRequest<BackendEstudiante>(`/api/estudiantes/carne/${encodeURIComponent(carne)}`, {
+    return apiRequest<BackendEstudiante>(`/api/usuario/carne/${encodeURIComponent(carne)}`, {
       method: "PUT",
       body: payload,
     });
   },
 
   remove(carne: string) {
-    return apiRequest<void>(`/api/estudiantes/carne/${encodeURIComponent(carne)}`, {
+    return apiRequest<void>(`/api/usuario/carne/${encodeURIComponent(carne)}`, {
       method: "DELETE",
     });
   },

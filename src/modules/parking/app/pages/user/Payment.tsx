@@ -7,15 +7,14 @@ import { CreditCard, ArrowLeft, DollarSign, Info, WalletCards } from 'lucide-rea
 import { toast } from 'react-toastify';
 import { useRegistration } from '../../context/RegistrationContext';
 import { getReadableApiError } from '../../../../../shared/api';
-import type { BackendCreatePagoPayload, BackendPago, BackendPlanParqueo } from '../../../../../shared/models/backend';
-import { parkingPlanService, paymentService } from '../../../../../shared/services';
+import type { BackendCreatePagoPayload, BackendFormaPago, BackendPago, BackendPlanParqueo } from '../../../../../shared/models/backend';
+import { parkingPlanService, paymentMethodService, paymentService } from '../../../../../shared/services';
 import { PaymentReceiptCard, type PaymentReceiptData } from '../../components/PaymentReceiptCard';
 import { exportReceiptToPdf } from '../../utils/receiptExport';
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : Promise.resolve(null);
 const paymentIdStart = Number(import.meta.env.VITE_PAYMENT_ID_START || 6);
-const paymentFormCardId = Number(import.meta.env.VITE_PAYMENT_FORM_CARD_ID || 1);
 const fallbackPlanIds = {
   'entre-semana': Number(import.meta.env.VITE_PAYMENT_PLAN_WEEKDAY_ID || 1),
   sabado: Number(import.meta.env.VITE_PAYMENT_PLAN_SATURDAY_ID || 2),
@@ -27,8 +26,6 @@ type PaymentIntentResponse = {
   data: BackendPago;
   clientSecret?: string;
 };
-
-const fixedAmount = 600;
 
 type PaymentFormState = {
   paymentId: number;
@@ -180,6 +177,9 @@ export function Payment() {
   const [isLoadingIntent, setIsLoadingIntent] = useState(false);
   const [isLoadingNextId, setIsLoadingNextId] = useState(false);
   const [paymentReference, setPaymentReference] = useState('');
+  const [paymentMethods, setPaymentMethods] = useState<BackendFormaPago[]>([]);
+  const [studentPayments, setStudentPayments] = useState<BackendPago[]>([]);
+  const [loadingAccount, setLoadingAccount] = useState(false);
   const [paymentData, setPaymentData] = useState<PaymentFormState>({
     paymentId: paymentIdStart,
     carnet: currentRegistration.carnet || '',
@@ -205,7 +205,7 @@ export function Payment() {
         setSelectedPlan(plan);
         updateRegistration({
           parkingPlan: plan.PLA_nombre,
-          amount: fixedAmount,
+          amount: Number(plan.PLA_precio) || 0,
         });
       } catch (requestError) {
         if (!isMounted) return;
@@ -240,17 +240,12 @@ export function Payment() {
       setIsLoadingNextId(true);
 
       try {
-        const pagos = await paymentService.getAll();
+        const nextPaymentId = await paymentService.getNextPaymentId(paymentIdStart);
         if (!isMounted) return;
-
-        const maxPaymentId = pagos.reduce((max, pago) => {
-          const currentId = Number(pago.PAG_PAGO);
-          return Number.isFinite(currentId) ? Math.max(max, currentId) : max;
-        }, paymentIdStart - 1);
 
         setPaymentData((prev) => ({
           ...prev,
-          paymentId: Math.max(paymentIdStart, maxPaymentId + 1),
+          paymentId: nextPaymentId,
         }));
       } catch {
         if (!isMounted) return;
@@ -267,12 +262,62 @@ export function Payment() {
     };
   }, [clientSecret]);
 
-  const amount = fixedAmount;
+  useEffect(() => {
+    if (!currentRegistration.carnet) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadAccountData = async () => {
+      setLoadingAccount(true);
+      setLoadError('');
+
+      try {
+        const [paymentsResponse, methodsResponse] = await Promise.all([
+          paymentService.getByCarne(currentRegistration.carnet || ''),
+          paymentMethodService.getAll(),
+        ]);
+
+        if (!isMounted) return;
+
+        setStudentPayments(paymentsResponse);
+        setPaymentMethods(methodsResponse.filter((method) => method.FPG_ESTADO === 'A'));
+      } catch (requestError) {
+        if (!isMounted) return;
+        setLoadError(getReadableApiError(requestError, 'No fue posible cargar los cobros del estudiante desde backend.'));
+      } finally {
+        if (isMounted) setLoadingAccount(false);
+      }
+    };
+
+    void loadAccountData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentRegistration.carnet]);
+
+  const amount = Number(selectedPlan?.PLA_precio || currentRegistration.amount || 0);
+  const planId = currentRegistration.selectedPlanId || fallbackPlanIds[(currentRegistration.parkingPlan as keyof typeof fallbackPlanIds) || 'entre-semana'];
   const planLabel = selectedPlan?.PLA_nombre || currentRegistration.parkingPlan || 'Plan no seleccionado';
   const planDescription = selectedPlan?.PLA_descripcion || 'Plan cargado desde el sistema';
+  const selectedPaymentMethod =
+    paymentMethods.find((method) => method.FPG_NOMBRE_FORMA?.toUpperCase().includes('TARJETA')) ||
+    paymentMethods[0];
+  const paymentFormCardId = selectedPaymentMethod?.FPG_FORMA_PAGO || Number(import.meta.env.VITE_PAYMENT_FORM_CARD_ID || 1);
+  const backendPlanPayment = studentPayments.find((payment) => Number(payment.PLN_PLAN) === Number(planId) && !payment.MUL_MULTA);
+  const backendPaymentStatus = backendPlanPayment?.PAG_ESTADO || '';
+  const backendPaymentPaid = backendPaymentStatus === 'A';
+  const backendPaymentPending = !!backendPlanPayment && !backendPaymentPaid;
+  const chargeStatusLabel = backendPaymentPaid ? 'Pagado' : 'Pendiente';
+  const chargeConcept = backendPlanPayment ? `Registro de parqueo - Pago #${backendPlanPayment.PAG_PAGO}` : planLabel;
+  const chargeDescription = backendPlanPayment
+    ? `Registro cargado desde backend (${backendPaymentStatus || 'sin estado'})`
+    : planDescription;
 
   const receiptData = useMemo<PaymentReceiptData | null>(() => {
-    if (currentRegistration.paymentStatus !== 'paid') {
+    if (currentRegistration.paymentStatus !== 'paid' && !backendPaymentPaid) {
       return null;
     }
 
@@ -281,24 +326,27 @@ export function Payment() {
       : new Date().toLocaleString();
 
     return {
-      receiptNumber: currentRegistration.paymentReference || `PRQ-${Date.now()}`,
+      receiptNumber: currentRegistration.paymentReference || backendPlanPayment?.STRIPE_PAYMENT_INTENT_ID || `PAG-${backendPlanPayment?.PAG_PAGO || Date.now()}`,
       title: 'Recibo de pago de parqueo',
       studentName: currentRegistration.fullName || 'Estudiante',
       carnet: currentRegistration.carnet || 'No disponible',
       concept: `Pago de parqueo - ${planLabel}`,
-      amount,
-      paymentMethod: 'Pago con Stripe',
+      amount: backendPlanPayment ? Number(backendPlanPayment.PAG_MONTO_TOTAL || amount) : amount,
+      paymentMethod: selectedPaymentMethod?.FPG_NOMBRE_FORMA || 'Pago con Stripe',
       status: 'Pagado',
       issuedAt,
       detailLines: [
         { label: 'Plan seleccionado', value: planLabel },
         { label: 'Descripcion', value: planDescription },
         { label: 'Vehiculos registrados', value: `${currentRegistration.vehicles?.length || 0}` },
-        { label: 'Payment Intent', value: paymentReference || 'No disponible' },
+        { label: 'Pago backend', value: backendPlanPayment ? `${backendPlanPayment.PAG_PAGO}` : 'No disponible' },
+        { label: 'Payment Intent', value: paymentReference || backendPlanPayment?.STRIPE_PAYMENT_INTENT_ID || 'No disponible' },
       ],
     };
   }, [
     amount,
+    backendPaymentPaid,
+    backendPlanPayment,
     currentRegistration.carnet,
     currentRegistration.fullName,
     currentRegistration.paymentRecordedAt,
@@ -306,6 +354,7 @@ export function Payment() {
     currentRegistration.paymentStatus,
     currentRegistration.vehicles,
     paymentReference,
+    selectedPaymentMethod,
     planDescription,
     planLabel,
   ]);
@@ -346,9 +395,9 @@ export function Payment() {
 
     try {
       const payload: BackendCreatePagoPayload = {
-        PAG_PAGO: paymentData.paymentId,
         EST_CARNE: paymentData.carnet,
-        PLN_PLAN: currentRegistration.selectedPlanId || fallbackPlanIds[(currentRegistration.parkingPlan as keyof typeof fallbackPlanIds) || 'entre-semana'],
+        LR_CARNE: paymentData.carnet,
+        PLN_PLAN: planId,
         FPG_FORMA_PAGO: paymentFormCardId,
         PAG_FECHA_PAGO: paymentData.paymentDate,
         PAG_MONTO_TOTAL: amount,
@@ -361,6 +410,7 @@ export function Payment() {
       }
 
       setPaymentReference(result.data?.STRIPE_PAYMENT_INTENT_ID || '');
+      setStudentPayments((prev) => [result.data, ...prev.filter((payment) => payment.PAG_PAGO !== result.data.PAG_PAGO)]);
       setClientSecret(result.clientSecret);
       setPaymentData((prev) => ({ ...prev, paymentId: prev.paymentId + 1 }));
     } catch (error) {
@@ -442,11 +492,11 @@ export function Payment() {
 
       {loadError && <Alert variant="danger" className="mb-4">{loadError}</Alert>}
 
-      {(loadingPlan || isLoadingIntent) && (
+      {(loadingPlan || loadingAccount || isLoadingIntent) && (
         <div className="text-center py-4">
           <Spinner animation="border" />
           <p className="text-muted mt-3 mb-0">
-            {loadingPlan ? 'Cargando informacion del plan...' : 'Preparando el formulario de pago seguro...'}
+            {loadingPlan || loadingAccount ? 'Cargando informacion de cobros desde backend...' : 'Preparando el formulario de pago seguro...'}
           </p>
         </div>
       )}
@@ -466,23 +516,31 @@ export function Payment() {
               </div>
               <div className="parking-charge-table__row">
                 <div>
-                  <strong>{planLabel}</strong>
-                  <small>{planDescription}</small>
+                  <strong>{chargeConcept}</strong>
+                  <small>{chargeDescription}</small>
                 </div>
                 <div>
-                  <span className="parking-charge-table__badge">Pendiente</span>
+                  <span className={`parking-charge-table__badge${backendPaymentPaid ? ' parking-charge-table__badge--paid' : ''}`}>
+                    {chargeStatusLabel}
+                  </span>
                 </div>
                 <div className="parking-charge-table__amount">Q.{amount.toFixed(2)}</div>
                 <div>
-                  <Button
-                    variant="primary"
-                    type="submit"
-                    className="parking-charge-table__pay"
-                    disabled={loadingPlan || !!planError || isLoadingIntent || isLoadingNextId}
-                  >
-                    {isLoadingIntent ? <Spinner size="sm" className="me-2" /> : <WalletCards size={16} className="me-2" />}
-                    Pagar
-                  </Button>
+                  {backendPaymentPaid ? (
+                    <Button variant="outline-primary" className="parking-charge-table__pay" onClick={() => navigate('/parking/user/perfil')}>
+                      Ver
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      type="submit"
+                      className="parking-charge-table__pay"
+                      disabled={loadingPlan || loadingAccount || !!planError || isLoadingIntent || isLoadingNextId || backendPaymentPending}
+                    >
+                      {isLoadingIntent ? <Spinner size="sm" className="me-2" /> : <WalletCards size={16} className="me-2" />}
+                      {backendPaymentPending ? 'En proceso' : 'Pagar'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

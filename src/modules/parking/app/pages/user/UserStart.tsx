@@ -5,14 +5,15 @@ import { Card, Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import { Car, Bike, Calendar, CheckCircle, CreditCard, WalletCards } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getReadableApiError } from '../../../../../shared/api';
-import type { BackendPlanParqueo } from '../../../../../shared/models/backend';
-import { parkingPlanService } from '../../../../../shared/services';
+import type { BackendPago, BackendPlanParqueo } from '../../../../../shared/models/backend';
+import { parkingPlanService, paymentService } from '../../../../../shared/services';
 import { getGuatemalaPlateExample, validateGuatemalaPlate } from '../../utils/plateValidation';
 
 export function UserStart() {
   const navigate = useNavigate();
   const { updateRegistration, currentRegistration } = useRegistration();
   const [plans, setPlans] = useState<BackendPlanParqueo[]>([]);
+  const [backendPayments, setBackendPayments] = useState<BackendPago[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [plansError, setPlansError] = useState('');
   const [formData, setFormData] = useState({
@@ -55,6 +56,33 @@ export function UserStart() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!currentRegistration.carnet) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadPayments = async () => {
+      try {
+        const response = await paymentService.getByCarne(currentRegistration.carnet || '');
+        if (isMounted) {
+          setBackendPayments(response);
+        }
+      } catch {
+        if (isMounted) {
+          setBackendPayments([]);
+        }
+      }
+    };
+
+    void loadPayments();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentRegistration.carnet]);
 
   const selectedPlan = useMemo(
     () => plans.find((plan) => plan.PLA_id_plan_parqueo === formData.selectedPlanId),
@@ -120,7 +148,13 @@ export function UserStart() {
   ] as const;
   const firstName = (currentRegistration.fullName || 'Cristian Estrada').split(' ')[0] || 'Usuario';
   const registeredVehicles = currentRegistration.vehicles?.length || 0;
-  const paymentStatus = currentRegistration.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente';
+  const hasAcceptedPayment = backendPayments.some((payment) => payment.PAG_ESTADO === 'A' && !payment.MUL_MULTA);
+  const hasBackendPayment = backendPayments.some((payment) => !payment.MUL_MULTA);
+  const paymentStatus = hasAcceptedPayment || currentRegistration.paymentStatus === 'paid'
+    ? 'Pagado'
+    : hasBackendPayment
+      ? 'En proceso'
+      : 'Pendiente';
 
   const dashboardHeader = (
     <>

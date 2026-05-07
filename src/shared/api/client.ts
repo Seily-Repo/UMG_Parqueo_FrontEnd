@@ -44,12 +44,13 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   const timeoutMs = options.timeoutMs ?? apiConfig.timeoutMs;
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
   const hasBody = options.body !== undefined;
+  const token = options.token ?? apiConfig.jwt;
 
   try {
     const response = await fetch(`${apiConfig.baseUrl}${path}`, {
       ...options,
       body: hasBody ? JSON.stringify(options.body) : undefined,
-      headers: buildHeaders(options.headers, hasBody, options.token),
+      headers: buildHeaders(options.headers, hasBody, token),
       signal: options.signal ?? controller.signal,
     });
 

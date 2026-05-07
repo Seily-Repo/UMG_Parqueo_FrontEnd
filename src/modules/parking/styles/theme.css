@@ -888,6 +888,11 @@ small {
   font-weight: 800;
 }
 
+.parking-charge-table__badge--paid {
+  background: #d7f5e5;
+  color: #10703c;
+}
+
 .parking-charge-table__amount {
   color: #0b0b0d;
   font-size: 1.1rem;
