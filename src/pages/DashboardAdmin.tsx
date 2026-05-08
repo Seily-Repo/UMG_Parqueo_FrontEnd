@@ -31,14 +31,17 @@ const DashboardAdmin = () => {
   const [pagosAdmin, setPagosAdmin] = useState<any[]>([]);
   const [multasCatalogo, setMultasCatalogo] = useState<any[]>([]);
   const [busquedaPagos, setBusquedaPagos] = useState('');
+  
   const [formMulta, setFormMulta] = useState({ carne: '', placa: '', id_multa: '' });
+  const [buscandoPlaca, setBuscandoPlaca] = useState(false);
+  const [infoVehiculoInfractor, setInfoVehiculoInfractor] = useState<any>(null);
 
   const [reportes, setReportes] = useState<any>({ demografia: [], ingresosPorPlan: [], morosos: [] });
 
   // --- EFECTOS ---
   useEffect(() => {
     const adminGuardado = localStorage.getItem('usuarioAdmin');
-    const token = localStorage.getItem('token'); // Verificamos que exista el token
+    const token = localStorage.getItem('token'); 
     if (adminGuardado && token) { 
         setAdminLogueado(JSON.parse(adminGuardado)); 
     } else { 
@@ -52,7 +55,6 @@ const DashboardAdmin = () => {
     if (vistaActual === 'reportes') cargarReportes(); 
   }, [vistaActual]);
 
-  // 🔥 NUEVO: Función maestra para inyectar el token en todas las peticiones
   const obtenerHeaders = (conJson = false) => {
     const token = localStorage.getItem('token');
     const headers: any = { 'Authorization': `Bearer ${token}` };
@@ -64,6 +66,7 @@ const DashboardAdmin = () => {
     cargarUsuarios();
     cargarEstadisticas();
     cargarRoles();
+    cargarPagosYMultas(); 
   };
 
   const cargarRoles = async () => { try { const res = await fetch('http://localhost:3001/api/roles'); if (res.ok) setRoles(await res.json()); } catch (error) {} };
@@ -71,7 +74,6 @@ const DashboardAdmin = () => {
   const cargarUsuarios = async () => { 
       setCargando(true); 
       try { 
-          // 🔥 Aquí le pasamos el token
           const respuesta = await fetch('http://localhost:3001/api/admin/usuarios', { headers: obtenerHeaders() }); 
           if (respuesta.ok) setUsuarios(await respuesta.json()); 
           else if (respuesta.status === 401 || respuesta.status === 403) { Swal.fire('Sesión Expirada', 'Por favor inicia sesión de nuevo', 'warning'); handleLogout(); }
@@ -80,12 +82,28 @@ const DashboardAdmin = () => {
   
   const cargarEstadisticas = async () => { try { const respuesta = await fetch('http://localhost:3001/api/admin/estadisticas', { headers: obtenerHeaders() }); if (respuesta.ok) setStats(await respuesta.json()); } catch (error) {} };
   
+  // 🔥 CARGA DE PAGOS Y MULTAS (MODO SIGILO)
   const cargarPagosYMultas = async () => {
-    setCargando(true);
     try {
-      const resPagos = await fetch('http://localhost:3001/api/admin/pagos', { headers: obtenerHeaders() }); if (resPagos.ok) setPagosAdmin(await resPagos.json());
-      const resMultas = await fetch('http://localhost:3001/api/admin/multas-catalogo', { headers: obtenerHeaders() }); if (resMultas.ok) setMultasCatalogo(await resMultas.json());
-    } catch (error) {} finally { setCargando(false); }
+      const resPagos = await fetch('http://localhost:3001/api/admin/pagos', { headers: obtenerHeaders() }); 
+      if (resPagos.ok) setPagosAdmin(await resPagos.json());
+    } catch (error) { 
+      console.error(error); 
+    }
+    
+    try {
+      const resMultas = await fetch('http://localhost:3001/api/admin/multas-catalogo', { headers: obtenerHeaders() }); 
+      if (resMultas.ok) {
+        const dataMultas = await resMultas.json();
+        let arraySeguro = Array.isArray(dataMultas) ? dataMultas : (dataMultas.data || dataMultas.multas || []);
+        
+        setMultasCatalogo(arraySeguro);
+      } else {
+        console.error("Error HTTP al traer multas:", resMultas.status);
+      }
+    } catch (error) { 
+      console.error("Error al cargar multas:", error);
+    }
   };
 
   const cargarReportes = async () => {
@@ -96,7 +114,6 @@ const DashboardAdmin = () => {
     } catch (error) {} finally { setCargando(false); }
   };
 
-  // --- ACCIONES INTERACTIVAS ---
   const abrirModalEdicion = (usr: any) => { setEditForm({ carne: usr.CARNE, nombres: usr.NOMBRES, apellidos: usr.APELLIDOS, correo_institucional: usr.CORREO, telefono: usr.TELEFONO || '', id_rol: usr.ID_ROL }); setShowEditModal(true); };
   
   const handleGuardarEdicion = async () => {
@@ -120,11 +137,49 @@ const DashboardAdmin = () => {
     });
   };
 
+  const buscarPropietarioPorPlaca = async () => {
+    if (!formMulta.placa) return;
+    setBuscandoPlaca(true);
+    try {
+      const placaLimpia = formMulta.placa.trim().toUpperCase();
+      const res = await fetch(`http://localhost:3001/api/vehiculos/placa/${placaLimpia}`, { headers: obtenerHeaders() });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setInfoVehiculoInfractor(data);
+        setFormMulta(prev => ({ ...prev, carne: data.CARNE, placa: placaLimpia }));
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Dueño localizado', showConfirmButton: false, timer: 1500 });
+      } else {
+        setInfoVehiculoInfractor(null);
+        setFormMulta(prev => ({ ...prev, carne: '' }));
+        Swal.fire('Atención', 'No se encontró ningún vehículo registrado con esta placa', 'warning');
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire('Error', 'Hubo un problema de conexión al buscar la placa.', 'error');
+    } finally {
+      setBuscandoPlaca(false);
+    }
+  };
+
   const handleAsignarMulta = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formMulta.carne) {
+      return Swal.fire('Falta información', 'Busca una placa válida primero para obtener el carné.', 'warning');
+    }
+
     try {
       const res = await fetch(`http://localhost:3001/api/admin/multas`, { method: 'POST', headers: obtenerHeaders(true), body: JSON.stringify(formMulta) });
-      if (res.ok) { Swal.fire('¡Multa Aplicada!', 'Cargo asignado exitosamente.', 'success'); setFormMulta({ carne: '', placa: '', id_multa: '' }); cargarPagosYMultas(); cargarReportes(); cargarEstadisticas(); } else { Swal.fire('Error', 'No se pudo asignar la multa.', 'error'); }
+      if (res.ok) { 
+        Swal.fire('¡Multa Aplicada!', 'Cargo asignado exitosamente al estudiante.', 'success'); 
+        setFormMulta({ carne: '', placa: '', id_multa: '' }); 
+        setInfoVehiculoInfractor(null);
+        cargarPagosYMultas(); 
+        cargarReportes(); 
+        cargarEstadisticas(); 
+      } else { 
+        Swal.fire('Error', 'No se pudo asignar la multa.', 'error'); 
+      }
     } catch (error) { Swal.fire('Error', 'Sin conexión al servidor.', 'error'); }
   };
 
@@ -132,7 +187,7 @@ const DashboardAdmin = () => {
       Swal.fire({ title: '¿Cerrar Sesión?', icon: 'question', showCancelButton: true, confirmButtonColor: 'var(--azul-universitario)', confirmButtonText: 'Sí, salir' }).then((result) => { 
           if (result.isConfirmed) { 
               localStorage.removeItem('usuarioAdmin'); 
-              localStorage.removeItem('token'); // 🔥 Borramos el token al salir
+              localStorage.removeItem('token'); 
               navigate('/login-admin'); 
           } 
       }); 
@@ -193,6 +248,9 @@ const DashboardAdmin = () => {
     </Col>
   );
 
+  const multaSeleccionada = multasCatalogo.find((m:any) => (m.MUL_MULTA || m.ID_MULTA || m.id_multa) == formMulta.id_multa);
+  const montoDisplay = multaSeleccionada ? (multaSeleccionada.MUL_MONTO_TOTAL || multaSeleccionada.MONTO || multaSeleccionada.monto || '0') : '0';
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--fondo-general, #f4f7f6)' }}>
       {/* ================= BARRA LATERAL ================= */}
@@ -238,6 +296,8 @@ const DashboardAdmin = () => {
         </div>
 
         <div className="p-4 p-md-5" style={{ overflowY: 'auto' }}>
+          
+          {/* VISTA 1: DASHBOARD */}
           {vistaActual === 'dashboard' && (
             <div className="animate-fade-in">
               <Row className="mb-4"><Col><h2 className="fw-bold" style={{ color: 'var(--color-accion, #0098db)', fontStyle: 'italic' }}>Visión General</h2><p className="text-muted">Resumen del estado del sistema</p></Col></Row>
@@ -250,6 +310,7 @@ const DashboardAdmin = () => {
             </div>
           )}
 
+          {/* VISTA 2: USUARIOS */}
           {vistaActual === 'usuarios' && (
             <div className="animate-fade-in">
               <Row className="mb-4"><Col><h2 className="fw-bold" style={{ color: 'var(--color-accion, #0098db)', fontStyle: 'italic' }}>Gestión de Usuarios</h2><p className="text-muted">Control total de accesos y roles del parqueo.</p></Col></Row>
@@ -295,10 +356,13 @@ const DashboardAdmin = () => {
             </div>
           )}
 
+          {/* VISTA 3: PAGOS Y MULTAS */}
           {vistaActual === 'pagos' && (
             <div className="animate-fade-in">
               <Row className="mb-4"><Col><h2 className="fw-bold" style={{ color: 'var(--color-accion, #0098db)', fontStyle: 'italic' }}>Centro de Control Financiero</h2><p className="text-muted">Auditoría de pagos automáticos y panel de emergencias.</p></Col></Row>
               <Tabs defaultActiveKey="auditoria" className="mb-4 custom-tabs">
+                
+                {/* Pestaña: Auditoría */}
                 <Tab eventKey="auditoria" title={<><Receipt className="me-2"/> Auditoría de Pagos</>}>
                   <Card className="border-0 shadow-sm rounded-4 mt-3">
                     <Card.Body className="p-4">
@@ -326,27 +390,104 @@ const DashboardAdmin = () => {
                     </Card.Body>
                   </Card>
                 </Tab>
+
+                {/* Pestaña: Asignar Multa */}
                 <Tab eventKey="multas" title={<><ExclamationOctagonFill className="me-2"/> Asignar Multa</>}>
                   <Row className="mt-3 justify-content-center">
                     <Col md={8}>
                       <Card className="border-0 shadow-sm rounded-4" style={{ borderTop: '5px solid #dc3545' }}>
                         <Card.Body className="p-4 p-md-5">
-                          <div className="text-center mb-4"><ExclamationOctagonFill size={50} className="text-danger mb-3" /><h4 className="fw-bold text-danger">Imponer Multa Disciplinaria</h4><p className="text-muted">El cargo se reflejará inmediatamente en el portal del estudiante.</p></div>
+                          <div className="text-center mb-4"><ExclamationOctagonFill size={50} className="text-danger mb-3" /><h4 className="fw-bold text-danger">Imponer Multa Disciplinaria</h4><p className="text-muted">Ingresa la placa para asociar el cargo automáticamente.</p></div>
                           <Form onSubmit={handleAsignarMulta}>
-                            <Form.Group className="mb-3"><Form.Label className="fw-bold">Carné del Estudiante</Form.Label><Form.Control type="text" placeholder="Ej. 5190-23-XXXXX" required value={formMulta.carne} onChange={(e) => setFormMulta({...formMulta, carne: e.target.value})} /></Form.Group>
-                            <Form.Group className="mb-3"><Form.Label className="fw-bold">Placa del Vehículo Infractor</Form.Label><Form.Control type="text" placeholder="Ej. P123ABC" required value={formMulta.placa} onChange={(e) => setFormMulta({...formMulta, placa: e.target.value.toUpperCase()})} /></Form.Group>
-                            <Form.Group className="mb-4"><Form.Label className="fw-bold">Motivo de la Multa</Form.Label><Form.Select required value={formMulta.id_multa} onChange={(e) => setFormMulta({...formMulta, id_multa: e.target.value})}><option value="" disabled hidden>Seleccione la infracción...</option>{multasCatalogo.map(m => (<option key={m.MUL_MULTA} value={m.MUL_MULTA}>{m.MUL_DESCRIPCION} - Q.{m.MUL_MONTO_TOTAL}.00</option>))}</Form.Select></Form.Group>
-                            <Button variant="danger" type="submit" size="lg" className="w-100 fw-bold rounded-3 shadow-sm">Aplicar Multa al Usuario</Button>
+                            
+                            {/* PASO 1: Búsqueda de Placa */}
+                            <Form.Group className="mb-3">
+                              <Form.Label className="fw-bold text-primary">1. Placa del Vehículo Infractor</Form.Label>
+                              <InputGroup>
+                                <Form.Control 
+                                  type="text" 
+                                  placeholder="Ej. P123ABC" 
+                                  required 
+                                  value={formMulta.placa} 
+                                  onChange={(e) => setFormMulta({...formMulta, placa: e.target.value.toUpperCase()})} 
+                                  onBlur={buscarPropietarioPorPlaca}
+                                />
+                                <Button variant="outline-primary" onClick={buscarPropietarioPorPlaca} disabled={buscandoPlaca}>
+                                  {buscandoPlaca ? <Spinner size="sm" animation="border" /> : <Search />} Buscar
+                                </Button>
+                              </InputGroup>
+                            </Form.Group>
+
+                            {/* Mostrar info del carro */}
+                            {infoVehiculoInfractor && (
+                              <div className="mb-3 p-3 bg-light border-start border-4 border-success rounded">
+                                <small className="d-block text-muted">Vehículo Localizado:</small>
+                                <strong>{infoVehiculoInfractor.MARCA} {infoVehiculoInfractor.MODELO}</strong> 
+                                <span className="ms-2 badge bg-secondary">{infoVehiculoInfractor.COLOR}</span>
+                              </div>
+                            )}
+
+                            {/* PASO 2: Carné */}
+                            <Form.Group className="mb-3">
+                              <Form.Label className="fw-bold text-muted">2. Carné del Propietario (Automático)</Form.Label>
+                              <Form.Control 
+                                type="text" 
+                                value={formMulta.carne} 
+                                disabled
+                                style={{ backgroundColor: '#f4f7f6', fontWeight: 'bold' }}
+                                placeholder="Se llenará al encontrar la placa..."
+                              />
+                            </Form.Group>
+
+                            {/* PASO 3: Motivo */}
+                            <Form.Group className="mb-3">
+                              <div className="d-flex justify-content-between align-items-center mb-2">
+                                <Form.Label className="fw-bold mb-0">3. Motivo de la Infracción</Form.Label>
+                              </div>
+                              <Form.Select 
+                                required 
+                                value={formMulta.id_multa} 
+                                onChange={(e) => setFormMulta({...formMulta, id_multa: e.target.value})}
+                              >
+                                <option value="" disabled hidden>Seleccione la infracción...</option>
+                                {multasCatalogo && multasCatalogo.map(m => {
+                                  const id = m.MUL_MULTA || m.ID_MULTA || m.id_multa;
+                                  const desc = m.MUL_DESCRIPCION || m.DESCRIPCION || m.descripcion;
+                                  return (
+                                    <option key={id} value={id}>
+                                      {desc}
+                                    </option>
+                                  );
+                                })}
+                              </Form.Select>
+                            </Form.Group>
+
+                            {/* Monto Automático */}
+                            <Form.Group className="mb-4">
+                              <Form.Label className="fw-bold">Monto Generado</Form.Label>
+                              <Form.Control 
+                                type="text" 
+                                disabled 
+                                value={`Q. ${montoDisplay}.00`} 
+                                style={{ fontWeight: 'bold', color: 'var(--azul-oscuro)', backgroundColor: '#f4f7f6', fontSize: '1.2rem' }} 
+                              />
+                            </Form.Group>
+
+                            <Button variant="danger" type="submit" size="lg" className="w-100 fw-bold rounded-3 shadow-sm" disabled={!formMulta.carne}>
+                              Aplicar Multa al Estudiante
+                            </Button>
                           </Form>
                         </Card.Body>
                       </Card>
                     </Col>
                   </Row>
                 </Tab>
+
               </Tabs>
             </div>
           )}
 
+          {/* VISTA 4: REPORTES */}
           {vistaActual === 'reportes' && (
             <div className="animate-fade-in">
               <Row className="mb-4">
@@ -439,6 +580,7 @@ const DashboardAdmin = () => {
         </div>
       </div>
 
+      {/* MODAL EDICIÓN */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
         <div style={{ borderRadius: '22px', overflow: 'hidden', backgroundColor: '#fff' }}>
           <div style={{ background: 'var(--azul-oscuro, #002b5c)', padding: '24px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -464,6 +606,7 @@ const DashboardAdmin = () => {
         </div>
       </Modal>
 
+      {/* MODAL PERFIL */}
       <Modal show={showProfile} onHide={() => setShowProfile(false)} centered>
         <div style={{ borderRadius: '22px', overflow: 'hidden', backgroundColor: 'var(--fondo-blanco)' }}>
           <div style={{ background: 'var(--azul-oscuro, #002b5c)', padding: '30px', textAlign: 'center', position: 'relative' }}>
