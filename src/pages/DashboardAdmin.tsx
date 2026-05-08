@@ -9,6 +9,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Le
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+const API_BASE = '/api';
+
 const DashboardAdmin = () => {
   const navigate = useNavigate();
   
@@ -69,30 +71,30 @@ const DashboardAdmin = () => {
     cargarPagosYMultas(); 
   };
 
-  const cargarRoles = async () => { try { const res = await fetch('http://localhost:3001/api/roles'); if (res.ok) setRoles(await res.json()); } catch (error) {} };
+  const cargarRoles = async () => { try { const res = await fetch(`${API_BASE}/roles`); if (res.ok) setRoles(await res.json()); } catch (error) {} };
   
   const cargarUsuarios = async () => { 
       setCargando(true); 
       try { 
-          const respuesta = await fetch('http://localhost:3001/api/admin/usuarios', { headers: obtenerHeaders() }); 
+          const respuesta = await fetch(`${API_BASE}/admin/usuarios`, { headers: obtenerHeaders() }); 
           if (respuesta.ok) setUsuarios(await respuesta.json()); 
           else if (respuesta.status === 401 || respuesta.status === 403) { Swal.fire('Sesión Expirada', 'Por favor inicia sesión de nuevo', 'warning'); handleLogout(); }
       } catch (error) {} finally { setCargando(false); } 
   };
   
-  const cargarEstadisticas = async () => { try { const respuesta = await fetch('http://localhost:3001/api/admin/estadisticas', { headers: obtenerHeaders() }); if (respuesta.ok) setStats(await respuesta.json()); } catch (error) {} };
+  const cargarEstadisticas = async () => { try { const respuesta = await fetch(`${API_BASE}/admin/estadisticas`, { headers: obtenerHeaders() }); if (respuesta.ok) setStats(await respuesta.json()); } catch (error) {} };
   
   // 🔥 CARGA DE PAGOS Y MULTAS (MODO SIGILO)
   const cargarPagosYMultas = async () => {
     try {
-      const resPagos = await fetch('http://localhost:3001/api/admin/pagos', { headers: obtenerHeaders() }); 
+      const resPagos = await fetch(`${API_BASE}/admin/pagos`, { headers: obtenerHeaders() }); 
       if (resPagos.ok) setPagosAdmin(await resPagos.json());
     } catch (error) { 
       console.error(error); 
     }
     
     try {
-      const resMultas = await fetch('http://localhost:3001/api/admin/multas-catalogo', { headers: obtenerHeaders() }); 
+      const resMultas = await fetch(`${API_BASE}/admin/multas-catalogo`, { headers: obtenerHeaders() }); 
       if (resMultas.ok) {
         const dataMultas = await resMultas.json();
         let arraySeguro = Array.isArray(dataMultas) ? dataMultas : (dataMultas.data || dataMultas.multas || []);
@@ -109,7 +111,7 @@ const DashboardAdmin = () => {
   const cargarReportes = async () => {
     setCargando(true);
     try {
-      const res = await fetch('http://localhost:3001/api/admin/reportes', { headers: obtenerHeaders() });
+      const res = await fetch(`${API_BASE}/admin/reportes`, { headers: obtenerHeaders() });
       if (res.ok) setReportes(await res.json());
     } catch (error) {} finally { setCargando(false); }
   };
@@ -118,7 +120,7 @@ const DashboardAdmin = () => {
   
   const handleGuardarEdicion = async () => {
     try {
-      const res = await fetch(`http://localhost:3001/api/admin/usuarios/${editForm.carne}`, { method: 'PUT', headers: obtenerHeaders(true), body: JSON.stringify(editForm) });
+      const res = await fetch(`${API_BASE}/admin/usuarios/${editForm.carne}`, { method: 'PUT', headers: obtenerHeaders(true), body: JSON.stringify(editForm) });
       if (res.ok) { Swal.fire({ title: '¡Actualizado!', icon: 'success', timer: 1500, showConfirmButton: false }); setShowEditModal(false); cargarUsuarios(); } else Swal.fire('Error', 'No se pudo guardar.', 'error');
     } catch (error) { Swal.fire('Error', 'Sin conexión al servidor.', 'error'); }
   };
@@ -127,13 +129,13 @@ const DashboardAdmin = () => {
     if (carne === adminLogueado.carne) return Swal.fire('Denegado', 'No puedes desactivar tu propia cuenta.', 'error');
     const nuevoEstado = estadoActual === 'Activo' ? 0 : 1;
     Swal.fire({ title: `¿${estadoActual === 'Activo' ? 'Desactivar' : 'Activar'} a ${nombre}?`, icon: 'warning', showCancelButton: true, confirmButtonColor: estadoActual === 'Activo' ? '#d33' : '#28a745', confirmButtonText: 'Sí, proceder' }).then(async (result) => {
-      if (result.isConfirmed) { try { const res = await fetch(`http://localhost:3001/api/admin/usuarios/${carne}/estado`, { method: 'PUT', headers: obtenerHeaders(true), body: JSON.stringify({ nuevoEstado }) }); if (res.ok) { cargarUsuarios(); Swal.fire({ title: '¡Estado Modificado!', icon: 'success', timer: 1500, showConfirmButton: false }); } } catch (error) { Swal.fire('Error', 'Sin conexión al servidor.', 'error'); } }
+      if (result.isConfirmed) { try { const res = await fetch(`${API_BASE}/admin/usuarios/${carne}/estado`, { method: 'PUT', headers: obtenerHeaders(true), body: JSON.stringify({ nuevoEstado }) }); if (res.ok) { cargarUsuarios(); Swal.fire({ title: '¡Estado Modificado!', icon: 'success', timer: 1500, showConfirmButton: false }); } } catch (error) { Swal.fire('Error', 'Sin conexión al servidor.', 'error'); } }
     });
   };
 
   const handleAprobarPago = (id_pago: number, nombre: string) => {
     Swal.fire({ title: '⚠️ MODO DE EMERGENCIA', html: `Estás a punto de forzar el pago de <b>${nombre}</b>.<br/><br/><small>Solo debes usar esta opción si el sistema del banco falló.</small>`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Sí, Forzar Aprobación' }).then(async (result) => {
-      if (result.isConfirmed) { try { const res = await fetch(`http://localhost:3001/api/admin/pagos/${id_pago}/aprobar`, { method: 'PUT', headers: obtenerHeaders() }); if (res.ok) { cargarPagosYMultas(); cargarEstadisticas(); cargarReportes(); Swal.fire('¡Forzado!', 'El pago ha sido aprobado manualmente.', 'success'); } } catch (error) { Swal.fire('Error', 'No se pudo conectar.', 'error'); } }
+      if (result.isConfirmed) { try { const res = await fetch(`${API_BASE}/admin/pagos/${id_pago}/aprobar`, { method: 'PUT', headers: obtenerHeaders() }); if (res.ok) { cargarPagosYMultas(); cargarEstadisticas(); cargarReportes(); Swal.fire('¡Forzado!', 'El pago ha sido aprobado manualmente.', 'success'); } } catch (error) { Swal.fire('Error', 'No se pudo conectar.', 'error'); } }
     });
   };
 
@@ -142,7 +144,7 @@ const DashboardAdmin = () => {
     setBuscandoPlaca(true);
     try {
       const placaLimpia = formMulta.placa.trim().toUpperCase();
-      const res = await fetch(`http://localhost:3001/api/vehiculos/placa/${placaLimpia}`, { headers: obtenerHeaders() });
+      const res = await fetch(`${API_BASE}/vehiculos/placa/${placaLimpia}`, { headers: obtenerHeaders() });
       
       if (res.ok) {
         const data = await res.json();
@@ -169,7 +171,7 @@ const DashboardAdmin = () => {
     }
 
     try {
-      const res = await fetch(`http://localhost:3001/api/admin/multas`, { method: 'POST', headers: obtenerHeaders(true), body: JSON.stringify(formMulta) });
+      const res = await fetch(`${API_BASE}/admin/multas`, { method: 'POST', headers: obtenerHeaders(true), body: JSON.stringify(formMulta) });
       if (res.ok) { 
         Swal.fire('¡Multa Aplicada!', 'Cargo asignado exitosamente al estudiante.', 'success'); 
         setFormMulta({ carne: '', placa: '', id_multa: '' }); 

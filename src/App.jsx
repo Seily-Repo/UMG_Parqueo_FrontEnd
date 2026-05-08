@@ -4,7 +4,7 @@ import './App.css';
 
 function App() {
   const [msg, setMsg] = useState('Cargando...');
-  const API = process.env.REACT_APP_API_URL || 'http://localhost:4000';
+  const API = process.env.REACT_APP_API_URL || 'http://10.0.40.10:4000';
 
   useEffect(() => {
     fetch(`${API}/test`)

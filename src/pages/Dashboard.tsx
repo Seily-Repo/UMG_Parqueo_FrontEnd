@@ -9,8 +9,8 @@ import {
 import Swal from 'sweetalert2';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 
-const API_BASE = 'http://localhost:3001/api';
-const COBROS_URL = 'http://localhost:4000';
+const API_BASE = '/api';
+const COBROS_URL = 'http://10.0.40.10:4000';
 
 const Dashboard = () => {
   const navigate = useNavigate();
