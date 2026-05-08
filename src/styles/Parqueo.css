@@ -4,6 +4,8 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-attachment: fixed;
+  image-rendering: auto;
 
   min-height: calc(100vh - 70px);
 
