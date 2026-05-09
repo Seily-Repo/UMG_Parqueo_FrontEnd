@@ -4,7 +4,7 @@ import "../styles/Parqueo.css";
 import api from "../services/api";
 import { useEffect, useState } from "react";
 import { preconnect } from "react-dom";
-
+import MessageBox from '../components/Mensaje';
 const ISLAS = [
   { nombre: "Isla A", descripcion: "Frente a Edificio A", carros: 10, motos: 5, discapacitados: 5, catedraticos: 3},
   { nombre: "Isla B", descripcion: "Frente a Edificio B", carros: 10, motos: 4, discapacitados: 5, catedraticos: 2 },
@@ -13,6 +13,7 @@ const ISLAS = [
 ];
 
 export default function Parqueo() {
+  const [showModal, setShowModal] = useState(false);
   const [espacios, setEspacios] = useState([]);
 
   useEffect(() => {
@@ -128,6 +129,33 @@ export default function Parqueo() {
                 </div>
               ))}
             </div>
+
+
+<div style={{ padding: '50px', textAlign: 'center' }}>
+      
+      <button onClick={() => setShowModal(true)} style={{background: "rgba(255,255,255,0.2)", color:"white", borderRadius: "10%", padding:"10px", backgroundColor:"#1a6db5",paddingLeft:"8%", paddingRight:"8%"}}>
+       Siguiente
+      </button>
+
+      <MessageBox 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)} 
+        title="¿Estas Seguro?" 
+        message="Despues de aceptar este puesto no podras cambiarlo"
+        buttonText="¡Entendido!"
+      />
+    </div>
+
+
+
+
+
+
+
+
+
+
+
 
           </div>
         </div>
