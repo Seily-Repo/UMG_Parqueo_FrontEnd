@@ -1,7 +1,7 @@
 import Isla from "../components/Isla";
 import Nav from "../components/nav";
 import "../styles/Parqueo.css";
-import api from "../services/api";
+import api, { asignarEspacio } from "../services/api";
 import { useEffect, useState } from "react";
 
 const ISLAS = [
@@ -25,6 +25,31 @@ export default function Parqueo() {
     };
     obtenerEspacios();
   }, []);
+
+    //CREAR FUNCIÓN HANDLESELECCION
+    const handleSeleccion = async (idEspacio) => {
+  try {
+
+    const data = {
+      carne_usuario: 202601001,
+      ES_Espacio: idEspacio,
+      id_ciclo: 1,
+      id_jornada: 1,
+      correlativo: "pi_3RDXTm2eZvKY1o2C1TjPKHmg"
+    };
+
+    const res = await asignarEspacio(data);
+
+    console.log("Asignación exitosa:", res.data);
+
+    alert("Espacio asignado correctamente");
+
+  } catch (error) {
+    console.error("Error al asignar:", error.response.data);
+  }
+};  
+
+
 
   const islaOffsets = ISLAS.reduce((acc, isla, i) => {
     const prev = acc[i - 1] ?? 0;
@@ -116,6 +141,7 @@ export default function Parqueo() {
                     discapacitados={isla.discapacitados}
                     espaciosBackend={espacios}
                     offsetIndex={islaOffsets[index] ?? 0}
+                    onSeleccionar={handleSeleccion}
                   />
                 </div>
               ))}
