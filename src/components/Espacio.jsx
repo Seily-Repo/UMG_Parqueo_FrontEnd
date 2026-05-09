@@ -1,4 +1,4 @@
-import { FaCar, FaMotorcycle, FaCheckCircle } from "react-icons/fa";
+import { FaCar, FaMotorcycle, FaCheckCircle, FaChalkboardTeacher } from "react-icons/fa";
 import Swal from "sweetalert2";
 
 export default function Espacio({ 
@@ -78,7 +78,15 @@ export default function Espacio({
       onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
     >
       <div style={{ fontSize: "18px" }}>
-        {discapacitado ? <span style={{ fontSize: "20px" }}>♿</span> : <FaCar />}
+        {discapacitado ? (
+          <span style={{ fontSize: "20px" }}>♿</span>
+        ) : tipo === "moto" ? (
+            <FaMotorcycle />
+        ) : tipo === "catedratico" ? (
+            <FaChalkboardTeacher />
+        ) : (
+          <FaCar />
+        )}
       </div>
 
       <div style={{ fontSize: "18px" }}>

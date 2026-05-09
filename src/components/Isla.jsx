@@ -4,6 +4,7 @@ export default function Isla({
   carros = 8,
   motos = 5,
   discapacitados = 2,
+  catedraticos = 0,
   espaciosBackend = [],
   offsetIndex = 0,
   onSeleccionar
@@ -11,6 +12,7 @@ export default function Isla({
 
   const espacios = [
     ...Array(discapacitados).fill("discapacitado"),
+    ...Array(catedraticos).fill("catedratico"),
     ...Array(carros).fill("carro"),
     ...Array(motos).fill("moto")
   ];
@@ -38,7 +40,7 @@ export default function Isla({
           <Espacio
             key={index}
             numero={backendIndex + 1}
-            tipo={tipo === "discapacitado" ? "carro" : tipo}
+            tipo={tipo}
             discapacitado={tipo === "discapacitado"}
 
             // Backend + demo temporal
