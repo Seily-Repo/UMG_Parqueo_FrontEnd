@@ -6,7 +6,8 @@ export default function Isla({
   discapacitados = 2,
   catedraticos = 0,
   espaciosBackend = [],
-  offsetIndex = 0
+  offsetIndex = 0,
+  onSeleccionar
 }) {
 
   const espacios = [
@@ -26,7 +27,14 @@ export default function Isla({
       }}
     >
       {espacios.map((tipo, index) => {
+
         const backendIndex = offsetIndex + index;
+
+        // Espacio de backend
+        const espacioActual = espaciosBackend[backendIndex];
+
+        // TEMPORAL: deja el primero ocupado para demo
+        const ocupadoDemo = index === 0;
 
         return (
           <Espacio
@@ -34,7 +42,15 @@ export default function Isla({
             numero={backendIndex + 1}
             tipo={tipo}
             discapacitado={tipo === "discapacitado"}
-            ocupado={index === 0}
+
+            // Backend + demo temporal
+            ocupado={
+              espacioActual?.ES_Estado === 0 || ocupadoDemo
+            }
+
+            onClick={() =>
+              onSeleccionar?.(espacioActual?.ES_Espacio)
+            }
           />
         );
       })}

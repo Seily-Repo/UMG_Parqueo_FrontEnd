@@ -1,7 +1,13 @@
 import { FaCar, FaMotorcycle, FaCheckCircle, FaChalkboardTeacher } from "react-icons/fa";
 import Swal from "sweetalert2";
 
-export default function Espacio({ numero, ocupado, tipo, discapacitado = false }) {
+export default function Espacio({ 
+  numero, 
+  ocupado, 
+  tipo, 
+  discapacitado = false,
+  onClick
+}) {
 
   const color = ocupado
     ? "#cb3634"
@@ -10,15 +16,44 @@ export default function Espacio({ numero, ocupado, tipo, discapacitado = false }
       : "#22c55e";
 
   const handleClick = () => {
-    if (ocupado) {
+
+  // Si está ocupado
+  if (ocupado) {
+    Swal.fire({
+      icon: "error",
+      title: "Espacio Ocupado",
+      text: `El espacio #${numero} está ocupado actualmente.`,
+      confirmButtonColor: "#cb3634"
+    });
+
+    return;
+  }
+
+  // Si está libre
+  Swal.fire({
+    icon: "question",
+    title: "Seleccionar espacio",
+    text: `¿Deseas seleccionar el espacio #${numero}?`,
+    showCancelButton: true,
+    confirmButtonText: "Sí, seleccionar",
+    cancelButtonText: "Cancelar",
+    confirmButtonColor: "#22c55e"
+  }).then((result) => {
+
+    if (result.isConfirmed) {
+
+      // Ejecutar función enviada desde Isla
+      onClick?.();
+
       Swal.fire({
-        icon: "error",
-        title: "Espacio Ocupado",
-        text: `El espacio #${numero} está ocupado actualmente.`,
-        confirmButtonColor: "#cb3634"
+        icon: "success",
+        title: "Espacio seleccionado",
+        text: `Has seleccionado el espacio #${numero}`,
+        confirmButtonColor: "#22c55e"
       });
     }
-  };
+  });
+};
 
   return (
     <div

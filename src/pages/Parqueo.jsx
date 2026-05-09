@@ -1,7 +1,7 @@
 import Isla from "../components/Isla";
 import Nav from "../components/nav";
 import "../styles/Parqueo.css";
-import api from "../services/api";
+import api, { asignarEspacio } from "../services/api";
 import { useEffect, useState } from "react";
 import { preconnect } from "react-dom";
 import MessageBox from '../components/Mensaje';
@@ -28,6 +28,40 @@ export default function Parqueo() {
     };
     obtenerEspacios();
   }, []);
+
+    //CREAR FUNCIÓN HANDLESELECCION
+    const handleSeleccion = async (idEspacio) => {
+  try {
+
+    const data = {
+      carne_usuario: 202601001,
+      ES_Espacio: idEspacio,
+      id_ciclo: 1,
+      id_jornada: 1,
+      correlativo: "TEST-123"
+    };
+
+    const res = await asignarEspacio(data);
+
+    console.log("Asignación exitosa:", res.data);
+
+    // ACTUALIZAR ESPACIO LOCALMENTE
+    setEspacios(prev =>
+      prev.map(e =>
+        e.ES_Espacio === idEspacio
+          ? { ...e, ES_Estado: 0 }
+          : e
+      )
+    );
+
+    alert("Espacio asignado correctamente");
+
+  } catch (error) {
+    console.error("Error al asignar:", error.response?.data);
+  }
+};
+
+
 
   const islaOffsets = ISLAS.reduce((acc, isla, i) => {
     const prev = acc[i - 1] ?? 0;
@@ -125,6 +159,7 @@ export default function Parqueo() {
                     catedraticos={isla.catedraticos}
                     espaciosBackend={espacios}
                     offsetIndex={islaOffsets[index] ?? 0}
+                    onSeleccionar={handleSeleccion}
                   />
                 </div>
               ))}
