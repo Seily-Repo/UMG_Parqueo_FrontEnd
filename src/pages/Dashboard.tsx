@@ -56,7 +56,8 @@ const Dashboard = () => {
 
   const cargarVehiculos = async () => {
     try {
-      const response = await fetch(`${API_BASE}/vehiculos/${carneUsuario}`);
+      const carneLimpio = carneUsuario.replace(/-/g, '');
+      const response = await fetch(`${API_BASE}/vehiculos/${carneLimpio}`);
       if (response.ok) {
         setVehiculos(await response.json());
       }
@@ -78,7 +79,8 @@ const Dashboard = () => {
 
   const cargarDeuda = async () => {
     try {
-      const response = await fetch(`${API_BASE}/pagos/lista-pendiente/${carneUsuario}`);
+      const carneLimpio = carneUsuario.replace(/-/g, '');
+      const response = await fetch(`${API_BASE}/pagos/lista-pendiente/${carneLimpio}`);
       if (response.ok) {
         setListaDeuda(await response.json());
       }
@@ -131,7 +133,7 @@ const Dashboard = () => {
       const response = await fetch(`${API_BASE}/vehiculos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...nuevoVehiculo, carne_usuario: carneUsuario })
+        body: JSON.stringify({ ...nuevoVehiculo, carne_usuario: carneUsuario.replace(/-/g, '') })
       });
 
       if (response.ok) {
@@ -157,7 +159,7 @@ const Dashboard = () => {
           
           if (result.isConfirmed && planIdParaCobros) {
             // Opción B: Redirigir al portal de cobros-dev con parámetros por URL
-            window.location.href = `${COBROS_URL}/parking/user?carne=${carneUsuario}&plan_id=${planIdParaCobros}&vehiculo=nuevo`;
+            window.location.href = `${COBROS_URL}/parking/user?carne=${carneUsuario.replace(/-/g, '')}&plan_id=${planIdParaCobros}&vehiculo=nuevo`;
           } else {
             setActiveSection('vehiculos');
           }
@@ -284,7 +286,7 @@ const Dashboard = () => {
                           <td className="text-end fw-bold">Q.{cargo.MONTO}.00</td>
                           <td className="text-center">
                             <Button size="sm" style={{ backgroundColor: 'var(--color-accion)', border: 'none' }} onClick={() => {
-                              window.location.href = `${COBROS_URL}/parking/user?carne=${carneUsuario}`;
+                              window.location.href = `${COBROS_URL}/parking/user?carne=${carneUsuario.replace(/-/g, '')}`;
                             }}>
                               <CreditCardFill className="me-1"/> Pagar
                             </Button>
