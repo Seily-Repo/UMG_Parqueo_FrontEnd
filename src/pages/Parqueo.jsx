@@ -3,11 +3,13 @@ import Nav from "../components/nav";
 import "../styles/Parqueo.css";
 import api from "../services/api";
 import { useEffect, useState } from "react";
+import { preconnect } from "react-dom";
 
 const ISLAS = [
-  { nombre: "Isla A", descripcion: "Frente a Edificio A", carros: 10, discapacitados: 5 },
-  { nombre: "Isla B", descripcion: "Frente a Edificio B", carros: 10, discapacitados: 5 },
-  { nombre: "Isla C", descripcion: "Frente a Edificio C", carros: 10, discapacitados: 5 },
+  { nombre: "Isla A", descripcion: "Frente a Edificio A", carros: 10, motos: 5, discapacitados: 5, catedraticos: 3},
+  { nombre: "Isla B", descripcion: "Frente a Edificio B", carros: 10, motos: 4, discapacitados: 5, catedraticos: 2 },
+  { nombre: "Isla C", descripcion: "Frente a Edificio C", carros: 10, motos: 6, discapacitados: 5, catedraticos: 1},
+  { nombre: "Isla D", descripcion: " Ubicada al lado izquierdo del Edificio C", carros: 8, motos: 3, discapacitados: 2, catedraticos: 0},
 ];
 
 export default function Parqueo() {
@@ -29,7 +31,11 @@ export default function Parqueo() {
   const islaOffsets = ISLAS.reduce((acc, isla, i) => {
     const prev = acc[i - 1] ?? 0;
     const prevIsla = ISLAS[i - 1];
-    const prevTotal = prevIsla ? prevIsla.carros + prevIsla.discapacitados : 0;
+    const prevTotal = prevIsla 
+      ? prevIsla.carros + 
+        prevIsla.motos +
+        prevIsla.discapacitados +
+        prevIsla.catedraticos: 0;
     acc[i] = prev + prevTotal;
     return acc;
   }, {});
@@ -113,7 +119,9 @@ export default function Parqueo() {
                   <p className="text-muted text-center mb-3">{isla.descripcion}</p>
                   <Isla
                     carros={isla.carros}
+                    motos={isla.motos}
                     discapacitados={isla.discapacitados}
+                    catedraticos={isla.catedraticos}
                     espaciosBackend={espacios}
                     offsetIndex={islaOffsets[index] ?? 0}
                   />
