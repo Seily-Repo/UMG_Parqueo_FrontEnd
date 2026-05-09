@@ -8,6 +8,7 @@ import {
 } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
 import ThemeSwitcher from '../components/ThemeSwitcher';
+import { ModalPagoStripe } from '../components/ModalPagoStripe';
 
 const API_BASE = '/api';
 const COBROS_URL = 'http://10.0.40.10:4000';
@@ -28,6 +29,9 @@ const Dashboard = () => {
   const [listaDeuda, setListaDeuda] = useState<any[]>([]); 
   const [showVehiculoModal, setShowVehiculoModal] = useState(false);
   const [nuevoVehiculo, setNuevoVehiculo] = useState({ tipo_vehiculo: 'AUTOMOVIL', placa: '', marca: '', modelo: '', color: '', plan_id: '' });
+
+  const [showModalPago, setShowModalPago] = useState(false);
+  const [cargoSeleccionado, setCargoSeleccionado] = useState<any>(null);
 
   useEffect(() => {
     const t = localStorage.getItem('umg-theme') || 'azul';
@@ -286,7 +290,8 @@ const Dashboard = () => {
                           <td className="text-end fw-bold">Q.{cargo.MONTO}.00</td>
                           <td className="text-center">
                             <Button size="sm" style={{ backgroundColor: 'var(--color-accion)', border: 'none' }} onClick={() => {
-                              window.location.href = `${COBROS_URL}/parking/user?carne=${carneUsuario.replace(/-/g, '')}`;
+                              setCargoSeleccionado(cargo);
+                              setShowModalPago(true);
                             }}>
                               <CreditCardFill className="me-1"/> Pagar
                             </Button>
@@ -535,6 +540,20 @@ const Dashboard = () => {
           </div>
         </div>
       </Modal>
+
+      {/* MODAL PAGO STRIPE */}
+      {showModalPago && (
+        <ModalPagoStripe 
+          show={showModalPago} 
+          onHide={(recargar) => {
+            setShowModalPago(false);
+            if (recargar) {
+              cargarDeuda();
+            }
+          }} 
+          cargoInfo={cargoSeleccionado} 
+        />
+      )}
 
     </div>
   );
