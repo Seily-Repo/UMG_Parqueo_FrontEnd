@@ -16,6 +16,7 @@ import { UserFinePayment } from "./pages/user/UserFinePayment";
 // Admin Pages
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { RegistrationDetail } from "./pages/admin/RegistrationDetail";
+import { AdminFines } from "./pages/admin/AdminFines";
 
 export const parkingRoutes = [
   {
@@ -42,7 +43,11 @@ export const parkingRoutes = [
     Component: AdminLayout,
     children: [
       { index: true, Component: AdminDashboard },
+      { path: "dashboard", Component: AdminDashboard },
+      { path: "multas", Component: AdminFines },
+      { path: "dashboard/multas", Component: AdminFines },
       { path: "registro/:id", Component: RegistrationDetail },
+      { path: "dashboard/registro/:id", Component: RegistrationDetail },
     ],
   },
 ];

@@ -1,17 +1,116 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
+import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { Alert, Button, Card, Col, Form, Row, Spinner } from 'react-bootstrap';
 import { ArrowLeft, CreditCard, DollarSign, Receipt } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useRegistration } from '../../context/RegistrationContext';
 import { getReadableApiError } from '../../../../../shared/api';
-import type { BackendEstudianteMulta, BackendFormaPago } from '../../../../../shared/models/backend';
+import type { BackendEstudianteMulta, BackendFormaPago, BackendMulta } from '../../../../../shared/models/backend';
 import { fineService, paymentMethodService, paymentService } from '../../../../../shared/services';
 import { PaymentReceiptCard, type PaymentReceiptData } from '../../components/PaymentReceiptCard';
 import { exportReceiptToPdf } from '../../utils/receiptExport';
 
 interface FinePaymentLocationState {
   fineRelation?: BackendEstudianteMulta;
+}
+
+type PaymentIntentResponse = {
+  message: string;
+  data: {
+    PAG_PAGO: number;
+    PLN_PLAN: number;
+    FPG_FORMA_PAGO: number;
+    PAG_FECHA_PAGO: string;
+    PAG_MONTO_TOTAL: number;
+    PAG_ESTADO?: string;
+    STRIPE_PAYMENT_INTENT_ID?: string;
+  };
+  clientSecret?: string;
+};
+
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : Promise.resolve(null);
+
+function FineStripeForm({
+  amount,
+  clientSecret,
+  submitting,
+  onBack,
+  onPaid,
+}: {
+  amount: number;
+  clientSecret: string;
+  submitting: boolean;
+  onBack: () => void;
+  onPaid: () => Promise<void>;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!stripe || !elements) {
+      toast.error('Stripe aun no termina de cargar');
+      return;
+    }
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: 'if_required',
+    });
+
+    if (error) {
+      toast.error(error.message || 'No fue posible confirmar el pago de la multa');
+      return;
+    }
+
+    const finalIntent = paymentIntent ?? (await stripe.retrievePaymentIntent(clientSecret)).paymentIntent;
+
+    if (finalIntent?.status === 'succeeded') {
+      await onPaid();
+      toast.success('Pago de multa realizado correctamente');
+      return;
+    }
+
+    toast.error('El pago de la multa no fue aprobado');
+  };
+
+  return (
+    <Form onSubmit={handleSubmit}>
+      <div style={{ border: '1px solid #dee2e6', borderRadius: 8, padding: 16, backgroundColor: '#ffffff' }}>
+        <PaymentElement options={{ layout: 'tabs' }} />
+      </div>
+
+      <Alert variant="warning" className="mt-4 mb-4">
+        <small>
+          <strong>Nota:</strong> Este flujo usa Stripe en modo de prueba.
+        </small>
+      </Alert>
+
+      <Row className="g-3">
+        <Col xs={6}>
+          <Button
+            variant="outline-secondary"
+            size="lg"
+            className="w-100 d-flex align-items-center justify-content-center"
+            onClick={onBack}
+            disabled={submitting}
+          >
+            <ArrowLeft size={16} className="me-2" />
+            Atras
+          </Button>
+        </Col>
+        <Col xs={6}>
+          <Button variant="primary" type="submit" size="lg" className="w-100" disabled={!stripe || submitting}>
+            {submitting ? 'Procesando...' : `Pagar Q${amount}`}
+          </Button>
+        </Col>
+      </Row>
+    </Form>
+  );
 }
 
 export function UserFinePayment() {
@@ -21,18 +120,17 @@ export function UserFinePayment() {
   const { currentRegistration } = useRegistration();
   const locationState = location.state as FinePaymentLocationState | null;
   const [fineRelation, setFineRelation] = useState<BackendEstudianteMulta | null>(locationState?.fineRelation || null);
+  const [fineCatalog, setFineCatalog] = useState<BackendMulta | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<BackendFormaPago[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [receiptData, setReceiptData] = useState<PaymentReceiptData | null>(null);
+  const [clientSecret, setClientSecret] = useState('');
+  const [activePayment, setActivePayment] = useState<PaymentIntentResponse['data'] | null>(null);
   const [formData, setFormData] = useState({
     amount: '',
     paymentMethodId: 0,
-    cardHolder: currentRegistration.fullName || '',
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
   });
 
   useEffect(() => {
@@ -52,14 +150,18 @@ export function UserFinePayment() {
           paymentMethodService.getAll(),
         ]);
 
+        const catalogResponse = await fineService.getFineById(Number(fineResponse.MUL_MULTA));
+
         if (!isMounted) {
           return;
         }
 
         setFineRelation(fineResponse);
+        setFineCatalog(catalogResponse);
         setPaymentMethods(paymentMethodsResponse.filter((method) => method.FPG_ESTADO === 'A'));
         setFormData((prev) => ({
           ...prev,
+          amount: `${Number(catalogResponse.MUL_MONTO_TOTAL ?? catalogResponse.MUL_monto_total ?? 0)}`,
           paymentMethodId:
             prev.paymentMethodId || paymentMethodsResponse.find((method) => method.FPG_ESTADO === 'A')?.FPG_FORMA_PAGO || 0,
         }));
@@ -87,22 +189,8 @@ export function UserFinePayment() {
     () => paymentMethods.find((method) => method.FPG_FORMA_PAGO === formData.paymentMethodId),
     [formData.paymentMethodId, paymentMethods]
   );
-
-  const isCardPayment = selectedPaymentMethod?.FPG_NOMBRE_FORMA?.includes('TARJETA');
-
-  const formatCardNumber = (value: string) => {
-    const cleaned = value.replace(/\s/g, '');
-    const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
-    return formatted.substring(0, 19);
-  };
-
-  const formatExpiryDate = (value: string) => {
-    const cleaned = value.replace(/\D/g, '');
-    if (cleaned.length >= 2) {
-      return `${cleaned.substring(0, 2)}/${cleaned.substring(2, 4)}`;
-    }
-    return cleaned;
-  };
+  const fineAmount = Number(fineCatalog?.MUL_MONTO_TOTAL ?? fineCatalog?.MUL_monto_total ?? formData.amount ?? 0);
+  const fineDescription = fineCatalog?.MUL_DESCRIPCION || fineCatalog?.MUL_descripcion || `Multa #${fineRelation?.MUL_MULTA || ''}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,31 +200,14 @@ export function UserFinePayment() {
       return;
     }
 
-    if (!formData.amount || Number(formData.amount) <= 0) {
-      toast.error('Ingrese un monto valido para la multa');
+    if (!fineAmount || fineAmount <= 0) {
+      toast.error('La multa no tiene un monto valido configurado');
       return;
     }
 
     if (!formData.paymentMethodId) {
       toast.error('Seleccione una forma de pago');
       return;
-    }
-
-    if (isCardPayment) {
-      if (!formData.cardHolder || !formData.cardNumber || !formData.expiryDate || !formData.cvv) {
-        toast.error('Complete los datos de tarjeta para continuar');
-        return;
-      }
-
-      if (formData.cardNumber.replace(/\s/g, '').length !== 16) {
-        toast.error('Numero de tarjeta invalido');
-        return;
-      }
-
-      if (formData.cvv.length !== 3) {
-        toast.error('CVV invalido');
-        return;
-      }
     }
 
     setSubmitting(true);
@@ -147,9 +218,38 @@ export function UserFinePayment() {
         LR_CARNE: currentRegistration.carnet,
         PLN_PLAN: currentRegistration.selectedPlanId || 1,
         FPG_FORMA_PAGO: formData.paymentMethodId,
-        MUL_MULTA: Number(fineRelation.MUL_MULTA),
+        EMU_USUARIO_MULTA: Number(fineRelation.EMU_ESTUDIANTE_MULTA),
         PAG_FECHA_PAGO: new Date().toISOString(),
-        PAG_MONTO_TOTAL: Number(formData.amount),
+        PAG_MONTO_TOTAL: fineAmount,
+      }) as PaymentIntentResponse;
+
+      if (!paymentResponse.clientSecret) {
+        throw new Error(paymentResponse.message || 'No se recibio clientSecret desde el backend.');
+      }
+
+      setActivePayment(paymentResponse.data);
+      setClientSecret(paymentResponse.clientSecret);
+    } catch (requestError) {
+      setError(getReadableApiError(requestError, 'No fue posible iniciar el pago de la multa.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleFinePaid = async () => {
+    if (!fineRelation || !activePayment) {
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const paidAt = new Date().toISOString();
+
+      await paymentService.update(activePayment.PAG_PAGO, {
+        ...activePayment,
+        PAG_ESTADO: 'A',
+        PAG_FECHA_PAGO: paidAt,
       });
 
       await fineService.updateStudentFineStatus(Number(fineRelation.EMU_ESTUDIANTE_MULTA), {
@@ -157,27 +257,22 @@ export function UserFinePayment() {
         EMU_MODIFICADO_POR: currentRegistration.fullName || currentRegistration.carnet || 'estudiante',
       });
 
-      const issuedAt = new Date().toLocaleString();
-
       setReceiptData({
-        receiptNumber: `MUL-${paymentResponse.data?.PAG_PAGO || Date.now()}`,
+        receiptNumber: `MUL-${activePayment.PAG_PAGO || Date.now()}`,
         title: 'Recibo de pago de multa',
         studentName: currentRegistration.fullName || 'Estudiante',
         carnet: currentRegistration.carnet || 'No disponible',
-        concept: `Pago de multa #${fineRelation.MUL_MULTA}`,
-        amount: Number(formData.amount),
+        concept: fineDescription,
+        amount: fineAmount,
         paymentMethod: selectedPaymentMethod?.FPG_NOMBRE_FORMA || `Forma ${formData.paymentMethodId}`,
-        status: 'Pagado',
-        issuedAt,
+        status: 'Pago exitoso',
+        issuedAt: new Date(paidAt).toLocaleString(),
         detailLines: [
           { label: 'Relacion estudiante-multa', value: `${fineRelation.EMU_ESTUDIANTE_MULTA}` },
           { label: 'Multa', value: `${fineRelation.MUL_MULTA}` },
+          { label: 'Descripcion', value: fineDescription },
         ],
       });
-
-      toast.success('Pago de multa registrado correctamente');
-    } catch (requestError) {
-      setError(getReadableApiError(requestError, 'No fue posible registrar el pago de la multa.'));
     } finally {
       setSubmitting(false);
     }
@@ -235,6 +330,19 @@ export function UserFinePayment() {
                 Volver a Consulta de Multas
               </Button>
             </>
+          ) : clientSecret ? (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <FineStripeForm
+                amount={fineAmount}
+                clientSecret={clientSecret}
+                submitting={submitting}
+                onBack={() => {
+                  setClientSecret('');
+                  setActivePayment(null);
+                }}
+                onPaid={handleFinePaid}
+              />
+            </Elements>
           ) : (
             <Form onSubmit={handleSubmit}>
               <div className="p-4 rounded mb-4 text-white" style={{ background: 'linear-gradient(135deg, #C41230 0%, #0d47a1 100%)' }}>
@@ -248,7 +356,7 @@ export function UserFinePayment() {
                       <small style={{ opacity: 0.9 }}>Carne</small>
                       <div className="fw-medium">{fineRelation.EST_CARNE}</div>
                       <small style={{ opacity: 0.9 }} className="mt-2 d-block">
-                        Relacion #{fineRelation.EMU_ESTUDIANTE_MULTA} | Multa #{fineRelation.MUL_MULTA}
+                        {fineDescription}
                       </small>
                     </div>
                   </Col>
@@ -267,11 +375,8 @@ export function UserFinePayment() {
                     <div className="position-relative">
                       <Form.Control
                         type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="150.00"
-                        value={formData.amount}
-                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        value={fineAmount || ''}
+                        readOnly
                       />
                       <DollarSign
                         size={20}
@@ -285,7 +390,7 @@ export function UserFinePayment() {
                       />
                     </div>
                     <Form.Text className="text-muted">
-                      Ingrese el monto correspondiente a la multa porque el backend actual no entrega ese detalle aqui.
+                      El monto se toma automaticamente del catalogo de multas.
                     </Form.Text>
                   </Form.Group>
                 </Col>
@@ -307,72 +412,6 @@ export function UserFinePayment() {
                   </Form.Group>
                 </Col>
               </Row>
-
-              {isCardPayment && (
-                <>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Nombre del Titular *</Form.Label>
-                    <Form.Control
-                      type="text"
-                      placeholder="JUAN CARLOS PEREZ"
-                      style={{ textTransform: 'uppercase' }}
-                      value={formData.cardHolder}
-                      onChange={(e) => setFormData({ ...formData, cardHolder: e.target.value.toUpperCase() })}
-                    />
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <Form.Label>Numero de Tarjeta *</Form.Label>
-                    <div className="position-relative">
-                      <Form.Control
-                        type="text"
-                        placeholder="1234 5678 9012 3456"
-                        value={formData.cardNumber}
-                        onChange={(e) => setFormData({ ...formData, cardNumber: formatCardNumber(e.target.value) })}
-                        maxLength={19}
-                      />
-                      <CreditCard
-                        size={20}
-                        style={{
-                          position: 'absolute',
-                          right: 12,
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          color: '#6c757d',
-                        }}
-                      />
-                    </div>
-                  </Form.Group>
-
-                  <Row className="mb-4">
-                    <Col md={6}>
-                      <Form.Group>
-                        <Form.Label>Fecha de Vencimiento *</Form.Label>
-                        <Form.Control
-                          type="text"
-                          placeholder="MM/AA"
-                          value={formData.expiryDate}
-                          onChange={(e) => setFormData({ ...formData, expiryDate: formatExpiryDate(e.target.value) })}
-                          maxLength={5}
-                        />
-                      </Form.Group>
-                    </Col>
-
-                    <Col md={6}>
-                      <Form.Group>
-                        <Form.Label>CVV *</Form.Label>
-                        <Form.Control
-                          type="password"
-                          placeholder="123"
-                          maxLength={3}
-                          value={formData.cvv}
-                          onChange={(e) => setFormData({ ...formData, cvv: e.target.value.replace(/\D/g, '') })}
-                        />
-                      </Form.Group>
-                    </Col>
-                  </Row>
-                </>
-              )}
 
               <Alert variant="warning" className="mb-4">
                 <small>

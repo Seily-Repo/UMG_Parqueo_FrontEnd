@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router';
-import { Building2, Car, ChevronLeft, CreditCard, Home, LogOut, Menu, UserCircle } from 'lucide-react';
+import { Building2, Car, ChevronLeft, Home, LogOut, Menu, ReceiptText, ShieldCheck, UserCircle } from 'lucide-react';
 import umgLogo from '../../../../assets/umg_logo.png';
 import { useRegistration } from '../context/RegistrationContext';
 
@@ -12,8 +12,8 @@ export function UserLayout() {
   const navItems = [
     { to: '/parking/user', label: 'Inicio', icon: Home },
     { to: '/parking/user/vehiculos', label: 'Mis Vehiculos', icon: Car },
-    { to: '/parking/user/pago', label: 'Pago', icon: CreditCard },
-    { to: '/parking/user/multas', label: 'Disponibilidad', icon: Building2 },
+    { to: '/parking/user/pago', label: 'Estado de Cobros', icon: ReceiptText },
+    { to: '/parking/user/multas', label: 'Multas', icon: Building2 },
   ];
 
   return (
@@ -59,6 +59,14 @@ export function UserLayout() {
         <header className="parking-user-topbar">
           <button type="button" className="parking-user-topbar__menu" aria-label="Abrir menu">
             <Menu size={24} />
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-primary btn-sm"
+            onClick={() => navigate('/parking/admin/dashboard')}
+          >
+            <ShieldCheck size={16} className="me-2" />
+            Ir al Admin
           </button>
           <div className="parking-user-topbar__profile">
             <div className="text-end">

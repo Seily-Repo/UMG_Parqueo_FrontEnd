@@ -1,4 +1,4 @@
-import { apiConfig } from "./config";
+import { apiConfig, getStoredJwt } from "./config";
 import { ApiError, getApiErrorCode } from "./errors";
 
 export interface ApiRequestOptions extends Omit<RequestInit, "body"> {
@@ -44,7 +44,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   const timeoutMs = options.timeoutMs ?? apiConfig.timeoutMs;
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
   const hasBody = options.body !== undefined;
-  const token = options.token ?? apiConfig.jwt;
+  const token = options.token ?? getStoredJwt();
 
   try {
     const response = await fetch(`${apiConfig.baseUrl}${path}`, {
@@ -60,7 +60,9 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
       const message =
         typeof payload === "object" && payload !== null && "message" in payload && typeof payload.message === "string"
           ? payload.message
-          : `La solicitud fallo con estado ${response.status}.`;
+          : typeof payload === "object" && payload !== null && "error" in payload && typeof payload.error === "string"
+            ? payload.error
+            : `La solicitud fallo con estado ${response.status}.`;
 
       throw new ApiError(message, {
         status: response.status,

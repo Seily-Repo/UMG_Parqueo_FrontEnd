@@ -1,5 +1,11 @@
 import { apiRequest, ApiError } from "../api";
-import type { BackendEstudianteMulta, BackendMulta } from "../models/backend";
+import type {
+  BackendCreateEstudianteMultaPayload,
+  BackendCreateMultaPayload,
+  BackendEstudianteMulta,
+  BackendMulta,
+  BackendUpdateMultaPayload,
+} from "../models/backend";
 
 type BackendUsuarioMultaCobros = BackendEstudianteMulta & {
   EMU_USUARIO_MULTA?: number;
@@ -23,9 +29,31 @@ export const fineService = {
     return apiRequest<BackendMulta>(`/api/multa/${id}`);
   },
 
+  createFine(payload: BackendCreateMultaPayload) {
+    return apiRequest<{ message: string; data: BackendMulta }>("/api/multa", {
+      method: "POST",
+      body: payload,
+    });
+  },
+
+  updateFine(id: number, payload: BackendUpdateMultaPayload) {
+    return apiRequest<{ message: string }>(`/api/multa/${id}`, {
+      method: "PUT",
+      body: payload,
+    });
+  },
+
   async getAllStudentFines() {
     const fines = await apiRequest<BackendUsuarioMultaCobros[]>("/api/usuario_multa");
     return fines.map(normalizeStudentFine);
+  },
+
+  async createStudentFine(payload: BackendCreateEstudianteMultaPayload) {
+    const fine = await apiRequest<BackendUsuarioMultaCobros>("/api/usuario_multa", {
+      method: "POST",
+      body: payload,
+    });
+    return normalizeStudentFine(fine);
   },
 
   async getStudentFinesByCarne(carne: string) {

@@ -1,20 +1,18 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useNavigate } from 'react-router';
+import { useState, type ReactNode } from 'react';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { Card, Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
-import { CreditCard, ArrowLeft, DollarSign, Info, WalletCards } from 'lucide-react';
+import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
+import { CreditCard, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useRegistration } from '../../context/RegistrationContext';
 import { getReadableApiError } from '../../../../../shared/api';
-import type { BackendCreatePagoPayload, BackendFormaPago, BackendPago, BackendPlanParqueo } from '../../../../../shared/models/backend';
-import { parkingPlanService, paymentMethodService, paymentService } from '../../../../../shared/services';
+import type { BackendCreatePagoPayload, BackendPago } from '../../../../../shared/models/backend';
+import { paymentService } from '../../../../../shared/services';
 import { PaymentReceiptCard, type PaymentReceiptData } from '../../components/PaymentReceiptCard';
 import { exportReceiptToPdf } from '../../utils/receiptExport';
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : Promise.resolve(null);
-const paymentIdStart = Number(import.meta.env.VITE_PAYMENT_ID_START || 6);
 const fallbackPlanIds = {
   'entre-semana': Number(import.meta.env.VITE_PAYMENT_PLAN_WEEKDAY_ID || 1),
   sabado: Number(import.meta.env.VITE_PAYMENT_PLAN_SATURDAY_ID || 2),
@@ -27,15 +25,7 @@ type PaymentIntentResponse = {
   clientSecret?: string;
 };
 
-type PaymentFormState = {
-  paymentId: number;
-  carnet: string;
-  paymentDate: string;
-};
-
-function FormLayout({ amount, children }: { amount: number; children: ReactNode }) {
-  const { currentRegistration } = useRegistration();
-
+function StripeShell({ amount, children }: { amount: number; children: ReactNode }) {
   return (
     <div className="parking-payment-flow">
       <Card className="parking-payment-card">
@@ -45,36 +35,9 @@ function FormLayout({ amount, children }: { amount: number; children: ReactNode 
         </Card.Header>
         <Card.Body>
           <div className="parking-payment-summary">
-            <div className="d-flex align-items-center gap-2 mb-3" style={{ opacity: 0.9 }}>
-              <DollarSign size={16} />
-              <small>Resumen de Pago</small>
-            </div>
-            <Row>
-              <Col>
-                <div>
-                  <small style={{ opacity: 0.9 }}>Plan seleccionado</small>
-                  <div className="fw-medium">{currentRegistration.parkingPlan || 'Plan no seleccionado'}</div>
-                  <small style={{ opacity: 0.9 }} className="mt-2 d-block">
-                    {currentRegistration.vehicles?.length || 0} vehiculo(s) registrado(s)
-                  </small>
-                </div>
-              </Col>
-              <Col xs="auto" className="text-end">
-                <small style={{ opacity: 0.9 }}>Total a pagar</small>
-                <div className="display-5 fw-bold">Q{amount}</div>
-                <small style={{ opacity: 0.75 }}>Pago mensual</small>
-              </Col>
-            </Row>
+            <small style={{ opacity: 0.9 }}>Total a pagar</small>
+            <div className="display-5 fw-bold">Q{amount.toFixed(2)}</div>
           </div>
-
-          <div className="parking-payment-method">
-            <CreditCard size={20} />
-            <div>
-              <div className="fw-medium">Pago con tarjeta</div>
-              <small className="text-muted">Stripe se encarga de capturar y tokenizar los datos bancarios.</small>
-            </div>
-          </div>
-
           {children}
         </Card.Body>
       </Card>
@@ -86,25 +49,26 @@ function StripePaymentForm({
   amount,
   clientSecret,
   onPaid,
+  onCancel,
 }: {
   amount: number;
   clientSecret: string;
   onPaid: () => void;
+  onCancel: () => void;
 }) {
-  const navigate = useNavigate();
   const stripe = useStripe();
   const elements = useElements();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
 
     if (!stripe || !elements) {
       toast.error('Stripe aun no termina de cargar');
       return;
     }
 
-    setIsSubmitting(true);
+    setSubmitting(true);
 
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
@@ -113,353 +77,150 @@ function StripePaymentForm({
 
     if (error) {
       toast.error(error.message || 'No fue posible confirmar el pago');
-      setIsSubmitting(false);
+      setSubmitting(false);
       return;
     }
 
     const finalIntent = paymentIntent ?? (await stripe.retrievePaymentIntent(clientSecret)).paymentIntent;
 
     if (finalIntent?.status === 'succeeded') {
-      toast.success('Pago realizado correctamente');
       onPaid();
+      toast.success('Pago completado correctamente');
       return;
     }
 
-    if (finalIntent?.status === 'processing') {
-      toast.info('El pago esta en proceso. Confirma el estado final en unos segundos.');
-    } else {
-      toast.error('El pago no fue aprobado');
-    }
-
-    setIsSubmitting(false);
+    toast.info('El pago quedo en proceso. Verifique el estado en unos segundos.');
+    setSubmitting(false);
   };
 
   return (
-    <FormLayout amount={amount}>
+    <StripeShell amount={amount}>
       <form onSubmit={handleSubmit}>
         <div style={{ border: '1px solid #dee2e6', borderRadius: 8, padding: 16, backgroundColor: '#ffffff' }}>
           <PaymentElement options={{ layout: 'tabs' }} />
         </div>
 
-        <Alert variant="warning" className="mt-4 mb-4">
-          <small>
-            <strong>Nota:</strong> Este flujo usa Stripe en modo de prueba. Puedes usar tarjetas de testing de Stripe.
-          </small>
-        </Alert>
-
-        <Row className="g-3">
+        <Row className="g-3 mt-4">
           <Col xs={6}>
-            <Button variant="outline-secondary" size="lg" className="w-100" onClick={() => navigate('/parking/user/vehiculos')} disabled={isSubmitting}>
-              <ArrowLeft size={16} className="me-2" />
-              Atras
+            <Button variant="outline-secondary" size="lg" className="w-100" onClick={onCancel} disabled={submitting}>
+              Volver
             </Button>
           </Col>
           <Col xs={6}>
-            <Button variant="primary" type="submit" size="lg" className="w-100" disabled={!stripe || isSubmitting}>
-              {isSubmitting ? <Spinner size="sm" className="me-2" /> : null}
-              {isSubmitting ? 'Procesando...' : `Pagar Q${amount}`}
+            <Button variant="primary" type="submit" size="lg" className="w-100" disabled={!stripe || submitting}>
+              {submitting ? <Spinner size="sm" className="me-2" /> : <CreditCard size={16} className="me-2" />}
+              {submitting ? 'Procesando...' : `Pagar Q${amount.toFixed(2)}`}
             </Button>
           </Col>
         </Row>
       </form>
-    </FormLayout>
+    </StripeShell>
   );
 }
 
 export function Payment() {
-  const navigate = useNavigate();
   const { currentRegistration, updateRegistration } = useRegistration();
-  const [selectedPlan, setSelectedPlan] = useState<BackendPlanParqueo | null>(null);
-  const [loadingPlan, setLoadingPlan] = useState(false);
-  const [planError, setPlanError] = useState('');
   const [clientSecret, setClientSecret] = useState('');
-  const [loadError, setLoadError] = useState('');
-  const [isLoadingIntent, setIsLoadingIntent] = useState(false);
-  const [isLoadingNextId, setIsLoadingNextId] = useState(false);
-  const [paymentReference, setPaymentReference] = useState('');
-  const [paymentMethods, setPaymentMethods] = useState<BackendFormaPago[]>([]);
-  const [studentPayments, setStudentPayments] = useState<BackendPago[]>([]);
-  const [loadingAccount, setLoadingAccount] = useState(false);
-  const [paymentData, setPaymentData] = useState<PaymentFormState>({
-    paymentId: paymentIdStart,
-    carnet: currentRegistration.carnet || '',
-    paymentDate: new Date().toISOString().slice(0, 10),
-  });
+  const [activePayment, setActivePayment] = useState<BackendPago | null>(null);
+  const [loadingStripe, setLoadingStripe] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
 
-  useEffect(() => {
-    if (!currentRegistration.selectedPlanId) {
-      return;
-    }
+  const planLabel = currentRegistration.parkingPlan || 'ENTRE-SEMANA';
+  const vehicleCount = currentRegistration.vehicles?.length || 0;
+  const amount = Number(currentRegistration.amount || 600);
+  const isPaid = currentRegistration.paymentStatus === 'paid';
+  const planId =
+    currentRegistration.selectedPlanId ||
+    fallbackPlanIds[(currentRegistration.parkingPlan as keyof typeof fallbackPlanIds) || 'entre-semana'] ||
+    1;
 
-    let isMounted = true;
-
-    const loadPlan = async () => {
-      setLoadingPlan(true);
-      setPlanError('');
-
-      try {
-        const plan = await parkingPlanService.getById(currentRegistration.selectedPlanId);
-
-        if (!isMounted) return;
-
-        setSelectedPlan(plan);
-        updateRegistration({
-          parkingPlan: plan.PLA_nombre,
-          amount: Number(plan.PLA_precio) || 0,
-        });
-      } catch (requestError) {
-        if (!isMounted) return;
-        setPlanError(getReadableApiError(requestError, 'No fue posible cargar el plan seleccionado.'));
-      } finally {
-        if (isMounted) setLoadingPlan(false);
-      }
-    };
-
-    void loadPlan();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentRegistration.selectedPlanId, updateRegistration]);
-
-  useEffect(() => {
-    setPaymentData((prev) => ({
-      ...prev,
-      carnet: prev.carnet || currentRegistration.carnet || '',
-    }));
-  }, [currentRegistration.carnet]);
-
-  useEffect(() => {
-    if (clientSecret) {
-      return;
-    }
-
-    let isMounted = true;
-
-    const loadNextId = async () => {
-      setIsLoadingNextId(true);
-
-      try {
-        const nextPaymentId = await paymentService.getNextPaymentId(paymentIdStart);
-        if (!isMounted) return;
-
-        setPaymentData((prev) => ({
-          ...prev,
-          paymentId: nextPaymentId,
-        }));
-      } catch {
-        if (!isMounted) return;
-        setPaymentData((prev) => ({ ...prev, paymentId: paymentIdStart }));
-      } finally {
-        if (isMounted) setIsLoadingNextId(false);
-      }
-    };
-
-    void loadNextId();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [clientSecret]);
-
-  useEffect(() => {
-    if (!currentRegistration.carnet) {
-      return;
-    }
-
-    let isMounted = true;
-
-    const loadAccountData = async () => {
-      setLoadingAccount(true);
-      setLoadError('');
-
-      try {
-        const [paymentsResponse, methodsResponse] = await Promise.all([
-          paymentService.getByCarne(currentRegistration.carnet || ''),
-          paymentMethodService.getAll(),
-        ]);
-
-        if (!isMounted) return;
-
-        setStudentPayments(paymentsResponse);
-        setPaymentMethods(methodsResponse.filter((method) => method.FPG_ESTADO === 'A'));
-      } catch (requestError) {
-        if (!isMounted) return;
-        setLoadError(getReadableApiError(requestError, 'No fue posible cargar los cobros del estudiante desde backend.'));
-      } finally {
-        if (isMounted) setLoadingAccount(false);
-      }
-    };
-
-    void loadAccountData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentRegistration.carnet]);
-
-  const amount = Number(selectedPlan?.PLA_precio || currentRegistration.amount || 0);
-  const planId = currentRegistration.selectedPlanId || fallbackPlanIds[(currentRegistration.parkingPlan as keyof typeof fallbackPlanIds) || 'entre-semana'];
-  const planLabel = selectedPlan?.PLA_nombre || currentRegistration.parkingPlan || 'Plan no seleccionado';
-  const planDescription = selectedPlan?.PLA_descripcion || 'Plan cargado desde el sistema';
-  const selectedPaymentMethod =
-    paymentMethods.find((method) => method.FPG_NOMBRE_FORMA?.toUpperCase().includes('TARJETA')) ||
-    paymentMethods[0];
-  const paymentFormCardId = selectedPaymentMethod?.FPG_FORMA_PAGO || Number(import.meta.env.VITE_PAYMENT_FORM_CARD_ID || 1);
-  const backendPlanPayment = studentPayments.find((payment) => Number(payment.PLN_PLAN) === Number(planId) && !payment.MUL_MULTA);
-  const backendPaymentStatus = backendPlanPayment?.PAG_ESTADO || '';
-  const backendPaymentPaid = backendPaymentStatus === 'A';
-  const backendPaymentPending = !!backendPlanPayment && !backendPaymentPaid;
-  const chargeStatusLabel = backendPaymentPaid ? 'Pagado' : 'Pendiente';
-  const chargeConcept = backendPlanPayment ? `Registro de parqueo - Pago #${backendPlanPayment.PAG_PAGO}` : planLabel;
-  const chargeDescription = backendPlanPayment
-    ? `Registro cargado desde backend (${backendPaymentStatus || 'sin estado'})`
-    : planDescription;
-
-  const receiptData = useMemo<PaymentReceiptData | null>(() => {
-    if (currentRegistration.paymentStatus !== 'paid' && !backendPaymentPaid) {
-      return null;
-    }
-
-    const issuedAt = currentRegistration.paymentRecordedAt
-      ? new Date(currentRegistration.paymentRecordedAt).toLocaleString()
-      : new Date().toLocaleString();
-
-    return {
-      receiptNumber: currentRegistration.paymentReference || backendPlanPayment?.STRIPE_PAYMENT_INTENT_ID || `PAG-${backendPlanPayment?.PAG_PAGO || Date.now()}`,
-      title: 'Recibo de pago de parqueo',
-      studentName: currentRegistration.fullName || 'Estudiante',
-      carnet: currentRegistration.carnet || 'No disponible',
-      concept: `Pago de parqueo - ${planLabel}`,
-      amount: backendPlanPayment ? Number(backendPlanPayment.PAG_MONTO_TOTAL || amount) : amount,
-      paymentMethod: selectedPaymentMethod?.FPG_NOMBRE_FORMA || 'Pago con Stripe',
-      status: 'Pagado',
-      issuedAt,
-      detailLines: [
-        { label: 'Plan seleccionado', value: planLabel },
-        { label: 'Descripcion', value: planDescription },
-        { label: 'Vehiculos registrados', value: `${currentRegistration.vehicles?.length || 0}` },
-        { label: 'Pago backend', value: backendPlanPayment ? `${backendPlanPayment.PAG_PAGO}` : 'No disponible' },
-        { label: 'Payment Intent', value: paymentReference || backendPlanPayment?.STRIPE_PAYMENT_INTENT_ID || 'No disponible' },
-      ],
-    };
-  }, [
+  const receiptData: PaymentReceiptData = {
+    receiptNumber: currentRegistration.paymentReference || activePayment?.STRIPE_PAYMENT_INTENT_ID || `PAG-${Date.now()}`,
+    title: 'Recibo de pago de parqueo',
+    studentName: currentRegistration.fullName || 'Estudiante',
+    carnet: currentRegistration.carnet || 'No disponible',
+    concept: `Pago de parqueo - ${planLabel}`,
     amount,
-    backendPaymentPaid,
-    backendPlanPayment,
-    currentRegistration.carnet,
-    currentRegistration.fullName,
-    currentRegistration.paymentRecordedAt,
-    currentRegistration.paymentReference,
-    currentRegistration.paymentStatus,
-    currentRegistration.vehicles,
-    paymentReference,
-    selectedPaymentMethod,
-    planDescription,
-    planLabel,
-  ]);
+    paymentMethod: 'Stripe',
+    status: 'Completado',
+    issuedAt: currentRegistration.paymentRecordedAt
+      ? new Date(currentRegistration.paymentRecordedAt).toLocaleString()
+      : new Date().toLocaleString(),
+    detailLines: [
+      { label: 'Plan seleccionado', value: planLabel },
+      { label: 'Vehiculos registrados', value: `${vehicleCount}` },
+      { label: 'Referencia', value: currentRegistration.paymentReference || activePayment?.STRIPE_PAYMENT_INTENT_ID || 'No disponible' },
+    ],
+  };
 
-  const missingRequirements = useMemo(() => {
+  const handleStartStripePayment = async () => {
     if (!stripePublishableKey) {
-      return 'Falta VITE_STRIPE_PUBLISHABLE_KEY en el entorno del front.';
-    }
-
-    if (!currentRegistration.selectedPlanId && !currentRegistration.parkingPlan) {
-      return 'Debe seleccionar un plan de parqueo antes de continuar al pago.';
-    }
-
-    if (currentRegistration.isDelinquent) {
-      return currentRegistration.delinquentReason || 'El estudiante presenta una restriccion activa por morosidad.';
-    }
-
-    return '';
-  }, [
-    currentRegistration.delinquentReason,
-    currentRegistration.isDelinquent,
-    currentRegistration.parkingPlan,
-    currentRegistration.selectedPlanId,
-  ]);
-
-  const handleCreateIntent = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!paymentData.carnet || !paymentData.paymentDate) {
-      const message = 'Completa el carnet y la fecha antes de continuar.';
-      setLoadError(message);
-      toast.error(message);
+      toast.error('Falta configurar VITE_STRIPE_PUBLISHABLE_KEY.');
       return;
     }
 
-    setLoadError('');
-    setIsLoadingIntent(true);
+    if (!currentRegistration.carnet) {
+      toast.error('Debe iniciar sesion antes de pagar.');
+      return;
+    }
+
+    setLoadingStripe(true);
 
     try {
       const payload: BackendCreatePagoPayload = {
-        EST_CARNE: paymentData.carnet,
-        LR_CARNE: paymentData.carnet,
+        EST_CARNE: currentRegistration.carnet,
+        LR_CARNE: currentRegistration.carnet,
         PLN_PLAN: planId,
-        FPG_FORMA_PAGO: paymentFormCardId,
-        PAG_FECHA_PAGO: paymentData.paymentDate,
+        FPG_FORMA_PAGO: Number(import.meta.env.VITE_PAYMENT_FORM_CARD_ID || 1),
+        PAG_FECHA_PAGO: new Date().toISOString().slice(0, 10),
         PAG_MONTO_TOTAL: amount,
       };
 
       const result = await paymentService.create(payload) as PaymentIntentResponse;
 
       if (!result.clientSecret) {
-        throw new Error(result.message || 'No se recibio clientSecret desde el backend.');
+        throw new Error(result.message || 'El backend no devolvio clientSecret para Stripe.');
       }
 
-      setPaymentReference(result.data?.STRIPE_PAYMENT_INTENT_ID || '');
-      setStudentPayments((prev) => [result.data, ...prev.filter((payment) => payment.PAG_PAGO !== result.data.PAG_PAGO)]);
+      setActivePayment(result.data);
       setClientSecret(result.clientSecret);
-      setPaymentData((prev) => ({ ...prev, paymentId: prev.paymentId + 1 }));
     } catch (error) {
-      const message = getReadableApiError(error, 'No se pudo iniciar el pago con Stripe.');
-      setLoadError(message);
-      toast.error(message);
+      toast.error(getReadableApiError(error, 'No se pudo iniciar el pago con Stripe.'));
     } finally {
-      setIsLoadingIntent(false);
+      setLoadingStripe(false);
     }
   };
 
   const handlePaymentConfirmed = () => {
-    const paymentRecordedAt = new Date().toISOString();
-    const paymentReferenceValue = paymentReference || `PRQ-${Date.now()}`;
-
+    const reference = activePayment?.STRIPE_PAYMENT_INTENT_ID || `STRIPE-${Date.now()}`;
     updateRegistration({
-      amount,
-      carnet: paymentData.carnet,
       paymentStatus: 'paid',
-      paymentRecordedAt,
-      paymentReference: paymentReferenceValue,
-      cardHolder: '',
-      cardNumber: '',
-      expiryDate: '',
-      cvv: '',
+      paymentRecordedAt: new Date().toISOString(),
+      paymentReference: reference,
+    });
+    setClientSecret('');
+    setShowReceipt(true);
+  };
+
+  const handleDeletePayment = () => {
+    setShowReceipt(false);
+    setClientSecret('');
+    setActivePayment(null);
+    updateRegistration({
+      paymentStatus: 'pending',
+      paymentRecordedAt: undefined,
+      paymentReference: undefined,
     });
   };
 
-  if (missingRequirements) {
-    return (
-      <div className="parking-payment-flow">
-        <Alert variant={currentRegistration.isDelinquent ? 'danger' : 'warning'} className="mb-4">
-          {currentRegistration.isDelinquent ? <strong>No puede realizar el pago.</strong> : null} {missingRequirements}
-        </Alert>
-        <Button variant="outline-primary" onClick={() => navigate('/parking/user')}>
-          Volver
-        </Button>
-      </div>
-    );
-  }
-
-  if (receiptData) {
+  if (showReceipt && isPaid) {
     return (
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
         <PaymentReceiptCard
           data={receiptData}
           onExportPdf={() => exportReceiptToPdf(receiptData)}
-          onContinue={() => navigate('/parking/user/firma')}
-          continueLabel="Continuar a Firma"
+          onContinue={() => setShowReceipt(false)}
+          continueLabel="Volver a Cobros"
         />
       </div>
     );
@@ -468,7 +229,12 @@ export function Payment() {
   if (clientSecret) {
     return (
       <Elements stripe={stripePromise} options={{ clientSecret }}>
-        <StripePaymentForm amount={amount} clientSecret={clientSecret} onPaid={handlePaymentConfirmed} />
+        <StripePaymentForm
+          amount={amount}
+          clientSecret={clientSecret}
+          onPaid={handlePaymentConfirmed}
+          onCancel={() => setClientSecret('')}
+        />
       </Elements>
     );
   }
@@ -480,31 +246,10 @@ export function Payment() {
         <p>Consulta tu estado de cuenta y realiza los pagos de tus planes de parqueo.</p>
       </div>
 
-      <div className="parking-system-notice" role="status">
-        <Info size={22} />
-        <span>
-          <strong>Aviso de Sistema:</strong> Tienes un pago pendiente por registro de vehiculo. Si no se registra en los
-          proximos <strong>10 dias habiles</strong>, el acceso sera bloqueado.
-        </span>
-      </div>
-
-      {planError && <Alert variant="danger" className="mb-4">{planError}</Alert>}
-
-      {loadError && <Alert variant="danger" className="mb-4">{loadError}</Alert>}
-
-      {(loadingPlan || loadingAccount || isLoadingIntent) && (
-        <div className="text-center py-4">
-          <Spinner animation="border" />
-          <p className="text-muted mt-3 mb-0">
-            {loadingPlan || loadingAccount ? 'Cargando informacion de cobros desde backend...' : 'Preparando el formulario de pago seguro...'}
-          </p>
-        </div>
-      )}
-
-      <Form onSubmit={handleCreateIntent} className="parking-pending-charges">
+      <div className="parking-pending-charges">
         <Card className="parking-pending-charges__card">
           <Card.Header>
-            <Card.Title>Cargos Pendientes en Cuenta</Card.Title>
+            <Card.Title>Cobros Disponibles</Card.Title>
           </Card.Header>
           <Card.Body>
             <div className="parking-charge-table">
@@ -516,53 +261,38 @@ export function Payment() {
               </div>
               <div className="parking-charge-table__row">
                 <div>
-                  <strong>{chargeConcept}</strong>
-                  <small>{chargeDescription}</small>
+                  <strong>{planLabel}</strong>
+                  <small>{vehicleCount} vehiculo(s) registrado(s) en el portal.</small>
                 </div>
                 <div>
-                  <span className={`parking-charge-table__badge${backendPaymentPaid ? ' parking-charge-table__badge--paid' : ''}`}>
-                    {chargeStatusLabel}
+                  <span className={`parking-charge-table__badge ${isPaid ? 'parking-charge-table__badge--paid' : 'parking-charge-table__badge--available'}`}>
+                    {isPaid ? 'Completado' : 'Disponible'}
                   </span>
                 </div>
                 <div className="parking-charge-table__amount">Q.{amount.toFixed(2)}</div>
                 <div>
-                  {backendPaymentPaid ? (
-                    <Button variant="outline-primary" className="parking-charge-table__pay" onClick={() => navigate('/parking/user/perfil')}>
-                      Ver
-                    </Button>
+                  {isPaid ? (
+                    <div className="d-flex flex-wrap gap-2">
+                      <Button variant="outline-primary" className="parking-charge-table__pay" onClick={() => setShowReceipt(true)}>
+                        Ver Recibo
+                      </Button>
+                      <Button variant="outline-danger" className="parking-charge-table__pay" onClick={handleDeletePayment}>
+                        <Trash2 size={16} className="me-2" />
+                        Eliminar
+                      </Button>
+                    </div>
                   ) : (
-                    <Button
-                      variant="primary"
-                      type="submit"
-                      className="parking-charge-table__pay"
-                      disabled={loadingPlan || loadingAccount || !!planError || isLoadingIntent || isLoadingNextId || backendPaymentPending}
-                    >
-                      {isLoadingIntent ? <Spinner size="sm" className="me-2" /> : <WalletCards size={16} className="me-2" />}
-                      {backendPaymentPending ? 'En proceso' : 'Pagar'}
+                    <Button variant="primary" className="parking-charge-table__pay" onClick={handleStartStripePayment} disabled={loadingStripe}>
+                      {loadingStripe ? <Spinner size="sm" className="me-2" /> : <CreditCard size={16} className="me-2" />}
+                      {loadingStripe ? 'Abriendo Stripe...' : 'Pagar'}
                     </Button>
                   )}
                 </div>
               </div>
             </div>
-
-            <div className="parking-payment-hidden-fields" aria-hidden="true">
-              <Form.Control type="number" value={paymentData.paymentId} readOnly tabIndex={-1} />
-              <Form.Control
-                type="text"
-                value={paymentData.carnet}
-                onChange={(e) => setPaymentData((prev) => ({ ...prev, carnet: e.target.value }))}
-                tabIndex={-1}
-              />
-              <Form.Control
-                type="date"
-                value={paymentData.paymentDate}
-                onChange={(e) => setPaymentData((prev) => ({ ...prev, paymentDate: e.target.value }))}
-                tabIndex={-1}
-              />
-            </div>
           </Card.Body>
         </Card>
-      </Form>
+      </div>
     </div>
   );
 }

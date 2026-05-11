@@ -808,6 +808,18 @@ small {
   fill: #866000;
 }
 
+.parking-system-notice--success {
+  color: #0f5132;
+  background: #dff7ea;
+  border-color: #bfe9d2;
+  box-shadow: 0 8px 18px rgba(15, 81, 50, 0.08);
+}
+
+.parking-system-notice--success svg {
+  color: #198754;
+  fill: none;
+}
+
 .parking-pending-charges__card,
 .parking-payment-card {
   border: 0;
@@ -882,10 +894,15 @@ small {
   min-height: 24px;
   padding: 3px 9px;
   border-radius: 7px;
-  background: #ffc20f;
-  color: #050505;
+  background: #e8eef6;
+  color: #174f82;
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.parking-charge-table__badge--available {
+  background: #e8eef6;
+  color: #174f82;
 }
 
 .parking-charge-table__badge--paid {
@@ -964,12 +981,25 @@ small {
   background: #d8f7ff;
 }
 
+.parking-dashboard-stat__icon--success {
+  color: #198754;
+  background: #dff7ea;
+}
+
 .parking-dashboard-stat span {
   display: block;
   margin-bottom: 4px;
   color: #6c6f76;
   font-size: 1rem;
   font-weight: 800;
+}
+
+.parking-dashboard-stat__note {
+  display: block;
+  margin-top: 8px;
+  color: #198754;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .parking-dashboard-stat strong {

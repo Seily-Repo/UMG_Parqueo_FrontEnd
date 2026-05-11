@@ -1,0 +1,22 @@
+import { apiRequest } from "../api";
+
+export interface BackendVehicleLookup {
+  ID_VEHICULO: number;
+  CARNE?: string;
+  TIPO_VEHICULO?: string;
+  PLACA: string;
+  MARCA?: string;
+  MODELO?: string;
+  COLOR?: string;
+  ACTIVO?: number;
+}
+
+function normalizePlate(plate: string) {
+  return plate.trim().toUpperCase().replace(/\s+/g, "");
+}
+
+export const vehicleService = {
+  getByPlate(plate: string) {
+    return apiRequest<BackendVehicleLookup>(`/api/vehiculos/placa/${encodeURIComponent(normalizePlate(plate))}`);
+  },
+};

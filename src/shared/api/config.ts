@@ -6,7 +6,11 @@ function parseTimeout(value: string | undefined) {
 }
 
 export const apiConfig = {
-  baseUrl: (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:3000").replace(/\/$/, ""),
+  baseUrl: (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:3001").replace(/\/$/, ""),
   timeoutMs: parseTimeout(import.meta.env.VITE_API_TIMEOUT_MS),
   jwt: import.meta.env.VITE_API_JWT || "",
 } as const;
+
+export function getStoredJwt() {
+  return localStorage.getItem("token") || apiConfig.jwt;
+}

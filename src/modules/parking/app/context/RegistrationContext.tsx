@@ -64,12 +64,12 @@ const RegistrationContext = createContext<RegistrationContextType | undefined>(u
 const simulatedUsers: Registration[] = [
   {
     id: 'simulated-1',
-    carnet: '5190-23-0001',
+    carnet: '51902317607',
     dpi: '1234567890123',
     vehicleType: 'carro',
     parkingPlan: 'entre-semana',
     selectedPlanId: 1,
-    fullName: 'Juan Pérez',
+    fullName: 'Pablo Argueta',
     address: 'Zona 1, Guatemala',
     phone: '55551234',
     emergencyContact: 'María Pérez',
@@ -166,10 +166,14 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
     const saved = localStorage.getItem('currentRegistration');
     if (saved) {
       const parsed = JSON.parse(saved);
+      const normalizedParsed = parsed.carnet === '5190-23-0001'
+        ? { ...parsed, carnet: '51902317607', fullName: 'Pablo Argueta' }
+        : parsed;
+
       return {
-        ...parsed,
-        createdAt: parsed.createdAt ? new Date(parsed.createdAt) : new Date(),
-        otpVerifiedAt: parsed.otpVerifiedAt ? new Date(parsed.otpVerifiedAt) : undefined,
+        ...normalizedParsed,
+        createdAt: normalizedParsed.createdAt ? new Date(normalizedParsed.createdAt) : new Date(),
+        otpVerifiedAt: normalizedParsed.otpVerifiedAt ? new Date(normalizedParsed.otpVerifiedAt) : undefined,
       };
     }
     // Si no hay login, cargamos un registro simulado por defecto
@@ -188,12 +192,12 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
     // Datos simulados si no hay registros
     const simulatedRegistration: Registration = {
       id: 'simulated-1',
-      carnet: '5190-23-0001',
+      carnet: '51902317607',
       dpi: '1234567890123',
       vehicleType: 'carro',
       parkingPlan: 'entre-semana',
       selectedPlanId: 1,
-      fullName: 'Juan Pérez',
+      fullName: 'Pablo Argueta',
       address: 'Zona 1, Guatemala',
       phone: '55551234',
       emergencyContact: 'María Pérez',
@@ -208,7 +212,7 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
         },
       ],
       amount: 600,
-      cardHolder: 'Juan Pérez',
+      cardHolder: 'Pablo Argueta',
       cardNumber: '1234567890123456',
       expiryDate: '12/28',
       cvv: '123',

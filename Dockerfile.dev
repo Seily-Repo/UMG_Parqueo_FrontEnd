@@ -12,7 +12,7 @@ RUN npm ci --no-audit --no-fund
 COPY . .
 
 # Puerto configurado para Vite en este proyecto
-EXPOSE 3000
+EXPOSE 3001
 
 # Comando por defecto (en docker-compose dev normalmente se sobrescribe)
 CMD ["npm", "start"]

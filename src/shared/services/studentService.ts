@@ -21,6 +21,10 @@ function normalizeStudent(student: BackendUsuarioCobros): BackendEstudiante {
   };
 }
 
+function normalizeCarneForOracle(carne: string) {
+  return carne.replace(/\D/g, "");
+}
+
 export const studentService = {
   async getAll() {
     const students = await apiRequest<BackendUsuarioCobros[]>("/api/usuario");
@@ -28,7 +32,9 @@ export const studentService = {
   },
 
   async getByCarne(carne: string) {
-    const student = await apiRequest<BackendUsuarioCobros>(`/api/usuario/carne/${encodeURIComponent(carne)}`);
+    const student = await apiRequest<BackendUsuarioCobros>(
+      `/api/usuario/carne/${encodeURIComponent(normalizeCarneForOracle(carne))}`
+    );
     return normalizeStudent(student);
   },
 

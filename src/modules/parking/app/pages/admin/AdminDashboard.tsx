@@ -12,7 +12,6 @@ interface AdminStudentRow {
   email: string;
   isDelinquent: boolean;
   delinquentReason?: string;
-  paymentStatus: 'paid' | 'pending';
   totalPaid: number;
   latestPaymentDate?: string;
 }
@@ -23,7 +22,7 @@ function formatCurrency(amount: number) {
 
 function formatDate(value?: string) {
   if (!value) {
-    return 'Sin pagos';
+    return 'Sin cobros';
   }
 
   const parsed = new Date(value);
@@ -120,7 +119,6 @@ export function AdminDashboard() {
         email: student.EST_EMAIL,
         isDelinquent: !!delinquentRecord,
         delinquentReason: delinquentRecord?.MOR_MOTIVO,
-        paymentStatus: acceptedPayments.length > 0 ? 'paid' : 'pending',
         totalPaid,
         latestPaymentDate: latestPayment?.PAG_FECHA_PAGO,
       };
@@ -163,7 +161,7 @@ export function AdminDashboard() {
     {
       title: 'Ingresos Totales',
       value: formatCurrency(totalRevenue),
-      description: 'Pagos registrados',
+      description: 'Cobros confirmados',
       icon: DollarSign,
       color: '#C41230',
       bgColor: '#ffebee'
@@ -182,7 +180,7 @@ export function AdminDashboard() {
     <div>
       <div className="mb-4">
         <h3 className="fw-bold mb-1">Panel de Administración</h3>
-        <p className="text-muted mb-0">Gestión de estudiantes, pagos y morosidad</p>
+        <p className="text-muted mb-0">Gestion de estudiantes, cobros confirmados y morosidad</p>
       </div>
 
       {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
@@ -223,7 +221,7 @@ export function AdminDashboard() {
         <Card.Header className="bg-white">
           <h5 className="mb-1">Lista de Estudiantes</h5>
           <p className="text-muted small mb-0">
-            Búsqueda sobre estudiantes, pagos registrados y morosidad activa
+            Busqueda sobre estudiantes, cobros confirmados y morosidad activa
           </p>
         </Card.Header>
         <Card.Body className="p-4">
@@ -262,9 +260,8 @@ export function AdminDashboard() {
                     <th>Nombre</th>
                     <th>Correo</th>
                     <th>Morosidad</th>
-                    <th>Estado Pago</th>
-                    <th>Total Pagado</th>
-                    <th>Último Pago</th>
+                    <th>Total Confirmado</th>
+                    <th>Ultimo Cobro</th>
                     <th className="text-end">Acciones</th>
                   </tr>
                 </thead>
@@ -277,14 +274,6 @@ export function AdminDashboard() {
                       <td>
                         <Badge bg={row.isDelinquent ? 'warning' : 'success'} text={row.isDelinquent ? 'dark' : 'white'}>
                           {row.isDelinquent ? row.delinquentReason || 'Activa' : 'Sin restricción'}
-                        </Badge>
-                      </td>
-                      <td>
-                        <Badge
-                          bg={row.paymentStatus === 'paid' ? 'primary' : 'danger'}
-                          className="text-white"
-                        >
-                          {row.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente'}
                         </Badge>
                       </td>
                       <td>{formatCurrency(row.totalPaid)}</td>

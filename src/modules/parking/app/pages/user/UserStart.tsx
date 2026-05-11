@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useRegistration } from '../../context/RegistrationContext';
 import { Card, Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
-import { Car, Bike, Calendar, CheckCircle, CreditCard, WalletCards } from 'lucide-react';
+import { Car, Bike, Calendar, CheckCircle, ShieldCheck } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getReadableApiError } from '../../../../../shared/api';
 import type { BackendPago, BackendPlanParqueo } from '../../../../../shared/models/backend';
@@ -119,7 +119,7 @@ export function UserStart() {
     }
 
     if (currentRegistration.isDelinquent) {
-      toast.error(currentRegistration.delinquentReason || 'Tiene una restriccion activa y no puede continuar al pago.');
+      toast.error(currentRegistration.delinquentReason || 'Tiene una restriccion activa y no puede completar el registro.');
       return;
     }
 
@@ -139,7 +139,8 @@ export function UserStart() {
       ],
     });
 
-    navigate('/parking/user/pago');
+    toast.success('Registro guardado. El pago del plan no es obligatorio para esta etapa.');
+    navigate('/parking/user/vehiculos');
   };
 
   const vehicleTypes = [
@@ -148,13 +149,8 @@ export function UserStart() {
   ] as const;
   const firstName = (currentRegistration.fullName || 'Cristian Estrada').split(' ')[0] || 'Usuario';
   const registeredVehicles = currentRegistration.vehicles?.length || 0;
-  const hasAcceptedPayment = backendPayments.some((payment) => payment.PAG_ESTADO === 'A' && !payment.MUL_MULTA);
-  const hasBackendPayment = backendPayments.some((payment) => !payment.MUL_MULTA);
-  const paymentStatus = hasAcceptedPayment || currentRegistration.paymentStatus === 'paid'
-    ? 'Pagado'
-    : hasBackendPayment
-      ? 'En proceso'
-      : 'Pendiente';
+  const hasRegisteredPlan = Boolean(currentRegistration.vehicleType && currentRegistration.parkingPlan);
+  const registrationStatus = hasRegisteredPlan ? 'Registrado' : 'Por completar';
 
   const dashboardHeader = (
     <>
@@ -174,14 +170,12 @@ export function UserStart() {
 
         <Card className="parking-dashboard-stat">
           <Card.Body>
-            <div className="parking-dashboard-stat__icon">
-              <WalletCards size={34} />
+            <div className="parking-dashboard-stat__icon parking-dashboard-stat__icon--success">
+              <ShieldCheck size={34} />
             </div>
             <div>
-              <span>ESTADO DE PAGO</span>
-              <strong className={paymentStatus === 'Pendiente' ? 'parking-dashboard-stat__danger' : ''}>
-                {paymentStatus}
-              </strong>
+              <span>ESTADO DE REGISTRO</span>
+              <strong>{registrationStatus}</strong>
             </div>
           </Card.Body>
         </Card>
@@ -190,11 +184,11 @@ export function UserStart() {
           <Card.Body>
             <div className="d-flex align-items-center gap-2 mb-2">
               <Car size={25} />
-              <h2>Nuevo Vehiculo?</h2>
+              <h2>Mis Vehiculos</h2>
             </div>
-            <p>Registra tu placa y modelo para habilitar tu acceso.</p>
+            <p>Consulta o actualiza los vehiculos registrados.</p>
             <Button variant="light" onClick={() => navigate('/parking/user/vehiculos')}>
-              Registrar ahora →
+              Revisar vehiculos
             </Button>
           </Card.Body>
         </Card>
@@ -291,9 +285,8 @@ export function UserStart() {
               </div>
             </div>
 
-            <Button variant="primary" size="lg" className="w-100" onClick={() => navigate('/parking/user/pago')}>
-              <CreditCard size={18} className="me-2" />
-              Continuar
+            <Button variant="primary" size="lg" className="w-100" onClick={() => navigate('/parking/user/vehiculos')}>
+              Ver vehiculos registrados
             </Button>
           </Card.Body>
         </Card>
@@ -325,7 +318,7 @@ export function UserStart() {
             <Alert variant="warning" className="mb-4">
               Tiene una restriccion activa.
               {currentRegistration.delinquentReason ? ` Motivo: ${currentRegistration.delinquentReason}.` : ''}
-              {' '}No podra continuar al pago hasta regularizar su estado.
+              {' '}No podra completar el registro hasta regularizar su estado.
             </Alert>
           )}
 
@@ -421,7 +414,7 @@ export function UserStart() {
               </Form.Group>
 
               <Button variant="primary" type="submit" size="lg" className="w-100">
-                Continuar
+                Guardar registro
               </Button>
             </Form>
           )}

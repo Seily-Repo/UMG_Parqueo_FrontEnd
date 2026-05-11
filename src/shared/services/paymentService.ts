@@ -14,6 +14,10 @@ function normalizePago(pago: BackendPagoCobros): BackendPago {
   };
 }
 
+function normalizeCarneForPayments(carne: string) {
+  return carne.replace(/\D/g, "");
+}
+
 export const paymentService = {
   async getAll() {
     const pagos = await apiRequest<BackendPagoCobros[]>("/api/pago");
@@ -22,7 +26,9 @@ export const paymentService = {
 
   async getByCarne(carne: string) {
     try {
-      const pagos = await apiRequest<BackendPagoCobros[]>(`/api/pago/carne/${encodeURIComponent(carne)}`);
+      const pagos = await apiRequest<BackendPagoCobros[]>(
+        `/api/pago/carne/${encodeURIComponent(normalizeCarneForPayments(carne))}`
+      );
       return pagos.map(normalizePago);
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
@@ -53,9 +59,15 @@ export const paymentService = {
   },
 
   create(payload: BackendCreatePagoPayload) {
+    const normalizedCarne = normalizeCarneForPayments(payload.EST_CARNE || payload.LR_CARNE || "");
+
     return apiRequest<BackendPagoCreationResponse>("/api/pago", {
       method: "POST",
-      body: payload,
+      body: {
+        ...payload,
+        EST_CARNE: normalizedCarne || payload.EST_CARNE,
+        LR_CARNE: normalizedCarne || payload.LR_CARNE,
+      },
     });
   },
 

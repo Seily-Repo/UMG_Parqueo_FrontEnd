@@ -1,0 +1,182 @@
+NOTAS PARA EQUIPO BACKEND - INTEGRACION PARQUEO / PAGOS / MULTAS
+
+Hola equipo,
+
+Durante la integracion del frontend de parqueo encontramos varios puntos del backend que deben corregirse para que pagos, multas y Stripe funcionen correctamente al unir ramas.
+
+
+1. CORREGIR TYPO EN ROL ADMINISTRADOR
+
+En pago.controller.js actualmente hay una comparacion con el rol mal escrito:
+
+  ADMININISTRADOR
+
+Debe quedar:
+
+  ADMINISTRADOR
+
+Por ese typo, cuando el admin intenta crear un pago para otro carne, el backend ignora el LR_CARNE enviado en el body y usa el carne del JWT.
+
+
+2. NORMALIZAR CARNE PARA ORACLE
+
+Oracle esta usando LR_CARNE como numero.
+
+El backend debe normalizar carnes con guiones antes de buscar usuarios o crear pagos.
+
+Ejemplo:
+
+  5190-23-17607  ->  51902317607
+
+Esto aplica en:
+
+- creacion de pagos
+- busqueda de usuarios por carne
+- consulta de pagos por carne
+- validacion del usuario autenticado
+
+
+3. LLENAR PAG_ESTADO_REGISTRO AL CREAR PAGOS
+
+Al crear un pago, Sequelize puede fallar porque PAG_ESTADO_REGISTRO va vacio.
+
+Antes de insertar en CB_PAGO, agregar:
+
+  PAG_ESTADO_REGISTRO = "A"
+
+
+4. PAGO DE MULTAS DEBE USAR EL MONTO DE LA MULTA
+
+Cuando el pago corresponde a una multa asignada, el backend no debe cobrar el precio del plan de parqueo.
+
+Si el body trae:
+
+  EMU_USUARIO_MULTA
+
+entonces el backend debe:
+
+1. buscar la relacion en CB_USUARIO_MULTA
+2. obtener el MUL_MULTA
+3. buscar la multa en CB_MULTA
+4. usar MUL_MONTO_TOTAL como PAG_MONTO_TOTAL
+
+
+5. PAGO DE MULTAS DEBE GUARDAR LA RELACION CORRECTA
+
+Para pagos de multas, el pago debe quedar asociado a:
+
+  EMU_USUARIO_MULTA
+
+No solo a MUL_MULTA, porque el pago corresponde a una multa especifica asignada a un vehiculo/usuario.
+
+
+6. CORREGIR MODELO DE MULTAS
+
+En Oracle la columna real es:
+
+  MUL_CREADOR_POR
+
+Pero el modelo esta usando:
+
+  MUL_CREADO_POR
+
+Debe mapearse usando field:
+
+  MUL_CREADO_POR: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+    defaultValue: "ADMIN",
+    field: "MUL_CREADOR_POR"
+  }
+
+Sin esto, listar o crear multas falla con:
+
+  ORA-00904: "MUL_CREADO_POR": invalid identifier
+
+
+7. PRECIOS CORRECTOS DE PLANES
+
+En CB_PLAN_PARQUEO deben quedar:
+
+  CARRO = Q600
+  MOTO  = Q300
+
+
+8. STRIPE: CLAVES DE LA MISMA CUENTA
+
+Backend y frontend deben usar claves de la misma cuenta Stripe.
+
+Backend:
+
+  STRIPE_SECRET_KEY
+  STRIPE_WEBHOOK_SECRET
+
+Frontend:
+
+  VITE_STRIPE_PUBLISHABLE_KEY
+
+Si no pertenecen a la misma cuenta, Stripe Elements puede no renderizar correctamente o el clientSecret no funcionara con la publishable key del frontend.
+
+
+9. WEBHOOK DE STRIPE
+
+En produccion debe funcionar el webhook de Stripe.
+
+Cuando Stripe emita:
+
+  payment_intent.succeeded
+
+el backend debe actualizar el pago a:
+
+  PAG_ESTADO = "A"
+
+Si el webhook no entra, el pago queda como:
+
+  PAG_ESTADO = "P"
+
+
+10. ASIGNACION DE MULTAS
+
+Actualmente el backend asigna multas por:
+
+  VEH_ID_VEHICULO
+
+Ese contrato esta bien.
+
+Payload esperado:
+
+  {
+    "MUL_MULTA": 6,
+    "VEH_ID_VEHICULO": 2,
+    "EMU_ESTADO_MULTA": "A",
+    "EMU_CREADO_POR": "ADMINISTRADOR"
+  }
+
+Si quieren que el admin asigne multas por carne o placa, harian falta endpoints extra para resolver:
+
+  carne -> vehiculos
+  placa -> VEH_ID_VEHICULO
+
+
+RESUMEN
+
+El frontend ya esta preparado para:
+
+- pagar parqueo con Stripe
+- pagar multas con Stripe
+- crear multas desde admin
+- asignar multas a vehiculos
+- consultar multas del estudiante
+
+Pero para que funcione al integrar ramas, backend necesita corregir:
+
+- typo de rol ADMINISTRADOR
+- normalizacion de carne
+- PAG_ESTADO_REGISTRO
+- monto real de multas
+- relacion EMU_USUARIO_MULTA
+- columna MUL_CREADOR_POR
+- precios de planes
+- webhook de Stripe
+- consistencia de claves Stripe
+

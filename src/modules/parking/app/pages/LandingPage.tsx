@@ -5,11 +5,12 @@ import {
   Building2,
   Car,
   ChevronLeft,
-  CreditCard,
   FileText,
   Home,
   LogOut,
   Menu,
+  ReceiptText,
+  ShieldCheck,
   UserCircle,
 } from 'lucide-react';
 import { useRegistration } from '../context/RegistrationContext';
@@ -24,8 +25,8 @@ export function LandingPage() {
   const navItems = [
     { label: 'Inicio', icon: Home, action: () => navigate('/parking') },
     { label: 'Mis Vehiculos', icon: Car, action: () => navigate('/parking/user/vehiculos') },
-    { label: 'Pago', icon: CreditCard, action: () => navigate('/parking/user/pago') },
-    { label: 'Disponibilidad', icon: Building2, action: () => navigate('/parking/user/multas') },
+    { label: 'Estado de Cobros', icon: ReceiptText, action: () => navigate('/parking/user/pago') },
+    { label: 'Multas', icon: Building2, action: () => navigate('/parking/user/multas') },
   ];
 
   return (
@@ -83,6 +84,13 @@ export function LandingPage() {
           <div className="parking-user-view">
             <h1 className="parking-user-greeting">Buenas tardes, {firstName}</h1>
 
+            <div className="d-flex justify-content-end mb-4">
+              <Button variant="outline-primary" onClick={() => navigate('/parking/admin/dashboard')}>
+                <ShieldCheck size={18} className="me-2" />
+                Ir al Admin
+              </Button>
+            </div>
+
             <div className="parking-portal-grid">
               <Card className="parking-portal-card">
                 <Card.Body>
@@ -102,10 +110,10 @@ export function LandingPage() {
                   <div className="parking-portal-card__icon">
                     <Car size={32} />
                   </div>
-                  <h2>Pagar Parqueo</h2>
-                  <p>Inscripcion y pago de cuota mensual.</p>
-                  <Button variant="primary" onClick={() => navigate('/parking/user/pago')}>
-                    Pagar
+                  <h2>Registro de Parqueo</h2>
+                  <p>Registra tu placa y selecciona un plan sin generar cobros pendientes.</p>
+                  <Button variant="primary" onClick={() => navigate('/parking/user')}>
+                    Registrar
                   </Button>
                 </Card.Body>
               </Card>

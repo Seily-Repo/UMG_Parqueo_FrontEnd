@@ -109,8 +109,8 @@ export function UserFines() {
   return (
     <div className="parking-user-view">
       <div className="parking-payments-page__heading">
-        <h1>Disponibilidad</h1>
-        <p>Consulta multas, restricciones y disponibilidad de acceso al parqueo.</p>
+        <h1>Multas</h1>
+        <p>Consulta tus multas, restricciones y pagos pendientes.</p>
       </div>
 
       <Card className="parking-dashboard-panel">
@@ -168,12 +168,6 @@ export function UserFines() {
             </div>
           ) : (
             <>
-              <Alert variant="info">
-                Esta vista le permite consultar el estado de sus multas. Desde aqui puede abrir la segunda vista del
-                modulo, que es el formulario para pagar una multa activa. El backend actual expone la relacion
-                estudiante-multa, por eso el pago se apoya en esa informacion y el monto se completa en el formulario.
-              </Alert>
-
               <div className="table-responsive parking-fines-table">
                 <Table hover className="align-middle mb-0">
                   <thead>

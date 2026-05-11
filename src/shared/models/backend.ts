@@ -48,6 +48,7 @@ export interface BackendCreatePagoPayload {
   PLN_PLAN: number;
   FPG_FORMA_PAGO: number;
   MUL_MULTA?: number | null;
+  EMU_USUARIO_MULTA?: number | null;
   PAG_FECHA_PAGO: string;
   PAG_MONTO_TOTAL: number;
 }
@@ -59,26 +60,59 @@ export interface BackendPagoCreationResponse {
 }
 
 export interface BackendMulta {
-  MUL_id_multa: number;
-  MUL_monto_total: number;
-  MUL_monto_base: number;
-  MUL_impuesto: number;
-  MUL_descripcion: string;
-  MUL_fecha: string;
-  MUL_fecha_vencimiento: string;
-  MUL_creado_por: string;
+  MUL_MULTA?: number;
+  MUL_id_multa?: number;
+  MUL_MONTO_TOTAL?: number;
+  MUL_monto_total?: number;
+  MUL_DESCRIPCION?: string;
+  MUL_descripcion?: string;
+  MUL_DIAS_VENCIMIENTO?: number;
+  MUL_dias_vencimiento?: number;
+  MUL_CREADO_POR?: string;
+  MUL_creado_por?: string;
+  MUL_FECHA_CREACION?: string;
   MUL_fecha_creacion?: string;
+  MUL_MODIFICADO_POR?: string;
   MUL_modificado_por?: string;
+  MUL_FECHA_MODIFICACION?: string;
   MUL_fecha_modificacion?: string;
+  MUL_ESTADO_REGISTRO?: string;
+}
+
+export interface BackendCreateMultaPayload {
+  MUL_DESCRIPCION: string;
+  MUL_MONTO_TOTAL: number;
+  MUL_DIAS_VENCIMIENTO: number;
+  MUL_CREADO_POR?: string;
+}
+
+export interface BackendUpdateMultaPayload {
+  MUL_DESCRIPCION?: string;
+  MUL_MONTO_TOTAL?: number;
+  MUL_DIAS_VENCIMIENTO?: number;
+  MUL_MODIFICADO_POR?: string;
+  MUL_ESTADO_REGISTRO?: string;
 }
 
 export interface BackendEstudianteMulta {
   EMU_ESTUDIANTE_MULTA: number;
+  EMU_USUARIO_MULTA?: number;
   MUL_MULTA: number;
-  EST_CARNE: string;
+  EST_CARNE?: string;
+  LR_CARNE?: string;
+  VEH_ID_VEHICULO?: number | string;
+  VEH_PLACA?: string;
   EMU_ESTADO_MULTA?: string;
   EMU_CREADO_POR: string;
   EMU_FECHA_CREACION?: string;
   EMU_MODIFICADO_POR?: string;
   EMU_FECHA_MODIFICACION?: string;
+}
+
+export interface BackendCreateEstudianteMultaPayload {
+  MUL_MULTA: number;
+  VEH_ID_VEHICULO?: number | string;
+  VEH_PLACA?: string;
+  EMU_ESTADO_MULTA: "A" | "P" | "C";
+  EMU_CREADO_POR?: string;
 }
