@@ -325,7 +325,25 @@ const Dashboard = () => {
         
         <Nav className="flex-column mt-3 flex-grow-1">
           {menuItems.map((item) => (
-            <Nav.Link key={item.key} onClick={() => setActiveSection(item.key)} className={`text-white d-flex align-items-center mb-1 sidebar-link ${activeSection === item.key ? 'sidebar-link-active' : ''}`} style={{ padding: '12px 16px', opacity: activeSection === item.key ? 1 : 0.65 }}>
+            <Nav.Link 
+              key={item.key} 
+              onClick={() => {
+                if (item.key === 'disponibilidad') {
+                  const tieneDeuda = listaDeuda.length > 0;
+                  if (tieneDeuda) {
+                    Swal.fire('Acceso Restringido', 'Debes solventar tus pagos pendientes para acceder a la disponibilidad de parqueos.', 'warning');
+                  } else if (vehiculos.length === 0) {
+                    Swal.fire('Acceso Restringido', 'Debes registrar al menos un vehículo y contar con un plan activo.', 'warning');
+                  } else {
+                    window.location.href = '/disponibilidad/';
+                  }
+                  return;
+                }
+                setActiveSection(item.key);
+              }} 
+              className={`text-white d-flex align-items-center mb-1 sidebar-link ${activeSection === item.key ? 'sidebar-link-active' : ''}`} 
+              style={{ padding: '12px 16px', opacity: activeSection === item.key ? 1 : 0.65 }}
+            >
               {item.icon} {sidebarOpen && <span className="ms-3">{item.label}</span>}
             </Nav.Link>
           ))}

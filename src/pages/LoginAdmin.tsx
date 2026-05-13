@@ -124,13 +124,14 @@ const LoginAdmin = () => {
                   </p>
                 </div>
 
-                <Form onSubmit={handleSubmit} style={{ fontFamily: 'var(--fuente-principal)' }}>
+                <Form onSubmit={handleSubmit} autoComplete="off" style={{ fontFamily: 'var(--fuente-principal)' }}>
                   <Form.Group className="mb-4">
                     <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Correo Electrónico Institucional</Form.Label>
                     <Form.Control 
                       name="correo_electronico"
                       type="email" 
                       required 
+                      autoComplete="off"
                       placeholder="usuario@miumg.edu.gt" 
                       className="py-2"
                     />
@@ -139,7 +140,7 @@ const LoginAdmin = () => {
                   <Form.Group className="mb-4">
                     <Form.Label style={{ color: 'var(--color-primario)', fontWeight: 'bold' }}>Contraseña de Seguridad</Form.Label>
                     <Form.Control 
-                      name="password" type="password" required 
+                      name="password" type="password" required autoComplete="new-password"
                       placeholder="Ingresa tu contraseña"
                     />
                   </Form.Group>

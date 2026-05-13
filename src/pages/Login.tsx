@@ -105,7 +105,7 @@ const Login = () => {
                   </p>
                 </div>
 
-                <Form onSubmit={handleSubmit} style={{ fontFamily: 'var(--fuente-principal)' }}>
+                <Form onSubmit={handleSubmit} autoComplete="off" style={{ fontFamily: 'var(--fuente-principal)' }}>
                   <Form.Group className="mb-4">
                     <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>
                       {labelUsuario} {/* 🔥 ETIQUETA DINÁMICA */}
@@ -114,6 +114,7 @@ const Login = () => {
                       name="identificador"
                       type={tipoPerfil === 'admin' ? "email" : "text"} // Si es admin fuerza teclado de email
                       required 
+                      autoComplete="off"
                       placeholder={placeholderUsuario} // 🔥 PLACEHOLDER DINÁMICO
                       className="py-2"
                     />
@@ -123,7 +124,7 @@ const Login = () => {
                     <Form.Label style={{ color: 'var(--color-primario)', fontWeight: 'bold' }}>
                       Contraseña de Seguridad
                     </Form.Label>
-                    <Form.Control name="password" type="password" required placeholder="Ingresa tu contraseña" />
+                    <Form.Control name="password" type="password" required autoComplete="new-password" placeholder="Ingresa tu contraseña" />
                   </Form.Group>
 
                   <div className="d-grid mt-4">
