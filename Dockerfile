@@ -16,8 +16,8 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY . .
 
 # Si necesitas variables en build, podrías pasar ARGs y crear .env
-ARG REACT_APP_API_URL
-RUN if [ -n "$REACT_APP_API_URL" ]; then echo "VITE_API_URL=$REACT_APP_API_URL" > .env; fi
+ARG VITE_API_BASE_URL
+RUN if [ -n "$VITE_API_BASE_URL" ]; then echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" > .env; fi
 
 RUN npm run build
 
