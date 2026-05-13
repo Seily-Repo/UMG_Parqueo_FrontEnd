@@ -161,10 +161,7 @@ export function UserFines() {
           ) : fines.length === 0 ? (
             <div className="text-center py-5">
               <Search size={56} color="#adb5bd" />
-              <p className="text-muted mt-3 mb-1">No se encontraron multas para este estudiante.</p>
-              <small className="text-muted">
-                Cuando el backend asocie multas al carne, apareceran aqui.
-              </small>
+              <p className="text-muted mt-3 mb-0">No se encontraron multas para este estudiante.</p>
             </div>
           ) : (
             <>

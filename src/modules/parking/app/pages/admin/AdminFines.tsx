@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Badge, Button, Card, Col, Form, Row, Spinner, Table } from 'react-bootstrap';
-import { CarFront, ListChecks, PlusCircle, RefreshCw, ShieldAlert, Trash2 } from 'lucide-react';
+import { CarFront, FileSpreadsheet, ListChecks, PlusCircle, RefreshCw, ShieldAlert, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { getReadableApiError } from '../../../../../shared/api';
 import type { BackendEstudianteMulta, BackendMulta } from '../../../../../shared/models/backend';
-import { fineService } from '../../../../../shared/services';
+import { fineService, vehicleService } from '../../../../../shared/services';
 
 type FineFormState = {
   description: string;
@@ -14,7 +14,7 @@ type FineFormState = {
 
 type AssignFineFormState = {
   fineId: string;
-  vehicleId: string;
+  vehicleLookup: string;
 };
 
 const initialFormState: FineFormState = {
@@ -25,7 +25,7 @@ const initialFormState: FineFormState = {
 
 const initialAssignFormState: AssignFineFormState = {
   fineId: '',
-  vehicleId: '',
+  vehicleLookup: '',
 };
 
 function getFineId(fine: BackendMulta) {
@@ -48,6 +48,40 @@ function formatCurrency(amount: number) {
   return `Q${amount.toFixed(2)}`;
 }
 
+function normalizePlate(plate: string) {
+  return plate.trim().toUpperCase().replace(/\s+/g, '');
+}
+
+function getLookupVehicleId(value: string) {
+  const normalizedValue = value.trim();
+  return /^\d+$/.test(normalizedValue) ? normalizedValue : '';
+}
+
+function getAssignedFineId(fine: BackendEstudianteMulta) {
+  return fine.EMU_USUARIO_MULTA || fine.EMU_ESTUDIANTE_MULTA || 0;
+}
+
+function getStatusLabel(status?: string) {
+  switch (status) {
+    case 'A':
+      return 'Activa';
+    case 'P':
+      return 'Pagada';
+    case 'C':
+      return 'Cancelada';
+    default:
+      return status || 'Sin estado';
+  }
+}
+
+function escapeExcelCell(value: unknown) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 export function AdminFines() {
   const [fines, setFines] = useState<BackendMulta[]>([]);
   const [assignedFines, setAssignedFines] = useState<BackendEstudianteMulta[]>([]);
@@ -63,6 +97,10 @@ export function AdminFines() {
     () => fines.slice().sort((a, b) => getFineId(b) - getFineId(a)),
     [fines]
   );
+
+  const fineCatalogById = useMemo(() => {
+    return new Map(sortedFines.map((fine) => [getFineId(fine), fine]));
+  }, [sortedFines]);
 
   const loadFines = async () => {
     setLoading(true);
@@ -134,15 +172,15 @@ export function AdminFines() {
     event.preventDefault();
 
     const fineId = Number(assignFormData.fineId);
-    const vehicleId = assignFormData.vehicleId.trim();
+    const vehicleLookup = assignFormData.vehicleLookup.trim();
 
     if (!fineId) {
       toast.error('Seleccione una multa para asignar');
       return;
     }
 
-    if (!vehicleId) {
-      toast.error('Ingrese el ID del vehiculo');
+    if (!vehicleLookup) {
+      toast.error('Ingrese la placa del vehiculo');
       return;
     }
 
@@ -150,18 +188,40 @@ export function AdminFines() {
     setError('');
 
     try {
-      await fineService.createStudentFine({
-        MUL_MULTA: fineId,
-        VEH_ID_VEHICULO: vehicleId,
-        EMU_ESTADO_MULTA: 'A',
-        EMU_CREADO_POR: 'ADMINISTRADOR',
-      });
+      let vehicleId = getLookupVehicleId(vehicleLookup);
+      const plate = normalizePlate(vehicleLookup);
+
+      if (!vehicleId) {
+        try {
+          const vehicle = await vehicleService.getByPlate(plate);
+          vehicleId = String(vehicle.ID_VEHICULO || vehicle.VEH_ID_VEHICULO || '');
+        } catch {
+          vehicleId = '';
+        }
+      }
+
+      if (vehicleId) {
+        await fineService.createStudentFine({
+          MUL_MULTA: fineId,
+          VEH_ID_VEHICULO: vehicleId,
+          VEH_PLACA: plate,
+          EMU_ESTADO_MULTA: 'A',
+          EMU_CREADO_POR: 'ADMINISTRADOR',
+        });
+      } else {
+        await fineService.createStudentFine({
+          MUL_MULTA: fineId,
+          VEH_PLACA: plate,
+          EMU_ESTADO_MULTA: 'A',
+          EMU_CREADO_POR: 'ADMINISTRADOR',
+        });
+      }
 
       setAssignFormData(initialAssignFormState);
-      toast.success(`Multa asignada al vehiculo #${vehicleId}`);
+      toast.success(`Multa asignada a la placa ${plate}`);
       void loadFines();
     } catch (requestError) {
-      const message = getReadableApiError(requestError, 'No fue posible asignar la multa a la placa indicada.');
+      const message = getReadableApiError(requestError, 'No fue posible asignar la multa al vehiculo indicado.');
       setError(message);
       toast.error(message);
     } finally {
@@ -201,7 +261,7 @@ export function AdminFines() {
   };
 
   const handleDeleteAssignedFine = async (fine: BackendEstudianteMulta) => {
-    const relationId = fine.EMU_USUARIO_MULTA || fine.EMU_ESTUDIANTE_MULTA;
+    const relationId = getAssignedFineId(fine);
 
     if (!relationId) {
       toast.error('No se pudo identificar la multa asignada');
@@ -228,6 +288,80 @@ export function AdminFines() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleExportAssignedFines = () => {
+    if (assignedFines.length === 0) {
+      toast.info('No hay multas asignadas para exportar');
+      return;
+    }
+
+    const headers = [
+      'ID Relacion',
+      'ID Multa',
+      'Descripcion',
+      'Monto',
+      'Dias Vencimiento',
+      'ID Vehiculo',
+      'Placa',
+      'Carne',
+      'Estado',
+      'Creado por',
+      'Fecha Creacion',
+      'Modificado por',
+      'Fecha Modificacion',
+    ];
+
+    const rows = assignedFines.map((fine) => {
+      const catalogFine = fineCatalogById.get(Number(fine.MUL_MULTA));
+
+      return [
+        getAssignedFineId(fine),
+        fine.MUL_MULTA,
+        catalogFine ? getFineDescription(catalogFine) : '',
+        catalogFine ? formatCurrency(getFineAmount(catalogFine)) : '',
+        catalogFine ? getFineDueDays(catalogFine) : '',
+        fine.VEH_ID_VEHICULO || '',
+        fine.VEH_PLACA || '',
+        fine.EST_CARNE || fine.LR_CARNE || '',
+        getStatusLabel(fine.EMU_ESTADO_MULTA),
+        fine.EMU_CREADO_POR || '',
+        fine.EMU_FECHA_CREACION || '',
+        fine.EMU_MODIFICADO_POR || '',
+        fine.EMU_FECHA_MODIFICACION || '',
+      ];
+    });
+
+    const tableRows = [headers, ...rows]
+      .map((row) => `<tr>${row.map((cell) => `<td>${escapeExcelCell(cell)}</td>`).join('')}</tr>`)
+      .join('');
+
+    const html = `
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+        </head>
+        <body>
+          <table border="1">
+            <caption>Multas Asignadas</caption>
+            ${tableRows}
+          </table>
+        </body>
+      </html>
+    `;
+
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const date = new Date().toISOString().slice(0, 10);
+
+    link.href = url;
+    link.download = `multas-asignadas-${date}.xls`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Excel de multas asignadas descargado');
   };
 
   return (
@@ -328,21 +462,21 @@ export function AdminFines() {
                 </Form.Group>
 
                 <Form.Group className="mb-4">
-                  <Form.Label>ID del Vehiculo *</Form.Label>
+                  <Form.Label>Placa del Vehiculo *</Form.Label>
                   <Form.Control
-                    value={assignFormData.vehicleId}
-                    onChange={(event) => setAssignFormData((prev) => ({ ...prev, vehicleId: event.target.value }))}
-                    placeholder="Ej. 1"
+                    value={assignFormData.vehicleLookup}
+                    onChange={(event) => setAssignFormData((prev) => ({ ...prev, vehicleLookup: event.target.value }))}
+                    placeholder="Ej. P123ABC"
                     required
                   />
                   <Form.Text className="text-muted">
-                    La multa aparecera al usuario propietario de ese vehiculo.
+                    La multa aparecera al usuario propietario del vehiculo.
                   </Form.Text>
                 </Form.Group>
 
                 <Button type="submit" variant="primary" className="w-100" disabled={assigning || loading}>
                   {assigning ? <Spinner size="sm" className="me-2" /> : <PlusCircle size={16} className="me-2" />}
-                  {assigning ? 'Asignando...' : 'Asignar por Placa'}
+                  {assigning ? 'Asignando...' : 'Asignar Multa'}
                 </Button>
               </Form>
             </Card.Body>
@@ -427,10 +561,21 @@ export function AdminFines() {
                     <p className="text-muted small mb-0">Registros activos creados para estudiantes o vehiculos.</p>
                   </div>
                 </div>
-                <Button variant="outline-primary" size="sm" onClick={loadFines} disabled={loading}>
-                  <RefreshCw size={16} className="me-2" />
-                  Actualizar
-                </Button>
+                <div className="d-flex gap-2 flex-wrap">
+                  <Button
+                    variant="outline-success"
+                    size="sm"
+                    onClick={handleExportAssignedFines}
+                    disabled={loading || assignedFines.length === 0}
+                  >
+                    <FileSpreadsheet size={16} className="me-2" />
+                    Descargar Excel
+                  </Button>
+                  <Button variant="outline-primary" size="sm" onClick={loadFines} disabled={loading}>
+                    <RefreshCw size={16} className="me-2" />
+                    Actualizar
+                  </Button>
+                </div>
               </div>
             </Card.Header>
             <Card.Body className="p-4">
@@ -452,7 +597,7 @@ export function AdminFines() {
                     </thead>
                     <tbody>
                       {assignedFines.map((fine) => {
-                        const relationId = fine.EMU_USUARIO_MULTA || fine.EMU_ESTUDIANTE_MULTA;
+                        const relationId = getAssignedFineId(fine);
                         return (
                           <tr key={relationId}>
                             <td className="fw-medium">{relationId}</td>

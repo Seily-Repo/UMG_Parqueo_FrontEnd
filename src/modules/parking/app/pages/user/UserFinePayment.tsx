@@ -84,12 +84,6 @@ function FineStripeForm({
         <PaymentElement options={{ layout: 'tabs' }} />
       </div>
 
-      <Alert variant="warning" className="mt-4 mb-4">
-        <small>
-          <strong>Nota:</strong> Este flujo usa Stripe en modo de prueba.
-        </small>
-      </Alert>
-
       <Row className="g-3">
         <Col xs={6}>
           <Button
@@ -224,7 +218,7 @@ export function UserFinePayment() {
       }) as PaymentIntentResponse;
 
       if (!paymentResponse.clientSecret) {
-        throw new Error(paymentResponse.message || 'No se recibio clientSecret desde el backend.');
+        throw new Error(paymentResponse.message || 'No fue posible preparar el pago con Stripe.');
       }
 
       setActivePayment(paymentResponse.data);

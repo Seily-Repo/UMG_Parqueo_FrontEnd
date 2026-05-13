@@ -179,7 +179,7 @@ export function Payment() {
       const result = await paymentService.create(payload) as PaymentIntentResponse;
 
       if (!result.clientSecret) {
-        throw new Error(result.message || 'El backend no devolvio clientSecret para Stripe.');
+        throw new Error(result.message || 'No fue posible preparar el pago con Stripe.');
       }
 
       setActivePayment(result.data);

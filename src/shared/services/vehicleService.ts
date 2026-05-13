@@ -1,10 +1,13 @@
 import { apiRequest } from "../api";
 
 export interface BackendVehicleLookup {
-  ID_VEHICULO: number;
+  ID_VEHICULO?: number;
+  VEH_ID_VEHICULO?: number;
   CARNE?: string;
+  LR_CARNE?: string;
   TIPO_VEHICULO?: string;
-  PLACA: string;
+  PLACA?: string;
+  VEH_PLACA?: string;
   MARCA?: string;
   MODELO?: string;
   COLOR?: string;

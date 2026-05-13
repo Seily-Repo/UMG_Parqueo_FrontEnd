@@ -61,6 +61,29 @@ interface RegistrationContextType {
 
 const RegistrationContext = createContext<RegistrationContextType | undefined>(undefined);
 
+function normalizeCarnet(carnet?: string | number | null) {
+  return String(carnet || '').replace(/-/g, '');
+}
+
+function getJwtUser() {
+  const token = localStorage.getItem('token') || import.meta.env.VITE_API_JWT || '';
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1] || ''));
+    const user = payload.usuario || payload;
+
+    return {
+      carnet: normalizeCarnet(user.carne),
+      role: user.rol || '',
+    };
+  } catch {
+    return {
+      carnet: '',
+      role: '',
+    };
+  }
+}
+
 const simulatedUsers: Registration[] = [
   {
     id: 'simulated-1',
@@ -163,12 +186,26 @@ const simulatedUsers: Registration[] = [
 
 export function RegistrationProvider({ children }: { children: React.ReactNode }) {
   const [currentRegistration, setCurrentRegistration] = useState<Partial<Registration>>(() => {
+    const tokenUser = getJwtUser();
     const saved = localStorage.getItem('currentRegistration');
+
     if (saved) {
       const parsed = JSON.parse(saved);
       const normalizedParsed = parsed.carnet === '5190-23-0001'
         ? { ...parsed, carnet: '51902317607', fullName: 'Pablo Argueta' }
         : parsed;
+      const savedCarnet = normalizeCarnet(normalizedParsed.carnet);
+
+      if (tokenUser.role === 'USUARIO' && tokenUser.carnet && savedCarnet !== tokenUser.carnet) {
+        return {
+          id: tokenUser.carnet,
+          carnet: tokenUser.carnet,
+          vehicles: [],
+          amount: 600,
+          paymentStatus: 'pending',
+          createdAt: new Date(),
+        };
+      }
 
       return {
         ...normalizedParsed,
@@ -176,6 +213,18 @@ export function RegistrationProvider({ children }: { children: React.ReactNode }
         otpVerifiedAt: normalizedParsed.otpVerifiedAt ? new Date(normalizedParsed.otpVerifiedAt) : undefined,
       };
     }
+
+    if (tokenUser.role === 'USUARIO' && tokenUser.carnet) {
+      return {
+        id: tokenUser.carnet,
+        carnet: tokenUser.carnet,
+        vehicles: [],
+        amount: 600,
+        paymentStatus: 'pending',
+        createdAt: new Date(),
+      };
+    }
+
     // Si no hay login, cargamos un registro simulado por defecto
     return { ...simulatedUsers[0] };
   });

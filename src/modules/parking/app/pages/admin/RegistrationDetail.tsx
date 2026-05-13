@@ -168,7 +168,7 @@ export function RegistrationDetail() {
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
           <div>
             <h3 className="fw-bold mb-1">Detalle del Estudiante</h3>
-            <p className="text-muted mb-0">Resumen consolidado desde el backend</p>
+            <p className="text-muted mb-0">Resumen consolidado del estudiante</p>
           </div>
           <div className="d-flex gap-2 flex-wrap">
             <Badge bg={payments.length > 0 ? 'primary' : 'warning'} className="text-white px-3 py-2">
@@ -335,10 +335,6 @@ export function RegistrationDetail() {
               </Card.Body>
             </Card>
 
-            <Alert variant="info" className="mb-0">
-              Esta vista ya usa datos reales de estudiante, pagos, multas y morosidad. Los campos de vehículos, firma,
-              dirección y contacto de emergencia siguen pendientes de backend.
-            </Alert>
           </div>
         </Col>
       </Row>

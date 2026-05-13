@@ -10,7 +10,6 @@ import {
   LogOut,
   Menu,
   ReceiptText,
-  ShieldCheck,
   UserCircle,
 } from 'lucide-react';
 import { useRegistration } from '../context/RegistrationContext';
@@ -83,13 +82,6 @@ export function LandingPage() {
         <main className="parking-user-content">
           <div className="parking-user-view">
             <h1 className="parking-user-greeting">Buenas tardes, {firstName}</h1>
-
-            <div className="d-flex justify-content-end mb-4">
-              <Button variant="outline-primary" onClick={() => navigate('/parking/admin/dashboard')}>
-                <ShieldCheck size={18} className="me-2" />
-                Ir al Admin
-              </Button>
-            </div>
 
             <div className="parking-portal-grid">
               <Card className="parking-portal-card">
