@@ -39,6 +39,16 @@ function buildHeaders(headers: HeadersInit | undefined, hasBody: boolean, token?
   return nextHeaders;
 }
 
+function buildApiUrl(path: string) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (apiConfig.baseUrl.endsWith("/api") && normalizedPath.startsWith("/api/")) {
+    return `${apiConfig.baseUrl}${normalizedPath.slice(4)}`;
+  }
+
+  return `${apiConfig.baseUrl}${normalizedPath}`;
+}
+
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const controller = new AbortController();
   const timeoutMs = options.timeoutMs ?? apiConfig.timeoutMs;
@@ -47,7 +57,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   const token = options.token ?? getStoredJwt();
 
   try {
-    const response = await fetch(`${apiConfig.baseUrl}${path}`, {
+    const response = await fetch(buildApiUrl(path), {
       ...options,
       body: hasBody ? JSON.stringify(options.body) : undefined,
       headers: buildHeaders(options.headers, hasBody, token),
