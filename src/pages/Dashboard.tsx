@@ -1,37 +1,36 @@
 import { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, Nav, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { 
-  House, CarFront, Wallet2, DoorOpen, List, PersonCircle, 
+import {
+  House, CarFront, Wallet2, DoorOpen, List, PersonCircle,
   ChevronLeft, ChevronRight, PencilSquare, Tools, PlusCircle, Building, Envelope, Telephone,
   ExclamationCircleFill, CreditCardFill, InfoCircleFill
 } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
 import ThemeSwitcher from '../components/ThemeSwitcher';
-import { ModalPagoStripe } from '../components/ModalPagoStripe';
+
 
 const API_BASE = '/api';
-const COBROS_URL = 'http://10.0.40.10:4000';
+const COBROS_URL = 'http://10.0.40.10:3000';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [usuario, setUsuario] = useState<any>(null); 
+  const [usuario, setUsuario] = useState<any>(null);
   const [nombreUsuario, setNombreUsuario] = useState('');
   const [apellidoUsuario, setApellidoUsuario] = useState('');
   const [carneUsuario, setCarneUsuario] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeSection, setActiveSection] = useState('inicio');
-  
+
   const [showProfile, setShowProfile] = useState(false);
 
   const [vehiculos, setVehiculos] = useState<any[]>([]);
   const [planes, setPlanes] = useState<any[]>([]);
-  const [listaDeuda, setListaDeuda] = useState<any[]>([]); 
+  const [listaDeuda, setListaDeuda] = useState<any[]>([]);
   const [showVehiculoModal, setShowVehiculoModal] = useState(false);
   const [nuevoVehiculo, setNuevoVehiculo] = useState({ tipo_vehiculo: 'AUTOMOVIL', placa: '', marca: '', modelo: '', color: '', plan_id: '' });
 
-  const [showModalPago, setShowModalPago] = useState(false);
-  const [cargoSeleccionado, setCargoSeleccionado] = useState<any>(null);
+
 
   useEffect(() => {
     const t = localStorage.getItem('umg-theme') || 'azul';
@@ -54,7 +53,7 @@ const Dashboard = () => {
   useEffect(() => {
     if ((activeSection === 'vehiculos' || activeSection === 'inicio' || activeSection === 'pago') && carneUsuario) {
       cargarVehiculos();
-      cargarDeuda(); 
+      cargarDeuda();
     }
   }, [activeSection, carneUsuario]);
 
@@ -158,12 +157,12 @@ const Dashboard = () => {
         }).then((result) => {
           setShowVehiculoModal(false);
           setNuevoVehiculo({ tipo_vehiculo: 'AUTOMOVIL', placa: '', marca: '', modelo: '', color: '', plan_id: '' });
-          cargarVehiculos(); 
+          cargarVehiculos();
           cargarDeuda();
-          
+
           if (result.isConfirmed && planIdParaCobros) {
             // Opción B: Redirigir al portal de cobros-dev con parámetros por URL
-            window.location.href = `${COBROS_URL}/parking/user?carne=${carneUsuario.replace(/-/g, '')}&plan_id=${planIdParaCobros}&vehiculo=nuevo`;
+            window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&plan_id=${planIdParaCobros}&vehiculo=nuevo`;
           } else {
             setActiveSection('vehiculos');
           }
@@ -249,7 +248,7 @@ const Dashboard = () => {
 
         {tieneDeuda ? (
           <div className="d-flex flex-column gap-4">
-            
+
             {tieneDeudaNormal && (
               <Alert variant="warning" className="d-flex align-items-center border-0 shadow-sm rounded-3 mb-0">
                 <InfoCircleFill size={24} className="me-3" />
@@ -290,10 +289,13 @@ const Dashboard = () => {
                           <td className="text-end fw-bold">Q.{cargo.MONTO}.00</td>
                           <td className="text-center">
                             <Button size="sm" style={{ backgroundColor: 'var(--color-accion)', border: 'none' }} onClick={() => {
-                              setCargoSeleccionado(cargo);
-                              setShowModalPago(true);
+                              if (cargo.TIPO === 'MULTA') {
+                                window.location.href = `${COBROS_URL}/parking/user/multas?carne=${carneUsuario.replace(/-/g, '')}`;
+                              } else {
+                                window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&monto=${cargo.MONTO}&concepto=${encodeURIComponent(cargo.DESCRIPCION)}`;
+                              }
                             }}>
-                              <CreditCardFill className="me-1"/> Pagar
+                              <CreditCardFill className="me-1" /> Pagar
                             </Button>
                           </td>
                         </tr>
@@ -322,11 +324,11 @@ const Dashboard = () => {
           <img src="/logo.png" alt="UMG" style={{ width: sidebarOpen ? '85px' : '60px', transition: '0.3s' }} />
           {sidebarOpen && <h4 className="mt-2 mb-0" style={{ color: 'var(--color-acento-2)', fontStyle: 'italic' }}>MiUMG</h4>}
         </div>
-        
+
         <Nav className="flex-column mt-3 flex-grow-1">
           {menuItems.map((item) => (
-            <Nav.Link 
-              key={item.key} 
+            <Nav.Link
+              key={item.key}
               onClick={() => {
                 if (item.key === 'disponibilidad') {
                   const tieneDeuda = listaDeuda.length > 0;
@@ -340,8 +342,8 @@ const Dashboard = () => {
                   return;
                 }
                 setActiveSection(item.key);
-              }} 
-              className={`text-white d-flex align-items-center mb-1 sidebar-link ${activeSection === item.key ? 'sidebar-link-active' : ''}`} 
+              }}
+              className={`text-white d-flex align-items-center mb-1 sidebar-link ${activeSection === item.key ? 'sidebar-link-active' : ''}`}
               style={{ padding: '12px 16px', opacity: activeSection === item.key ? 1 : 0.65 }}
             >
               {item.icon} {sidebarOpen && <span className="ms-3">{item.label}</span>}
@@ -397,11 +399,11 @@ const Dashboard = () => {
                     </Card.Body>
                   </Card>
                 </Col>
-                
+
                 {/* 🔥 LA TERCERA TARJETA ESTÁ DE VUELTA */}
                 <Col lg={4} md={12}>
-                  <Card 
-                    className="border-0 h-100 animate-fade-in" 
+                  <Card
+                    className="border-0 h-100 animate-fade-in"
                     style={{ background: 'linear-gradient(135deg, #1a3a5c 0%, #0d253f 100%)', borderRadius: '18px', cursor: 'pointer', overflow: 'hidden', position: 'relative', boxShadow: '0 8px 30px rgba(13, 37, 63, 0.25)' }}
                     onClick={() => setShowVehiculoModal(true)}
                   >
@@ -490,14 +492,14 @@ const Dashboard = () => {
           </div>
 
           <div style={{ padding: '28px' }}>
-            
+
             {esPrimerVehiculo ? (
               <Form.Group className="mb-4">
                 <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Selecciona tu Plan de Parqueo <span className="text-danger">*</span></Form.Label>
-                <Form.Select 
+                <Form.Select
                   required
                   value={nuevoVehiculo.plan_id}
-                  onChange={(e) => setNuevoVehiculo({...nuevoVehiculo, plan_id: e.target.value})}
+                  onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, plan_id: e.target.value })}
                   style={{ border: '2px solid var(--color-accion)' }}
                 >
                   <option value="" disabled hidden>Elige un plan de la lista...</option>
@@ -520,7 +522,7 @@ const Dashboard = () => {
 
             <Form.Group className="mb-3">
               <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Tipo de Vehículo</Form.Label>
-              <Form.Select value={nuevoVehiculo.tipo_vehiculo} onChange={(e) => setNuevoVehiculo({...nuevoVehiculo, tipo_vehiculo: e.target.value})}>
+              <Form.Select value={nuevoVehiculo.tipo_vehiculo} onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, tipo_vehiculo: e.target.value })}>
                 <option value="AUTOMOVIL">Automóvil</option>
                 <option value="MOTOCICLETA">Motocicleta</option>
               </Form.Select>
@@ -528,27 +530,27 @@ const Dashboard = () => {
 
             <Form.Group className="mb-3">
               <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Placa <span className="text-danger">*</span></Form.Label>
-              <Form.Control type="text" placeholder="Ej. P123ABC" required value={nuevoVehiculo.placa} onChange={(e) => setNuevoVehiculo({...nuevoVehiculo, placa: e.target.value})} style={{ textTransform: 'uppercase' }} />
+              <Form.Control type="text" placeholder="Ej. P123ABC" required value={nuevoVehiculo.placa} onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, placa: e.target.value })} style={{ textTransform: 'uppercase' }} />
             </Form.Group>
 
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Marca</Form.Label>
-                  <Form.Control type="text" placeholder="Ej. Toyota" value={nuevoVehiculo.marca} onChange={(e) => setNuevoVehiculo({...nuevoVehiculo, marca: e.target.value})} />
+                  <Form.Control type="text" placeholder="Ej. Toyota" value={nuevoVehiculo.marca} onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, marca: e.target.value })} />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Modelo</Form.Label>
-                  <Form.Control type="text" placeholder="Ej. Yaris 2020" value={nuevoVehiculo.modelo} onChange={(e) => setNuevoVehiculo({...nuevoVehiculo, modelo: e.target.value})} />
+                  <Form.Control type="text" placeholder="Ej. Yaris 2020" value={nuevoVehiculo.modelo} onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, modelo: e.target.value })} />
                 </Form.Group>
               </Col>
             </Row>
 
             <Form.Group className="mb-4">
               <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Color</Form.Label>
-              <Form.Control type="text" placeholder="Ej. Azul Oscuro" value={nuevoVehiculo.color} onChange={(e) => setNuevoVehiculo({...nuevoVehiculo, color: e.target.value})} />
+              <Form.Control type="text" placeholder="Ej. Azul Oscuro" value={nuevoVehiculo.color} onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, color: e.target.value })} />
             </Form.Group>
 
             <div className="d-flex gap-2 mt-4">
@@ -559,19 +561,7 @@ const Dashboard = () => {
         </div>
       </Modal>
 
-      {/* MODAL PAGO STRIPE */}
-      {showModalPago && (
-        <ModalPagoStripe 
-          show={showModalPago} 
-          onHide={(recargar) => {
-            setShowModalPago(false);
-            if (recargar) {
-              cargarDeuda();
-            }
-          }} 
-          cargoInfo={cargoSeleccionado} 
-        />
-      )}
+
 
     </div>
   );

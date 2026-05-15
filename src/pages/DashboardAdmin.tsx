@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Badge, Button, Form, InputGroup, Spinner, Nav, Modal, Tabs, Tab } from 'react-bootstrap';
-import { Search, PencilSquare, Trash, PersonLinesFill, CarFrontFill, Scooter, CashStack, PieChartFill, List, Speedometer2, ArrowRepeat, BoxArrowRight, ChevronLeft, PersonCircle, Envelope, Telephone, Save, CheckCircleFill, ExclamationOctagonFill, Receipt, ExclamationTriangleFill, Download } from 'react-bootstrap-icons';
+import { Search, PencilSquare, Trash, PersonLinesFill, CarFrontFill, Scooter, CashStack, PieChartFill, List, Speedometer2, ArrowRepeat, BoxArrowRight, ChevronLeft, PersonCircle, Envelope, Telephone, Save, CheckCircleFill, ExclamationOctagonFill, Receipt, ExclamationTriangleFill, Download, Building } from 'react-bootstrap-icons';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend, PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -13,16 +13,16 @@ const API_BASE = '/api';
 
 const DashboardAdmin = () => {
   const navigate = useNavigate();
-  
+
   // --- ESTADOS PRINCIPALES ---
   const [cargando, setCargando] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [vistaActual, setVistaActual] = useState('reportes'); 
+  const [vistaActual, setVistaActual] = useState('reportes');
   const [adminLogueado, setAdminLogueado] = useState<any>({});
-  
+
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [busquedaUsuarios, setBusquedaUsuarios] = useState('');
-  
+
   const [showProfile, setShowProfile] = useState(false);
   const [stats, setStats] = useState({ carros: 0, motos: 0, ingresos: 0 });
 
@@ -33,28 +33,25 @@ const DashboardAdmin = () => {
   const [pagosAdmin, setPagosAdmin] = useState<any[]>([]);
   const [multasCatalogo, setMultasCatalogo] = useState<any[]>([]);
   const [busquedaPagos, setBusquedaPagos] = useState('');
-  
-  const [formMulta, setFormMulta] = useState({ carne: '', placa: '', id_multa: '' });
-  const [buscandoPlaca, setBuscandoPlaca] = useState(false);
-  const [infoVehiculoInfractor, setInfoVehiculoInfractor] = useState<any>(null);
 
-  const [reportes, setReportes] = useState<any>({ demografia: [], ingresosPorPlan: [], morosos: [] });
+
+  const [reportes, setReportes] = useState<any>({ distribucion: [], ingresosMensuales: [], dashboard: null });
 
   // --- EFECTOS ---
   useEffect(() => {
     const adminGuardado = localStorage.getItem('usuarioAdmin');
-    const token = localStorage.getItem('token'); 
-    if (adminGuardado && token) { 
-        setAdminLogueado(JSON.parse(adminGuardado)); 
-    } else { 
-        navigate('/login-admin'); 
+    const token = localStorage.getItem('token');
+    if (adminGuardado && token) {
+      setAdminLogueado(JSON.parse(adminGuardado));
+    } else {
+      navigate('/login-admin');
     }
     cargarTodo();
   }, [navigate]);
 
   useEffect(() => {
     if (vistaActual === 'pagos') cargarPagosYMultas();
-    if (vistaActual === 'reportes') cargarReportes(); 
+    if (vistaActual === 'reportes') cargarReportes();
   }, [vistaActual]);
 
   const obtenerHeaders = (conJson = false) => {
@@ -68,42 +65,42 @@ const DashboardAdmin = () => {
     cargarUsuarios();
     cargarEstadisticas();
     cargarRoles();
-    cargarPagosYMultas(); 
+    cargarPagosYMultas();
   };
 
-  const cargarRoles = async () => { try { const res = await fetch(`${API_BASE}/roles`); if (res.ok) setRoles(await res.json()); } catch (error) {} };
-  
-  const cargarUsuarios = async () => { 
-      setCargando(true); 
-      try { 
-          const respuesta = await fetch(`${API_BASE}/admin/usuarios`, { headers: obtenerHeaders() }); 
-          if (respuesta.ok) setUsuarios(await respuesta.json()); 
-          else if (respuesta.status === 401 || respuesta.status === 403) { Swal.fire('Sesión Expirada', 'Por favor inicia sesión de nuevo', 'warning'); handleLogout(); }
-      } catch (error) {} finally { setCargando(false); } 
+  const cargarRoles = async () => { try { const res = await fetch(`${API_BASE}/roles`); if (res.ok) setRoles(await res.json()); } catch (error) { } };
+
+  const cargarUsuarios = async () => {
+    setCargando(true);
+    try {
+      const respuesta = await fetch(`${API_BASE}/admin/usuarios`, { headers: obtenerHeaders() });
+      if (respuesta.ok) setUsuarios(await respuesta.json());
+      else if (respuesta.status === 401 || respuesta.status === 403) { Swal.fire('Sesión Expirada', 'Por favor inicia sesión de nuevo', 'warning'); handleLogout(); }
+    } catch (error) { } finally { setCargando(false); }
   };
-  
-  const cargarEstadisticas = async () => { try { const respuesta = await fetch(`${API_BASE}/admin/estadisticas`, { headers: obtenerHeaders() }); if (respuesta.ok) setStats(await respuesta.json()); } catch (error) {} };
-  
+
+  const cargarEstadisticas = async () => { try { const respuesta = await fetch(`${API_BASE}/admin/estadisticas`, { headers: obtenerHeaders() }); if (respuesta.ok) setStats(await respuesta.json()); } catch (error) { } };
+
   // 🔥 CARGA DE PAGOS Y MULTAS (MODO SIGILO)
   const cargarPagosYMultas = async () => {
     try {
-      const resPagos = await fetch(`${API_BASE}/admin/pagos`, { headers: obtenerHeaders() }); 
+      const resPagos = await fetch(`${API_BASE}/admin/pagos`, { headers: obtenerHeaders() });
       if (resPagos.ok) setPagosAdmin(await resPagos.json());
-    } catch (error) { 
-      console.error(error); 
+    } catch (error) {
+      console.error(error);
     }
-    
+
     try {
-      const resMultas = await fetch(`${API_BASE}/admin/multas-catalogo`, { headers: obtenerHeaders() }); 
+      const resMultas = await fetch(`${API_BASE}/admin/multas-catalogo`, { headers: obtenerHeaders() });
       if (resMultas.ok) {
         const dataMultas = await resMultas.json();
         let arraySeguro = Array.isArray(dataMultas) ? dataMultas : (dataMultas.data || dataMultas.multas || []);
-        
+
         setMultasCatalogo(arraySeguro);
       } else {
         console.error("Error HTTP al traer multas:", resMultas.status);
       }
-    } catch (error) { 
+    } catch (error) {
       console.error("Error al cargar multas:", error);
     }
   };
@@ -111,13 +108,33 @@ const DashboardAdmin = () => {
   const cargarReportes = async () => {
     setCargando(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/reportes`, { headers: obtenerHeaders() });
-      if (res.ok) setReportes(await res.json());
-    } catch (error) {} finally { setCargando(false); }
+      const token = localStorage.getItem('token');
+      // Asegurar que si en backend no usan "Bearer" no haya problema, o ajustamos headers.
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      // Llamadas al microservicio de reportes
+      const resIngresos = await fetch(`/api/reportes/ingresos-mensuales`, { headers });
+      const resDist = await fetch(`/api/reportes/distribucion-facultades`, { headers });
+      const resDash = await fetch(`/api/reportes/dashboard`, { headers });
+
+      const ingresosData = resIngresos.ok ? await resIngresos.json() : { data: [] };
+      const distData = resDist.ok ? await resDist.json() : { data: [] };
+      const dashData = resDash.ok ? await resDash.json() : { data: null };
+
+      setReportes({
+        ingresosMensuales: ingresosData.data || [],
+        distribucion: distData.data || [],
+        dashboard: dashData.data || null
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setCargando(false);
+    }
   };
 
   const abrirModalEdicion = (usr: any) => { setEditForm({ carne: usr.CARNE, nombres: usr.NOMBRES, apellidos: usr.APELLIDOS, correo_institucional: usr.CORREO, telefono: usr.TELEFONO || '', id_rol: usr.ID_ROL }); setShowEditModal(true); };
-  
+
   const handleGuardarEdicion = async () => {
     try {
       const res = await fetch(`${API_BASE}/admin/usuarios/${editForm.carne}`, { method: 'PUT', headers: obtenerHeaders(true), body: JSON.stringify(editForm) });
@@ -139,60 +156,15 @@ const DashboardAdmin = () => {
     });
   };
 
-  const buscarPropietarioPorPlaca = async () => {
-    if (!formMulta.placa) return;
-    setBuscandoPlaca(true);
-    try {
-      const placaLimpia = formMulta.placa.trim().toUpperCase();
-      const res = await fetch(`${API_BASE}/vehiculos/placa/${placaLimpia}`, { headers: obtenerHeaders() });
-      
-      if (res.ok) {
-        const data = await res.json();
-        setInfoVehiculoInfractor(data);
-        setFormMulta(prev => ({ ...prev, carne: data.CARNE, placa: placaLimpia }));
-        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Dueño localizado', showConfirmButton: false, timer: 1500 });
-      } else {
-        setInfoVehiculoInfractor(null);
-        setFormMulta(prev => ({ ...prev, carne: '' }));
-        Swal.fire('Atención', 'No se encontró ningún vehículo registrado con esta placa', 'warning');
+
+  const handleLogout = () => {
+    Swal.fire({ title: '¿Cerrar Sesión?', icon: 'question', showCancelButton: true, confirmButtonColor: 'var(--azul-universitario)', confirmButtonText: 'Sí, salir' }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem('usuarioAdmin');
+        localStorage.removeItem('token');
+        navigate('/login-admin');
       }
-    } catch (error) {
-      console.error(error);
-      Swal.fire('Error', 'Hubo un problema de conexión al buscar la placa.', 'error');
-    } finally {
-      setBuscandoPlaca(false);
-    }
-  };
-
-  const handleAsignarMulta = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formMulta.carne) {
-      return Swal.fire('Falta información', 'Busca una placa válida primero para obtener el carné.', 'warning');
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/admin/multas`, { method: 'POST', headers: obtenerHeaders(true), body: JSON.stringify(formMulta) });
-      if (res.ok) { 
-        Swal.fire('¡Multa Aplicada!', 'Cargo asignado exitosamente al estudiante.', 'success'); 
-        setFormMulta({ carne: '', placa: '', id_multa: '' }); 
-        setInfoVehiculoInfractor(null);
-        cargarPagosYMultas(); 
-        cargarReportes(); 
-        cargarEstadisticas(); 
-      } else { 
-        Swal.fire('Error', 'No se pudo asignar la multa.', 'error'); 
-      }
-    } catch (error) { Swal.fire('Error', 'Sin conexión al servidor.', 'error'); }
-  };
-
-  const handleLogout = () => { 
-      Swal.fire({ title: '¿Cerrar Sesión?', icon: 'question', showCancelButton: true, confirmButtonColor: 'var(--azul-universitario)', confirmButtonText: 'Sí, salir' }).then((result) => { 
-          if (result.isConfirmed) { 
-              localStorage.removeItem('usuarioAdmin'); 
-              localStorage.removeItem('token'); 
-              navigate('/login-admin'); 
-          } 
-      }); 
+    });
   };
 
   const generarPDF = () => {
@@ -212,15 +184,16 @@ const DashboardAdmin = () => {
     doc.text(`• Vehículos Registrados (Automóviles): ${stats.carros}`, 20, 68);
     doc.text(`• Vehículos Registrados (Motocicletas): ${stats.motos}`, 20, 76);
     doc.setFontSize(14);
-    doc.text('Listado de Estudiantes con Pagos Pendientes (Morosos)', 14, 95);
-    const tableColumn = ["Estudiante / Carné", "Monto Pendiente (GTQ)"];
-    const tableRows = reportes.morosos.map((m: any) => [m.usuario, `Q. ${m.deuda}.00`]);
+    doc.text('Métricas del Módulo de Reportes', 14, 95);
+    const tableColumn = ["Métrica", "Valor"];
+    const tableRows = [
+      ["Usuarios Totales", reportes.dashboard?.usuarios?.total || 0],
+      ["Espacios Libres", reportes.dashboard?.espacios?.libres || 0],
+      ["Usuarios Morosos", reportes.dashboard?.morosidad?.usuarios_morosos || 0],
+      ["Total Ingresos (Cobros)", `Q. ${reportes.dashboard?.finanzas?.total_ingresos || 0}.00`]
+    ];
 
-    if (tableRows.length > 0) {
-      autoTable(doc, { head: [tableColumn], body: tableRows, startY: 102, theme: 'striped', headStyles: { fillColor: [220, 53, 69] } });
-    } else {
-      doc.setFontSize(11); doc.setTextColor(40, 167, 69); doc.text('Actualmente no hay estudiantes con morosidad o pagos pendientes.', 14, 105);
-    }
+    autoTable(doc, { head: [tableColumn], body: tableRows, startY: 102, theme: 'striped', headStyles: { fillColor: [0, 152, 219] } });
     doc.save(`Reporte_Parqueo_UMG_${new Date().getTime()}.pdf`);
     Swal.fire({ title: '¡Reporte Generado!', text: 'Tu documento PDF ha sido descargado exitosamente.', icon: 'success', timer: 2000, showConfirmButton: false });
   };
@@ -250,8 +223,6 @@ const DashboardAdmin = () => {
     </Col>
   );
 
-  const multaSeleccionada = multasCatalogo.find((m:any) => (m.MUL_MULTA || m.ID_MULTA || m.id_multa) == formMulta.id_multa);
-  const montoDisplay = multaSeleccionada ? (multaSeleccionada.MUL_MONTO_TOTAL || multaSeleccionada.MONTO || multaSeleccionada.monto || '0') : '0';
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--fondo-general, #f4f7f6)' }}>
@@ -271,6 +242,10 @@ const DashboardAdmin = () => {
           <SidebarItem icon={PersonLinesFill} label="Gestión de Usuarios" vista="usuarios" />
           <SidebarItem icon={CashStack} label="Pagos y Cobros" vista="pagos" />
           <SidebarItem icon={PieChartFill} label="Reportes" vista="reportes" />
+          <Nav.Link onClick={() => { window.location.href = '/disponibilidad/admin'; }} className="d-flex align-items-center px-4 py-3 text-white mb-1 admin-logout-hover" style={{ cursor: 'pointer', transition: '0.2s' }}>
+            <Building size={20} className="me-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
+            <span style={{ display: sidebarOpen ? 'block' : 'none', color: 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>Gestión de Islas</span>
+          </Nav.Link>
         </Nav>
         <div className="mt-auto" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <Nav.Link onClick={() => setSidebarOpen(!sidebarOpen)} className="d-flex align-items-center px-4 py-3 text-white" style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.6)' }}>
@@ -298,7 +273,7 @@ const DashboardAdmin = () => {
         </div>
 
         <div className="p-4 p-md-5" style={{ overflowY: 'auto' }}>
-          
+
           {/* VISTA 1: DASHBOARD */}
           {vistaActual === 'dashboard' && (
             <div className="animate-fade-in">
@@ -321,7 +296,7 @@ const DashboardAdmin = () => {
                   <Row className="mb-4 align-items-center">
                     <Col md={6}>
                       <InputGroup>
-                        <InputGroup.Text className="bg-light border-end-0"><Search className="text-muted"/></InputGroup.Text>
+                        <InputGroup.Text className="bg-light border-end-0"><Search className="text-muted" /></InputGroup.Text>
                         <Form.Control placeholder="Buscar carné, nombre o correo..." className="bg-light border-start-0 ps-0 bg-transparent" style={{ boxShadow: 'none' }} value={busquedaUsuarios} onChange={(e) => setBusquedaUsuarios(e.target.value)} />
                       </InputGroup>
                     </Col>
@@ -363,13 +338,13 @@ const DashboardAdmin = () => {
             <div className="animate-fade-in">
               <Row className="mb-4"><Col><h2 className="fw-bold" style={{ color: 'var(--color-accion, #0098db)', fontStyle: 'italic' }}>Centro de Control Financiero</h2><p className="text-muted">Auditoría de pagos automáticos y panel de emergencias.</p></Col></Row>
               <Tabs defaultActiveKey="auditoria" className="mb-4 custom-tabs">
-                
+
                 {/* Pestaña: Auditoría */}
-                <Tab eventKey="auditoria" title={<><Receipt className="me-2"/> Auditoría de Pagos</>}>
+                <Tab eventKey="auditoria" title={<><Receipt className="me-2" /> Auditoría de Pagos</>}>
                   <Card className="border-0 shadow-sm rounded-4 mt-3">
                     <Card.Body className="p-4">
                       <Row className="mb-4 align-items-center">
-                        <Col md={6}><InputGroup><InputGroup.Text className="bg-light border-end-0"><Search className="text-muted"/></InputGroup.Text><Form.Control placeholder="Buscar por carné o nombre..." className="bg-light border-start-0 ps-0 bg-transparent" style={{ boxShadow: 'none' }} value={busquedaPagos} onChange={(e) => setBusquedaPagos(e.target.value)} /></InputGroup></Col>
+                        <Col md={6}><InputGroup><InputGroup.Text className="bg-light border-end-0"><Search className="text-muted" /></InputGroup.Text><Form.Control placeholder="Buscar por carné o nombre..." className="bg-light border-start-0 ps-0 bg-transparent" style={{ boxShadow: 'none' }} value={busquedaPagos} onChange={(e) => setBusquedaPagos(e.target.value)} /></InputGroup></Col>
                         <Col md={6} className="text-md-end mt-3 mt-md-0"><Button variant="light" onClick={cargarPagosYMultas} title="Recargar"><ArrowRepeat size={20} className={cargando ? 'text-muted' : 'text-primary'} /></Button></Col>
                       </Row>
                       <div className="table-responsive">
@@ -379,9 +354,9 @@ const DashboardAdmin = () => {
                             <tbody>
                               {pagosFiltrados.map((p, index) => (
                                 <tr key={index}>
-                                  <td className="text-muted small">{p.FECHA}</td><td><strong>{p.CARNE_USUARIO}</strong><br/><small className="text-muted">{p.NOMBRE}</small></td><td>{p.CONCEPTO}</td><td className="fw-bold">Q.{p.PAG_MONTO_TOTAL}.00</td>
+                                  <td className="text-muted small">{p.FECHA}</td><td><strong>{p.CARNE_USUARIO}</strong><br /><small className="text-muted">{p.NOMBRE}</small></td><td>{p.CONCEPTO}</td><td className="fw-bold">Q.{p.PAG_MONTO_TOTAL}.00</td>
                                   <td><Badge bg={p.PAG_ESTADO === 'C' ? 'success' : 'warning'} text={p.PAG_ESTADO === 'C' ? 'light' : 'dark'}>{p.PAG_ESTADO === 'C' ? 'Completado' : 'Pendiente'}</Badge></td>
-                                  <td className="text-center">{p.PAG_ESTADO === 'P' ? (<Button variant="outline-danger" size="sm" title="Usar solo si el cobro automático falló" onClick={() => handleAprobarPago(p.PAG_PAGO, p.NOMBRE)}><ExclamationTriangleFill className="me-1"/> Forzar Aprobación</Button>) : (<span className="text-success small fw-bold"><CheckCircleFill className="me-1"/> Procesado Auto.</span>)}</td>
+                                  <td className="text-center">{p.PAG_ESTADO === 'P' ? (<Button variant="outline-danger" size="sm" title="Usar solo si el cobro automático falló" onClick={() => handleAprobarPago(p.PAG_PAGO, p.NOMBRE)}><ExclamationTriangleFill className="me-1" /> Forzar Aprobación</Button>) : (<span className="text-success small fw-bold"><CheckCircleFill className="me-1" /> Procesado Auto.</span>)}</td>
                                 </tr>
                               ))}
                               {pagosFiltrados.length === 0 && <tr><td colSpan={6} className="text-center py-4 text-muted">No hay transacciones registradas.</td></tr>}
@@ -394,91 +369,24 @@ const DashboardAdmin = () => {
                 </Tab>
 
                 {/* Pestaña: Asignar Multa */}
-                <Tab eventKey="multas" title={<><ExclamationOctagonFill className="me-2"/> Asignar Multa</>}>
-                  <Row className="mt-3 justify-content-center">
-                    <Col md={8}>
+                <Tab eventKey="multas" title={<><ExclamationOctagonFill className="me-2" /> Asignar Multa</>}>
+                  <Row className="mt-5 justify-content-center">
+                    <Col md={8} className="text-center">
                       <Card className="border-0 shadow-sm rounded-4" style={{ borderTop: '5px solid #dc3545' }}>
                         <Card.Body className="p-4 p-md-5">
-                          <div className="text-center mb-4"><ExclamationOctagonFill size={50} className="text-danger mb-3" /><h4 className="fw-bold text-danger">Imponer Multa Disciplinaria</h4><p className="text-muted">Ingresa la placa para asociar el cargo automáticamente.</p></div>
-                          <Form onSubmit={handleAsignarMulta}>
-                            
-                            {/* PASO 1: Búsqueda de Placa */}
-                            <Form.Group className="mb-3">
-                              <Form.Label className="fw-bold text-primary">1. Placa del Vehículo Infractor</Form.Label>
-                              <InputGroup>
-                                <Form.Control 
-                                  type="text" 
-                                  placeholder="Ej. P123ABC" 
-                                  required 
-                                  value={formMulta.placa} 
-                                  onChange={(e) => setFormMulta({...formMulta, placa: e.target.value.toUpperCase()})} 
-                                  onBlur={buscarPropietarioPorPlaca}
-                                />
-                                <Button variant="outline-primary" onClick={buscarPropietarioPorPlaca} disabled={buscandoPlaca}>
-                                  {buscandoPlaca ? <Spinner size="sm" animation="border" /> : <Search />} Buscar
-                                </Button>
-                              </InputGroup>
-                            </Form.Group>
-
-                            {/* Mostrar info del carro */}
-                            {infoVehiculoInfractor && (
-                              <div className="mb-3 p-3 bg-light border-start border-4 border-success rounded">
-                                <small className="d-block text-muted">Vehículo Localizado:</small>
-                                <strong>{infoVehiculoInfractor.MARCA} {infoVehiculoInfractor.MODELO}</strong> 
-                                <span className="ms-2 badge bg-secondary">{infoVehiculoInfractor.COLOR}</span>
-                              </div>
-                            )}
-
-                            {/* PASO 2: Carné */}
-                            <Form.Group className="mb-3">
-                              <Form.Label className="fw-bold text-muted">2. Carné del Propietario (Automático)</Form.Label>
-                              <Form.Control 
-                                type="text" 
-                                value={formMulta.carne} 
-                                disabled
-                                style={{ backgroundColor: '#f4f7f6', fontWeight: 'bold' }}
-                                placeholder="Se llenará al encontrar la placa..."
-                              />
-                            </Form.Group>
-
-                            {/* PASO 3: Motivo */}
-                            <Form.Group className="mb-3">
-                              <div className="d-flex justify-content-between align-items-center mb-2">
-                                <Form.Label className="fw-bold mb-0">3. Motivo de la Infracción</Form.Label>
-                              </div>
-                              <Form.Select 
-                                required 
-                                value={formMulta.id_multa} 
-                                onChange={(e) => setFormMulta({...formMulta, id_multa: e.target.value})}
-                              >
-                                <option value="" disabled hidden>Seleccione la infracción...</option>
-                                {multasCatalogo && multasCatalogo.map(m => {
-                                  const id = m.MUL_MULTA || m.ID_MULTA || m.id_multa;
-                                  const desc = m.MUL_DESCRIPCION || m.DESCRIPCION || m.descripcion;
-                                  return (
-                                    <option key={id} value={id}>
-                                      {desc}
-                                    </option>
-                                  );
-                                })}
-                              </Form.Select>
-                            </Form.Group>
-
-                            {/* Monto Automático */}
-                            <Form.Group className="mb-4">
-                              <Form.Label className="fw-bold">Monto Generado</Form.Label>
-                              <Form.Control 
-                                type="text" 
-                                disabled 
-                                value={`Q. ${montoDisplay}.00`} 
-                                style={{ fontWeight: 'bold', color: 'var(--azul-oscuro)', backgroundColor: '#f4f7f6', fontSize: '1.2rem' }} 
-                              />
-                            </Form.Group>
-
-                            <Button variant="danger" type="submit" size="lg" className="w-100 fw-bold rounded-3 shadow-sm" disabled={!formMulta.carne}>
-                              Aplicar Multa al Estudiante
-                            </Button>
-                          </Form>
+                          <ExclamationOctagonFill size={50} className="text-danger mb-3" />
+                          <h4 className="fw-bold text-danger">Módulo de Multas</h4>
+                          <p className="text-muted mb-4">
+                            La creación y asignación de multas disciplinarias se gestiona a través del módulo de Cobros y Finanzas.
+                          </p>
+                          <Button
+                            variant="danger"
+                            size="lg"
+                            className="fw-bold rounded-3 shadow-sm px-5"
+                            onClick={() => window.location.href = 'http://10.0.40.10:3000/parking/admin/dashboard/multas'}
+                          >
+                            Ir a Asignar Multa
+                          </Button>
                         </Card.Body>
                       </Card>
                     </Col>
@@ -509,13 +417,13 @@ const DashboardAdmin = () => {
                   <Col lg={8}>
                     <Card className="border-0 shadow-sm rounded-4 h-100">
                       <Card.Body className="p-4">
-                        <h5 className="fw-bold mb-4" style={{ color: 'var(--azul-oscuro)' }}><CashStack className="me-2 text-success"/> Ingresos Monetarios por Plan de Parqueo</h5>
+                        <h5 className="fw-bold mb-4" style={{ color: 'var(--azul-oscuro)' }}><CashStack className="me-2 text-success" /> Ingresos Mensuales</h5>
                         <div style={{ width: '100%', height: 300 }}>
-                          {reportes.ingresosPorPlan && reportes.ingresosPorPlan.length > 0 ? (
+                          {reportes.ingresosMensuales && reportes.ingresosMensuales.length > 0 ? (
                             <ResponsiveContainer>
-                              <BarChart data={reportes.ingresosPorPlan} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                              <BarChart data={reportes.ingresosMensuales} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                                <XAxis dataKey="plan" tick={{ fill: '#666' }} axisLine={false} tickLine={false} />
+                                <XAxis dataKey="mes" tick={{ fill: '#666' }} axisLine={false} tickLine={false} />
                                 <YAxis tickFormatter={(val) => `Q${val}`} tick={{ fill: '#666' }} axisLine={false} tickLine={false} />
                                 <ChartTooltip formatter={(value) => [`Q ${value}`, 'Total Recaudado']} cursor={{ fill: '#f8f9fa' }} />
                                 <Bar dataKey="total" fill="var(--color-accion, #0098db)" radius={[6, 6, 0, 0]} barSize={50} />
@@ -531,47 +439,51 @@ const DashboardAdmin = () => {
                   <Col lg={4}>
                     <Card className="border-0 shadow-sm rounded-4 h-100">
                       <Card.Body className="p-4">
-                        <h5 className="fw-bold mb-4 text-center" style={{ color: 'var(--azul-oscuro)' }}><PieChartFill className="me-2 text-warning"/> Tipo de Vehículos</h5>
+                        <h5 className="fw-bold mb-4 text-center" style={{ color: 'var(--azul-oscuro)' }}><PieChartFill className="me-2 text-warning" /> Estudiantes por Facultad</h5>
                         <div style={{ width: '100%', height: 250 }}>
-                          {reportes.demografia && reportes.demografia.length > 0 ? (
+                          {reportes.distribucion && reportes.distribucion.length > 0 ? (
                             <ResponsiveContainer>
                               <PieChart>
-                                <Pie data={reportes.demografia} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="cantidad" nameKey="nombre">
-                                  {reportes.demografia.map((entry: any, index: number) => (
+                                <Pie data={reportes.distribucion} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="cantidad" nameKey="facultad">
+                                  {reportes.distribucion.map((entry: any, index: number) => (
                                     <Cell key={`cell-${index}`} fill={COLORES_PASTEL[index % COLORES_PASTEL.length]} />
                                   ))}
                                 </Pie>
-                                <ChartTooltip formatter={(value) => [value, 'Unidades Registradas']} />
+                                <ChartTooltip formatter={(value) => [value, 'Estudiantes']} />
                                 <Legend verticalAlign="bottom" height={36} />
                               </PieChart>
                             </ResponsiveContainer>
                           ) : (
-                            <div className="d-flex h-100 align-items-center justify-content-center text-muted">No hay vehículos registrados.</div>
+                            <div className="d-flex h-100 align-items-center justify-content-center text-muted">No hay registros aún.</div>
                           )}
                         </div>
                       </Card.Body>
                     </Card>
                   </Col>
                   <Col lg={12}>
-                    <Card className="border-0 shadow-sm rounded-4 border-top-danger" style={{ borderTop: '4px solid #dc3545' }}>
+                    <Card className="border-0 shadow-sm rounded-4 border-top-primary" style={{ borderTop: '4px solid var(--color-accion, #0098db)' }}>
                       <Card.Body className="p-4">
                         <div className="d-flex justify-content-between align-items-center mb-4">
-                          <h5 className="fw-bold mb-0 text-danger"><ExclamationTriangleFill className="me-2"/> Top Usuarios con Pagos Atrasados</h5>
+                          <h5 className="fw-bold mb-0" style={{ color: 'var(--azul-oscuro)' }}><Speedometer2 className="me-2" /> KPIs Gerenciales (Módulo de Reportes)</h5>
                         </div>
-                        <Table hover className="align-middle border-0">
-                          <thead className="bg-light text-muted">
-                            <tr><th className="border-0 rounded-start">Usuario</th><th className="border-0 text-end rounded-end">Deuda Total Acumulada</th></tr>
-                          </thead>
-                          <tbody>
-                            {reportes.morosos.map((m: any, index: number) => (
-                              <tr key={index}>
-                                <td className="border-bottom-0 fw-bold" style={{ color: 'var(--azul-oscuro)' }}>{m.usuario}</td>
-                                <td className="border-bottom-0 text-end fw-bold text-danger">Q.{m.deuda}.00</td>
-                              </tr>
-                            ))}
-                            {reportes.morosos.length === 0 && <tr><td colSpan={2} className="text-center py-4 text-success fw-bold"><CheckCircleFill className="me-2"/> No hay estudiantes con deudas pendientes en este momento.</td></tr>}
-                          </tbody>
-                        </Table>
+                        <Row>
+                          <Col md={3} className="text-center mb-3">
+                            <h2 className="fw-bold text-primary">{reportes.dashboard?.usuarios?.total || 0}</h2>
+                            <span className="text-muted small text-uppercase">Total Usuarios</span>
+                          </Col>
+                          <Col md={3} className="text-center mb-3">
+                            <h2 className="fw-bold text-success">{reportes.dashboard?.espacios?.libres || 0}</h2>
+                            <span className="text-muted small text-uppercase">Espacios Libres</span>
+                          </Col>
+                          <Col md={3} className="text-center mb-3">
+                            <h2 className="fw-bold text-warning">{reportes.dashboard?.accesos?.tasa_exito || 0}%</h2>
+                            <span className="text-muted small text-uppercase">Tasa Éxito Accesos</span>
+                          </Col>
+                          <Col md={3} className="text-center mb-3">
+                            <h2 className="fw-bold text-danger">{reportes.dashboard?.morosidad?.usuarios_morosos || 0}</h2>
+                            <span className="text-muted small text-uppercase">Usuarios Morosos</span>
+                          </Col>
+                        </Row>
                       </Card.Body>
                     </Card>
                   </Col>
@@ -592,13 +504,13 @@ const DashboardAdmin = () => {
           <div style={{ padding: '28px' }}>
             <Form.Group className="mb-3"><Form.Label className="fw-bold text-muted small">Carné (No editable)</Form.Label><Form.Control type="text" value={editForm.carne} disabled style={{ backgroundColor: '#f4f7f6' }} /></Form.Group>
             <Row>
-              <Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold text-muted small">Nombres</Form.Label><Form.Control type="text" value={editForm.nombres} onChange={(e) => setEditForm({...editForm, nombres: e.target.value})} /></Form.Group></Col>
-              <Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold text-muted small">Apellidos</Form.Label><Form.Control type="text" value={editForm.apellidos} onChange={(e) => setEditForm({...editForm, apellidos: e.target.value})} /></Form.Group></Col>
+              <Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold text-muted small">Nombres</Form.Label><Form.Control type="text" value={editForm.nombres} onChange={(e) => setEditForm({ ...editForm, nombres: e.target.value })} /></Form.Group></Col>
+              <Col md={6}><Form.Group className="mb-3"><Form.Label className="fw-bold text-muted small">Apellidos</Form.Label><Form.Control type="text" value={editForm.apellidos} onChange={(e) => setEditForm({ ...editForm, apellidos: e.target.value })} /></Form.Group></Col>
             </Row>
-            <Form.Group className="mb-3"><Form.Label className="fw-bold text-muted small">Correo Institucional</Form.Label><Form.Control type="email" value={editForm.correo_institucional} onChange={(e) => setEditForm({...editForm, correo_institucional: e.target.value})} /></Form.Group>
+            <Form.Group className="mb-3"><Form.Label className="fw-bold text-muted small">Correo Institucional</Form.Label><Form.Control type="email" value={editForm.correo_institucional} onChange={(e) => setEditForm({ ...editForm, correo_institucional: e.target.value })} /></Form.Group>
             <Row>
-              <Col md={6}><Form.Group className="mb-4"><Form.Label className="fw-bold text-muted small">Teléfono</Form.Label><Form.Control type="tel" value={editForm.telefono} onChange={(e) => setEditForm({...editForm, telefono: e.target.value})} /></Form.Group></Col>
-              <Col md={6}><Form.Group className="mb-4"><Form.Label className="fw-bold text-muted small">Rol del Sistema</Form.Label><Form.Select value={editForm.id_rol} onChange={(e) => setEditForm({...editForm, id_rol: e.target.value})}>{roles.map(r => (<option key={r.ID_ROL} value={r.ID_ROL}>{r.NOMBRE_ROL}</option>))}</Form.Select></Form.Group></Col>
+              <Col md={6}><Form.Group className="mb-4"><Form.Label className="fw-bold text-muted small">Teléfono</Form.Label><Form.Control type="tel" value={editForm.telefono} onChange={(e) => setEditForm({ ...editForm, telefono: e.target.value })} /></Form.Group></Col>
+              <Col md={6}><Form.Group className="mb-4"><Form.Label className="fw-bold text-muted small">Rol del Sistema</Form.Label><Form.Select value={editForm.id_rol} onChange={(e) => setEditForm({ ...editForm, id_rol: e.target.value })}>{roles.map(r => (<option key={r.ID_ROL} value={r.ID_ROL}>{r.NOMBRE_ROL}</option>))}</Form.Select></Form.Group></Col>
             </Row>
             <div className="d-flex gap-2">
               <Button variant="outline-secondary" onClick={() => setShowEditModal(false)} style={{ flex: 1, borderRadius: '8px' }}>Cancelar</Button>
