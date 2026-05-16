@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
+import React, { useEffect, useState } from 'react';
+import { Container, Row, Col, Card, Form, Button, Modal } from 'react-bootstrap';
 import { useNavigate, Link, useLocation } from 'react-router-dom'; // 🔥 Agregamos useLocation
 import Swal from 'sweetalert2';
 import ThemeSwitcher from '../components/ThemeSwitcher';
@@ -21,6 +21,32 @@ const Login = () => {
     const t = localStorage.getItem('umg-theme') || 'azul';
     document.documentElement.setAttribute('data-theme', t);
   }, []);
+
+  const [showRecoverModal, setShowRecoverModal] = useState(false);
+
+  const handleRecoverPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const correo_electronico = formData.get('correo_electronico')?.toString().trim();
+
+    try {
+      const response = await fetch('/api/auth/recuperar-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ correo_electronico }),
+      });
+
+      if (response.ok) {
+        Swal.fire({ title: '¡Solicitud Enviada!', text: 'Si el correo está registrado, recibirás un enlace para recuperar tu contraseña.', icon: 'success', confirmButtonColor: 'var(--color-accion)' });
+        setShowRecoverModal(false);
+      } else {
+        const data = await response.json();
+        Swal.fire({ title: 'Error', text: data.error || 'No se pudo procesar la solicitud.', icon: 'error', confirmButtonColor: 'var(--rojo-institucional)' });
+      }
+    } catch (error) {
+      Swal.fire({ title: 'Error', text: 'No se pudo conectar con el servidor.', icon: 'error', confirmButtonColor: 'var(--rojo-institucional)' });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -141,6 +167,12 @@ const Login = () => {
                       </Link>
                     </div>
                   )}
+
+                  <div className="text-center mt-3">
+                    <Button variant="link" className="text-decoration-none" style={{ color: 'var(--color-primario)', fontSize: '0.85rem' }} onClick={() => setShowRecoverModal(true)}>
+                      ¿Olvidaste tu contraseña?
+                    </Button>
+                  </div>
                 </Form>
               </Card.Body>
             </Card>
@@ -148,6 +180,31 @@ const Login = () => {
         </Row>
       </Container>
       <ThemeSwitcher />
+
+      {/* Modal Recuperar Contraseña */}
+      <Modal show={showRecoverModal} onHide={() => setShowRecoverModal(false)} centered>
+        <div style={{ borderRadius: '22px', overflow: 'hidden' }}>
+          <div style={{ background: 'linear-gradient(135deg, var(--color-primario), var(--color-primario-profundo))', padding: '24px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h5 className="mb-0" style={{ color: 'white', fontFamily: 'var(--fuente-titulos)', fontStyle: 'italic' }}>Recuperar Contraseña</h5>
+            <button type="button" className="btn-close btn-close-white" onClick={() => setShowRecoverModal(false)} style={{ opacity: 0.7 }}></button>
+          </div>
+          <Form onSubmit={handleRecoverPassword}>
+            <Modal.Body className="p-4" style={{ backgroundColor: 'var(--fondo-blanco)' }}>
+              <p className="text-muted mb-4" style={{ fontSize: '0.9rem' }}>
+                Ingresa tu correo electrónico y te enviaremos las instrucciones para restablecer tu contraseña de acceso.
+              </p>
+              <Form.Group>
+                <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Correo Electrónico</Form.Label>
+                <Form.Control name="correo_electronico" type="email" required placeholder="usuario@miumg.edu.gt" />
+              </Form.Group>
+            </Modal.Body>
+            <div style={{ padding: '0 24px 24px', backgroundColor: 'var(--fondo-blanco)', display: 'flex', gap: '10px' }}>
+              <Button variant="outline-secondary" onClick={() => setShowRecoverModal(false)} style={{ flex: 1, borderRadius: '12px' }}>Cancelar</Button>
+              <Button type="submit" className="btn-liquid" style={{ flex: 2, backgroundColor: 'var(--color-accion)', border: 'none', borderRadius: '12px' }}>Enviar Instrucciones</Button>
+            </div>
+          </Form>
+        </div>
+      </Modal>
     </div>
   );
 };

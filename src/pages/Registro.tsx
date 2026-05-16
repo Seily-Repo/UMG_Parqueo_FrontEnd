@@ -24,6 +24,8 @@ const Registro = () => {
   const [municipios, setMunicipios] = useState<any[]>([]);
   const [cargando, setCargando] = useState(true);
   const [deptoSeleccionado, setDeptoSeleccionado] = useState('');
+  const [muniSeleccionado, setMuniSeleccionado] = useState('');
+  const [esAreaMetro, setEsAreaMetro] = useState(false);
 
   useEffect(() => {
     const cargarCatalogos = async () => {
@@ -75,6 +77,24 @@ const Registro = () => {
     };
     cargarMunicipios();
   }, [deptoSeleccionado]);
+
+  useEffect(() => {
+    if (!muniSeleccionado) {
+      setEsAreaMetro(false);
+      return;
+    }
+    const muni = municipios.find(m => m.ID_MUNICIPIO.toString() === muniSeleccionado);
+    if (muni) {
+      const nombre = muni.NOMBRE_MUNICIPIO.toUpperCase();
+      if (nombre.includes('GUATEMALA') || nombre.includes('MIXCO') || nombre.includes('VILLA NUEVA') || nombre.includes('PETAPA') || nombre.includes('CANALES') || nombre.includes('SANTA CATARINA PINULA') || nombre.includes('SAN JOSE PINULA') || nombre.includes('CHINAUTLA') || nombre.includes('AMATITLAN')) {
+        setEsAreaMetro(true);
+      } else {
+        setEsAreaMetro(false);
+      }
+    } else {
+      setEsAreaMetro(false);
+    }
+  }, [muniSeleccionado, municipios]);
 
   // --- ENVÍO DEL FORMULARIO ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -249,7 +269,7 @@ const Registro = () => {
                     <Col md={4}>
                       <Form.Group className="mb-3">
                         <Form.Label className="fw-bold">Municipio</Form.Label>
-                        <Form.Select name="id_municipio" required disabled={!deptoSeleccionado}>
+                        <Form.Select name="id_municipio" required disabled={!deptoSeleccionado} value={muniSeleccionado} onChange={(e) => setMuniSeleccionado(e.target.value)}>
                           <option value="">{deptoSeleccionado ? 'Selecciona municipio...' : 'Elige departamento primero'}</option>
                           {municipios.map((m) => (
                             <option key={m.ID_MUNICIPIO} value={m.ID_MUNICIPIO}>
@@ -262,9 +282,9 @@ const Registro = () => {
                     <Col md={2}>
                       <Form.Group className="mb-3">
                         <Form.Label className="fw-bold">Zona</Form.Label>
-                        <Form.Select name="zona">
+                        <Form.Select name="zona" value={!esAreaMetro ? "" : undefined}>
                           <option value="">N/A</option>
-                          {[...Array(25)].map((_, i) => (
+                          {esAreaMetro && [...Array(25)].map((_, i) => (
                             <option key={i + 1} value={i + 1}>{i + 1}</option>
                           ))}
                         </Form.Select>
@@ -298,14 +318,8 @@ const Registro = () => {
                     <Col md={3}>
                       <Form.Group className="mb-3">
                         <Form.Label className="fw-bold">Sede</Form.Label>
-                        <Form.Select name="id_sede" required disabled={cargando}>
-                          <option value="">Selecciona...</option>
-                          {sedes.map((s) => (
-                            <option key={s.ID_SEDE} value={s.ID_SEDE}>
-                              {s.NOMBRE_SEDE}
-                            </option>
-                          ))}
-                        </Form.Select>
+                        <input type="hidden" name="id_sede" value="1" />
+                        <Form.Control type="text" value="Campus Villa Nueva" readOnly disabled style={{ backgroundColor: '#e9ecef', cursor: 'not-allowed' }} />
                       </Form.Group>
                     </Col>
                     <Col md={3}>
