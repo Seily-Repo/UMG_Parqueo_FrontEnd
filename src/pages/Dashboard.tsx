@@ -169,10 +169,11 @@ const Dashboard = () => {
         });
       } else {
         const errorData = await response.json();
-        Swal.fire('Atención', errorData.error || 'No se pudo guardar el vehículo', 'warning');
+        const mensajeReal = errorData.error || errorData.mensaje || 'No se pudo guardar el vehículo';
+        Swal.fire('Atención', mensajeReal, 'warning');
       }
-    } catch (error) {
-      Swal.fire('Error de Conexión', 'No se pudo conectar con el servidor', 'error');
+    } catch (error: any) {
+      Swal.fire('Error de Conexión', error.message || 'No se pudo conectar con el servidor', 'error');
     }
   };
 
