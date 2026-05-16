@@ -499,7 +499,22 @@ const Dashboard = () => {
                 <Form.Select
                   required
                   value={nuevoVehiculo.plan_id}
-                  onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, plan_id: e.target.value })}
+                  onChange={(e) => {
+                    const selectedPlanId = e.target.value;
+                    const selectedPlan = planes.find(p => p.PLN_PLAN.toString() === selectedPlanId);
+                    let tipoVehiculo = nuevoVehiculo.tipo_vehiculo;
+                    
+                    if (selectedPlan && selectedPlan.PLN_NOMBRE_PLAN) {
+                      const nombrePlan = selectedPlan.PLN_NOMBRE_PLAN.toUpperCase();
+                      if (nombrePlan.includes('MOTO')) {
+                        tipoVehiculo = 'MOTOCICLETA';
+                      } else if (nombrePlan.includes('CARRO')) {
+                        tipoVehiculo = 'AUTOMOVIL';
+                      }
+                    }
+                    
+                    setNuevoVehiculo({ ...nuevoVehiculo, plan_id: selectedPlanId, tipo_vehiculo: tipoVehiculo });
+                  }}
                   style={{ border: '2px solid var(--color-accion)' }}
                 >
                   <option value="" disabled hidden>Elige un plan de la lista...</option>
@@ -522,7 +537,11 @@ const Dashboard = () => {
 
             <Form.Group className="mb-3">
               <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Tipo de Vehículo</Form.Label>
-              <Form.Select value={nuevoVehiculo.tipo_vehiculo} onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, tipo_vehiculo: e.target.value })}>
+              <Form.Select 
+                value={nuevoVehiculo.tipo_vehiculo} 
+                onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, tipo_vehiculo: e.target.value })}
+                disabled={esPrimerVehiculo}
+              >
                 <option value="AUTOMOVIL">Automóvil</option>
                 <option value="MOTOCICLETA">Motocicleta</option>
               </Form.Select>
