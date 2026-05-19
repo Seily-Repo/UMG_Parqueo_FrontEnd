@@ -1,6 +1,5 @@
 // src/App.jsx
-import React, { useEffect, useState } from 'react';
-import Nav from './components/nav';
+import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import './App.css';
 
@@ -29,12 +28,9 @@ function App() {
   }, [API]);
 
   return (
-    <>
-      <Nav />
-      <div className="container" style={{ marginTop: "90px" }}>
-        <h3>{msg}</h3>
-      </div>
-    </>
+    <div className="container" style={{ marginTop: "90px" }}>
+      <h3>{msg}</h3>
+    </div>
   );
 }
 

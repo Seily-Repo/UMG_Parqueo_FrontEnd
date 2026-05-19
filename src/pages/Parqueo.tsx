@@ -1,10 +1,14 @@
 import Isla from "../components/Isla";
-import Nav from "../components/nav";
 import "../styles/Parqueo.css";
 import api, { asignarEspacio } from "../services/api";
 import { useEffect, useState } from "react";
-import { preconnect } from "react-dom";
 import MessageBox from '../components/Mensaje';
+
+interface EspacioApi {
+  ES_Espacio: number;
+  ES_Estado: number;
+}
+
 const ISLAS = [
   { nombre: "Isla A", descripcion: "Frente a Edificio A", carros: 10, motos: 5, discapacitados: 5, catedraticos: 3},
   { nombre: "Isla B", descripcion: "Frente a Edificio B", carros: 10, motos: 4, discapacitados: 5, catedraticos: 2 },
@@ -14,7 +18,7 @@ const ISLAS = [
 
 export default function Parqueo() {
   const [showModal, setShowModal] = useState(false);
-  const [espacios, setEspacios] = useState([]);
+  const [espacios, setEspacios] = useState<EspacioApi[]>([]);
 
   useEffect(() => {
     const obtenerEspacios = async () => {
@@ -30,7 +34,8 @@ export default function Parqueo() {
   }, []);
 
     //CREAR FUNCIÓN HANDLESELECCION
-    const handleSeleccion = async (idEspacio) => {
+    const handleSeleccion = async (idEspacio?: number) => {
+  if (!idEspacio) return;
   try {
 
     const data = {
@@ -46,7 +51,7 @@ export default function Parqueo() {
     console.log("Asignación exitosa:", res.data);
 
     // ACTUALIZAR ESPACIO LOCALMENTE
-    setEspacios(prev =>
+    setEspacios((prev) =>
       prev.map(e =>
         e.ES_Espacio === idEspacio
           ? { ...e, ES_Estado: 0 }
@@ -57,13 +62,13 @@ export default function Parqueo() {
     alert("Espacio asignado correctamente");
 
   } catch (error) {
-    console.error("Error al asignar:", error.response?.data);
+    console.error("Error al asignar:", error);
   }
 };
 
 
 
-  const islaOffsets = ISLAS.reduce((acc, isla, i) => {
+  const islaOffsets = ISLAS.reduce<Record<number, number>>((acc, isla, i) => {
     const prev = acc[i - 1] ?? 0;
     const prevIsla = ISLAS[i - 1];
     const prevTotal = prevIsla 
@@ -81,8 +86,6 @@ export default function Parqueo() {
   const totalDiscapacitados = ISLAS.reduce((sum, i) => sum + i.discapacitados, 0);
 
   return (
-    <>
-      <Nav />
       <div className="fondo-parqueo">
         <div className="overlay-parqueo">
           <div className="card-parqueo">
@@ -195,6 +198,5 @@ export default function Parqueo() {
           </div>
         </div>
       </div>
-    </>
   );
 }

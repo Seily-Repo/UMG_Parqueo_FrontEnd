@@ -8,8 +8,8 @@ import { Offcanvas } from "bootstrap";
 const Nav = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const offcanvasRef = useRef(null);
-  const offcanvasInstance = useRef(null);
+  const offcanvasRef = useRef<HTMLDivElement | null>(null);
+  const offcanvasInstance = useRef<Offcanvas | null>(null);
 
   useEffect(() => {
     if (offcanvasRef.current) {

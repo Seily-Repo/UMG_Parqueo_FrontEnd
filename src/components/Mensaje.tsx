@@ -1,6 +1,14 @@
 import React from 'react';
 
-const MessageBox = ({ isOpen, onClose, title, message }) => {
+interface MessageBoxProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+  buttonText?: string;
+}
+
+const MessageBox = ({ isOpen, onClose, title, message, buttonText = "Continuar" }: MessageBoxProps) => {
   if (!isOpen) return null; // Si no está abierto, no renderiza nada
 
   return (
@@ -8,13 +16,13 @@ const MessageBox = ({ isOpen, onClose, title, message }) => {
       <div style={styles.modal}>
         <h3>{title}</h3>
         <p>{message}</p>
-        <button onClick={onClose} style={styles.button}>Continuar</button>
+        <button onClick={onClose} style={styles.button}>{buttonText}</button>
       </div>
     </div>
   );
 };
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   overlay: {
     position: 'fixed',
     top: 0,

@@ -1,4 +1,8 @@
-export default function Espacio({ numero }) {
+interface PerfilProps {
+  numero?: number;
+}
+
+export default function Perfil({ numero = 0 }: PerfilProps) {
   return (
     <div
       style={{

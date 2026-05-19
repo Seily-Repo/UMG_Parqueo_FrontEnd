@@ -1,5 +1,22 @@
 import Espacio from "./Espacio";
 
+export type TipoEspacio = "discapacitado" | "catedratico" | "carro" | "moto";
+
+export interface EspacioBackend {
+  ES_Espacio?: number;
+  ES_Estado?: number;
+}
+
+interface IslaProps {
+  carros?: number;
+  motos?: number;
+  discapacitados?: number;
+  catedraticos?: number;
+  espaciosBackend?: EspacioBackend[];
+  offsetIndex?: number;
+  onSeleccionar?: (idEspacio?: number) => void;
+}
+
 export default function Isla({
   carros = 8,
   motos = 5,
@@ -8,9 +25,9 @@ export default function Isla({
   espaciosBackend = [],
   offsetIndex = 0,
   onSeleccionar
-}) {
+}: IslaProps) {
 
-  const espacios = [
+  const espacios: TipoEspacio[] = [
     ...Array(discapacitados).fill("discapacitado"),
     ...Array(catedraticos).fill("catedratico"),
     ...Array(carros).fill("carro"),

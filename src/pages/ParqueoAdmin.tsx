@@ -1,15 +1,33 @@
 import { useState } from "react";
 import Isla from "../components/Isla";
-import Nav from "../components/nav";
 import "../styles/Parqueo.css";
 import Swal from "sweetalert2";
 
+interface IslaAdmin {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  carros: number;
+  motos: number;
+  discapacitados: number;
+  catedraticos: number;
+}
+
+interface IslaForm {
+  nombre: string;
+  descripcion: string;
+  carros: number | string;
+  motos: number | string;
+  discapacitados: number | string;
+  catedraticos: number | string;
+}
+
 export default function ParqueoAdmin() {
 
-  const [islas, setIslas] = useState([]);
+  const [islas, setIslas] = useState<IslaAdmin[]>([]);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
-  const [nuevaIsla, setNuevaIsla] = useState({
+  const [nuevaIsla, setNuevaIsla] = useState<IslaForm>({
     nombre: "",
     descripcion: "",
     carros: 10,
@@ -88,7 +106,7 @@ export default function ParqueoAdmin() {
     });
   };
 
-  const handleEliminarIsla = (id, nombre) => {
+  const handleEliminarIsla = (id: number, nombre: string) => {
 
     Swal.fire({
       icon: "warning",
@@ -115,9 +133,6 @@ export default function ParqueoAdmin() {
   };
 
   return (
-    <>
-      <Nav />
-
       <div className="fondo-parqueo">
         <div className="overlay-parqueo">
 
@@ -580,6 +595,5 @@ export default function ParqueoAdmin() {
           </div>
         </div>
       </div>
-    </>
   );
 }
