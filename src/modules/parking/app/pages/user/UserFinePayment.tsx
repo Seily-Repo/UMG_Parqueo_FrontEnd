@@ -7,8 +7,8 @@ import { ArrowLeft, CreditCard, DollarSign, Receipt } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useRegistration } from '../../context/RegistrationContext';
 import { getReadableApiError } from '../../../../../shared/api';
-import type { BackendEstudianteMulta, BackendFormaPago, BackendMulta } from '../../../../../shared/models/backend';
-import { fineService, paymentMethodService, paymentService } from '../../../../../shared/services';
+import type { BackendEstudianteMulta, BackendMulta } from '../../../../../shared/models/backend';
+import { fineService, paymentService } from '../../../../../shared/services';
 import { PaymentReceiptCard, type PaymentReceiptData } from '../../components/PaymentReceiptCard';
 import { exportReceiptToPdf } from '../../utils/receiptExport';
 
@@ -20,7 +20,7 @@ type PaymentIntentResponse = {
   message: string;
   data: {
     PAG_PAGO: number;
-    PLN_PLAN: number;
+    PLN_PLAN?: number;
     FPG_FORMA_PAGO: number;
     PAG_FECHA_PAGO: string;
     PAG_MONTO_TOTAL: number;
@@ -32,6 +32,7 @@ type PaymentIntentResponse = {
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : Promise.resolve(null);
+const cardPaymentMethodId = Number(import.meta.env.VITE_PAYMENT_FORM_CARD_ID || 1);
 
 function FineStripeForm({
   amount,
@@ -115,7 +116,6 @@ export function UserFinePayment() {
   const locationState = location.state as FinePaymentLocationState | null;
   const [fineRelation, setFineRelation] = useState<BackendEstudianteMulta | null>(locationState?.fineRelation || null);
   const [fineCatalog, setFineCatalog] = useState<BackendMulta | null>(null);
-  const [paymentMethods, setPaymentMethods] = useState<BackendFormaPago[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -124,7 +124,7 @@ export function UserFinePayment() {
   const [activePayment, setActivePayment] = useState<PaymentIntentResponse['data'] | null>(null);
   const [formData, setFormData] = useState({
     amount: '',
-    paymentMethodId: 0,
+    paymentMethodId: cardPaymentMethodId,
   });
 
   useEffect(() => {
@@ -139,10 +139,9 @@ export function UserFinePayment() {
       setError('');
 
       try {
-        const [fineResponse, paymentMethodsResponse] = await Promise.all([
-          fineRelation ? Promise.resolve(fineRelation) : fineService.getStudentFineById(Number(relationId)),
-          paymentMethodService.getAll(),
-        ]);
+        const fineResponse = fineRelation
+          ? await Promise.resolve(fineRelation)
+          : await fineService.getStudentFineById(Number(relationId));
 
         const catalogResponse = await fineService.getFineById(Number(fineResponse.MUL_MULTA));
 
@@ -152,12 +151,10 @@ export function UserFinePayment() {
 
         setFineRelation(fineResponse);
         setFineCatalog(catalogResponse);
-        setPaymentMethods(paymentMethodsResponse.filter((method) => method.FPG_ESTADO === 'A'));
         setFormData((prev) => ({
           ...prev,
           amount: `${Number(catalogResponse.MUL_MONTO_TOTAL ?? catalogResponse.MUL_monto_total ?? 0)}`,
-          paymentMethodId:
-            prev.paymentMethodId || paymentMethodsResponse.find((method) => method.FPG_ESTADO === 'A')?.FPG_FORMA_PAGO || 0,
+          paymentMethodId: prev.paymentMethodId || cardPaymentMethodId,
         }));
       } catch (requestError) {
         if (!isMounted) {
@@ -179,10 +176,6 @@ export function UserFinePayment() {
     };
   }, [currentRegistration.carnet, fineRelation, relationId]);
 
-  const selectedPaymentMethod = useMemo(
-    () => paymentMethods.find((method) => method.FPG_FORMA_PAGO === formData.paymentMethodId),
-    [formData.paymentMethodId, paymentMethods]
-  );
   const fineAmount = Number(fineCatalog?.MUL_MONTO_TOTAL ?? fineCatalog?.MUL_monto_total ?? formData.amount ?? 0);
   const fineDescription = fineCatalog?.MUL_DESCRIPCION || fineCatalog?.MUL_descripcion || `Multa #${fineRelation?.MUL_MULTA || ''}`;
 
@@ -210,7 +203,6 @@ export function UserFinePayment() {
       const paymentResponse = await paymentService.create({
         EST_CARNE: currentRegistration.carnet,
         LR_CARNE: currentRegistration.carnet,
-        PLN_PLAN: currentRegistration.selectedPlanId || 1,
         FPG_FORMA_PAGO: formData.paymentMethodId,
         EMU_USUARIO_MULTA: Number(fineRelation.EMU_ESTUDIANTE_MULTA),
         PAG_FECHA_PAGO: new Date().toISOString(),
@@ -258,7 +250,7 @@ export function UserFinePayment() {
         carnet: currentRegistration.carnet || 'No disponible',
         concept: fineDescription,
         amount: fineAmount,
-        paymentMethod: selectedPaymentMethod?.FPG_NOMBRE_FORMA || `Forma ${formData.paymentMethodId}`,
+        paymentMethod: `Tarjeta (${formData.paymentMethodId})`,
         status: 'Pago exitoso',
         issuedAt: new Date(paidAt).toLocaleString(),
         detailLines: [
@@ -392,17 +384,7 @@ export function UserFinePayment() {
                 <Col md={6}>
                   <Form.Group>
                     <Form.Label>Forma de Pago *</Form.Label>
-                    <Form.Select
-                      value={formData.paymentMethodId}
-                      onChange={(e) => setFormData({ ...formData, paymentMethodId: Number(e.target.value) })}
-                    >
-                      <option value={0}>Seleccione una forma de pago</option>
-                      {paymentMethods.map((method) => (
-                        <option key={method.FPG_FORMA_PAGO} value={method.FPG_FORMA_PAGO}>
-                          {method.FPG_NOMBRE_FORMA}
-                        </option>
-                      ))}
-                    </Form.Select>
+                    <Form.Control value={`Tarjeta (${formData.paymentMethodId})`} readOnly />
                   </Form.Group>
                 </Col>
               </Row>

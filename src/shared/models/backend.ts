@@ -45,7 +45,7 @@ export interface BackendCreatePagoPayload {
   PAG_PAGO?: number;
   EST_CARNE?: string;
   LR_CARNE?: string;
-  PLN_PLAN: number;
+  PLN_PLAN?: number;
   FPG_FORMA_PAGO: number;
   MUL_MULTA?: number | null;
   EMU_USUARIO_MULTA?: number | null;
