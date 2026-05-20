@@ -36,16 +36,27 @@ const ISLAS: IslaLocal[] = [
   { nombre: "Isla D", descripcion: "Ubicada al lado izquierdo del Edificio C", carros: 8, motos: 3, discapacitados: 2, catedraticos: 0 },
 ];
 
+function cargarIslasExtra(): IslaVista[] {
+  try {
+    const data = JSON.parse(localStorage.getItem("islas_extra") || "[]");
+    return data.map((isla: any) => ({
+      ...isla,
+      motos: isla.motos ?? 0,
+      catedraticos: isla.catedraticos ?? 0,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 const obtenerCarneUsuario = () => {
   const usuarioRaw = localStorage.getItem("usuarioParqueo") || localStorage.getItem("usuarioAdmin");
-
   if (!usuarioRaw) return null;
-
   try {
     const usuario = JSON.parse(usuarioRaw);
     const carne = usuario.carne ?? usuario.carne_usuario ?? usuario.LR_CARNE;
     return carne ? Number(String(carne).replace(/-/g, "")) : null;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -62,7 +73,6 @@ export default function Parqueo() {
 
   const cargarDisponibilidad = useCallback(async () => {
     setCargando(true);
-
     try {
       const [libresRes, ocupadosRes] = await Promise.all([
         obtenerEspaciosLibres(ID_CICLO, ID_JORNADA),
@@ -78,7 +88,6 @@ export default function Parqueo() {
       (ocupadosRes.data.details ?? []).forEach((asignacion) => {
         const idEspacio = Number(asignacion.ES_Espacio);
         const espacioActual = espaciosPorId.get(idEspacio);
-
         espaciosPorId.set(idEspacio, {
           ...espacioActual,
           ES_Espacio: idEspacio,
@@ -97,7 +106,6 @@ export default function Parqueo() {
           islasActivas.map(async (isla) => {
             const detalleRes = await obtenerDetalleIsla(isla.IS_ISLA);
             const detalle = detalleRes.data.details ?? [];
-
             return {
               id: isla.IS_ISLA,
               nombre: isla.IS_NOMBRE,
@@ -109,7 +117,6 @@ export default function Parqueo() {
               espacios: detalle.map((espacio) => {
                 const idEspacio = Number(espacio.id_espacio);
                 const estadoDisponibilidad = espaciosPorId.get(idEspacio);
-
                 return {
                   ...estadoDisponibilidad,
                   id_espacio: idEspacio,
@@ -124,7 +131,7 @@ export default function Parqueo() {
         );
 
         setIslasBackend(islasConDetalle);
-      } catch (error) {
+      } catch {
         setIslasBackend([]);
       }
     } catch (error) {
@@ -188,7 +195,7 @@ export default function Parqueo() {
         text: res.data.message,
         confirmButtonColor: "#22c55e",
       });
-      } catch (error: any) {
+    } catch (error: any) {
       Swal.fire({
         icon: "error",
         title: "No se pudo asignar",
@@ -197,8 +204,6 @@ export default function Parqueo() {
       });
     }
   };
-
-  const islas: IslaVista[] = islasBackend.length > 0 ? islasBackend : ISLAS;
 
   const islaOffsets = useMemo(() => {
     return ISLAS.reduce<Record<number, number>>((acc, isla, i) => {
@@ -211,6 +216,11 @@ export default function Parqueo() {
       return acc;
     }, {});
   }, []);
+
+  // Combinar islas del backend + islas base + islas extra del admin
+  const islasBase = islasBackend.length > 0 ? islasBackend : ISLAS;
+  const islasExtra = cargarIslasExtra();
+  const islas: IslaVista[] = [...islasBase, ...islasExtra];
 
   const totalEspacios = islas.reduce(
     (sum, isla) =>
@@ -225,6 +235,8 @@ export default function Parqueo() {
     <div className="fondo-parqueo">
       <div className="overlay-parqueo">
         <div className="card-parqueo">
+
+          {/* RESUMEN */}
           <div className="mb-4 p-3" style={{ background: "#1f4e79", borderRadius: 10, color: "white" }}>
             <h5 className="text-center mb-3">Resumen del Parqueo</h5>
             <div className="d-flex justify-content-around flex-wrap gap-3">
@@ -248,18 +260,16 @@ export default function Parqueo() {
                 <div style={{ fontSize: 28, fontWeight: 900, color: "#00bfff" }}>{totalDiscapacitados}</div>
                 <small>Discapacitados</small>
               </div>
-             </div>
+            </div>
 
             <div className="mt-3" style={{ height: 10, borderRadius: 99, background: "rgba(255,255,255,0.2)", overflow: "hidden" }}>
-              <div
-                style={{
-                  height: "100%",
-                  width: totalEspacios > 0 ? `${(ocupados / totalEspacios) * 100}%` : "0%",
-                  background: "linear-gradient(90deg, #22c55e, #cb3634)",
-                  borderRadius: 99,
-                  transition: "width 0.5s",
-                }}
-              />
+              <div style={{
+                height: "100%",
+                width: totalEspacios > 0 ? `${(ocupados / totalEspacios) * 100}%` : "0%",
+                background: "linear-gradient(90deg, #22c55e, #cb3634)",
+                borderRadius: 99,
+                transition: "width 0.5s",
+              }} />
             </div>
             <div className="d-flex justify-content-between mt-1">
               <small>0%</small>
@@ -268,6 +278,7 @@ export default function Parqueo() {
             </div>
           </div>
 
+          {/* LEYENDA */}
           <div className="d-flex justify-content-center gap-4 mb-4 flex-wrap">
             <div className="d-flex align-items-center gap-2">
               <div style={{ width: 16, height: 16, borderRadius: 4, background: "#22c55e" }} />
@@ -283,12 +294,13 @@ export default function Parqueo() {
             </div>
           </div>
 
+          {/* ISLAS */}
           {cargando ? (
             <div className="text-center p-4">Cargando disponibilidad...</div>
           ) : (
             <div className="d-flex flex-column align-items-center gap-4">
               {islas.map((isla, index) => (
-                <div key={isla.id ?? index} className="card-isla p-4 shadow-sm w-100">
+                <div key={isla.id ?? `extra-${index}`} className="card-isla p-4 shadow-sm w-100">
                   <h5 className="text-center mb-1">{isla.nombre}</h5>
                   <p className="text-muted text-center mb-3">{isla.descripcion}</p>
                   <Isla
