@@ -2,7 +2,7 @@
 # Habilitar sintaxis BuildKit (opcional, mejora mounts de cache)
 # syntax=docker/dockerfile:1.4
 
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /usr/src/app
 
 # copio package files primero para cachear instalación
