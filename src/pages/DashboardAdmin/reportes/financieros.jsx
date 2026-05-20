@@ -19,7 +19,7 @@ function ReporteFinanciero() {
 
     try {
       const response = await axios.get(
-        "http://10.0.40.10/api/reportes/api/reportes/pagos-aceptados",
+        `http://10.0.40.10/api/reportes/api/reportes/pagos-aceptados`,
       );
 
       if (response.data.success) {
@@ -40,7 +40,7 @@ function ReporteFinanciero() {
 
     try {
       const response = await axios.get(
-        "http://10.0.40.10/api/reportes/api/reportes/reporte-financiero",
+        `http://10.0.40.10/api/reportes/api/reportes/reporte-financiero`,
       );
 
       if (response.data.success) {
@@ -61,18 +61,21 @@ function ReporteFinanciero() {
   }, []);
 
   // Lógica de filtrado
-  const filtrados = pagos.filter(
-    (d) =>
-      (d.usuario.toLowerCase().includes(busqueda.toLowerCase()))
+  const filtrados = pagos.filter((d) =>
+    d.usuario.toLowerCase().includes(busqueda.toLowerCase()),
   );
 
   // Cálculo de KPIs rápidos
-  const totalRecaudado = pagos.reduce(
-    (acc, curr) =>
-      acc + (curr.PAG_ESTADO === "A" ? parseFloat(curr.MONTO) : 0),
-    0,
-  );
-  const pendientes = pagos.filter((d) => d.PAG_ESTADO !== "P").length;
+  const totalRecaudado = pagos.reduce((acc, curr) => {
+    const estado = String(curr.estado || curr.PAG_ESTADO || "")
+      .trim()
+      .toUpperCase();
+
+    const monto = Number(curr.MONTO || curr.PAG_MONTO || 0);
+
+    return estado === "ACEPTADO" || estado === "A" ? acc + monto : acc;
+  }, 0);
+  const pendientes = pagos.filter((d) => d.estado == "PENDIENTE").length;
 
   // Función para exportar PDF mejorado
   const exportarPDF = () => {
@@ -148,7 +151,7 @@ function ReporteFinanciero() {
           <div style={styles.card}>
             <span style={styles.cardLabel}>RECAUDADO (PAGADO)</span>
             <h2 style={{ ...styles.cardValue, color: "#27ae60" }}>
-              Q{totalRecaudado.toFixed(2)}
+              Q{aceptados.totalMonto.toFixed(2)}
             </h2>
           </div>
           <div style={styles.card}>
@@ -245,37 +248,33 @@ function ReporteFinanciero() {
 
         {/* Tabla de Resultados */}
         <div style={styles.tableWrapper}>
-           <table className="table table-bordered table-hover">
+          <table className="table table-bordered table-hover">
+            <thead className="table-dark">
+              <tr>
+                <th>ID</th>
+                <th>Carne</th>
+                <th>Usuario</th>
+                <th>Plan</th>
+                <th>Monto</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
 
-                <thead className="table-dark">
-                    <tr>
-                        <th>ID</th>
-                        <th>Carne</th>
-                        <th>Usuario</th>
-                        <th>Plan</th>
-                        <th>Monto</th>
-                        <th>Fecha</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    {filtrados.map((pago) => (
-                        <tr key={pago.id_pago}>
-                            <td>{pago.id_pago}</td>
-                            <td>{pago.carne}</td>
-                            <td>{pago.usuario}</td>
-                            <td>{pago.plan}</td>
-                            <td>Q {pago.monto}</td>
-                            <td>{pago.fecha_pago}</td>
-                            <td>{pago.estado}</td>
-                        </tr>
-                    ))}
-
-                </tbody>
-
-            </table>
+            <tbody>
+              {filtrados.map((pago) => (
+                <tr key={pago.id_pago}>
+                  <td>{pago.id_pago}</td>
+                  <td>{pago.carne}</td>
+                  <td>{pago.usuario}</td>
+                  <td>{pago.plan}</td>
+                  <td>Q {pago.monto}</td>
+                  <td>{pago.fecha_pago}</td>
+                  <td>{pago.estado}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
