@@ -1,6 +1,6 @@
 import React from "react";
 import SideBarAdmin from "../../../components/SidebarAdmin";
-import "../../../styles/reportes.module.css";
+//import "@/styles/reportes.module.css";
 
 import {useNavigate} from "react-router-dom";
 
