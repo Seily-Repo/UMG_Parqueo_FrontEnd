@@ -26,5 +26,5 @@ FROM nginx:stable-alpine AS runner
 COPY --from=builder /usr/src/app/build /usr/share/nginx/html
 
 # optional: custom nginx conf (gzip, cache headers) para mejorar performance
-EXPOSE 80
+EXPOSE 3000
 CMD ["nginx", "-g", "daemon off;"]
