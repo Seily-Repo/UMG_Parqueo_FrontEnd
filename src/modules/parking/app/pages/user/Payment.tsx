@@ -364,13 +364,74 @@ export function Payment() {
 
   if (showReceipt && isPaid) {
     return (
-      <div style={{ maxWidth: 860, margin: '0 auto' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: directPayment.enabled ? '24px' : 0 }}>
         <PaymentReceiptCard
           data={receiptData}
           onExportPdf={() => exportReceiptToPdf(receiptData)}
-          onContinue={() => setShowReceipt(false)}
-          continueLabel="Volver a Cobros"
+          onContinue={() => {
+            if (directPayment.enabled) {
+              window.location.href = 'http://10.0.40.10/dashboard';
+            } else {
+              setShowReceipt(false);
+            }
+          }}
+          continueLabel={directPayment.enabled ? 'Volver al Dashboard' : 'Volver a Cobros'}
         />
+      </div>
+    );
+  }
+
+  if (directPayment.enabled) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(135deg, #f5f7fa 0%, #e4ecf3 100%)',
+          padding: '24px',
+        }}
+      >
+        <Card style={{ maxWidth: 560, width: '100%', boxShadow: '0 12px 40px rgba(0,0,0,0.12)', border: 'none' }}>
+          <Card.Header className="bg-white border-bottom py-3">
+            <div className="d-flex align-items-center gap-2">
+              <CreditCard size={22} color="#C41230" />
+              <div>
+                <div className="fw-bold">Pago con Stripe</div>
+                <small className="text-muted">{planLabel}</small>
+              </div>
+            </div>
+          </Card.Header>
+          <Card.Body className="p-4">
+            {paymentError ? (
+              <>
+                <div className="alert alert-danger">{paymentError}</div>
+                <Button
+                  variant="outline-secondary"
+                  className="w-100"
+                  onClick={() => (window.location.href = 'http://10.0.40.10/dashboard')}
+                >
+                  Volver al Dashboard
+                </Button>
+              </>
+            ) : loadingStripe || resolvingPlanId || !clientSecret ? (
+              <div className="text-center py-5">
+                <Spinner animation="border" />
+                <p className="text-muted mt-3 mb-0">Preparando Stripe...</p>
+              </div>
+            ) : (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <StripePaymentForm
+                  amount={amount}
+                  clientSecret={clientSecret}
+                  onPaid={handlePaymentConfirmed}
+                  onCancel={() => (window.location.href = 'http://10.0.40.10/dashboard')}
+                />
+              </Elements>
+            )}
+          </Card.Body>
+        </Card>
       </div>
     );
   }

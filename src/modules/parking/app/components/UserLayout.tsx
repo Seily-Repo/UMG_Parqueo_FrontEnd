@@ -1,11 +1,19 @@
-import { NavLink, Outlet, useNavigate } from 'react-router';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { Building2, Car, ChevronLeft, Home, LogOut, Menu, ReceiptText, UserCircle } from 'lucide-react';
 import umgLogo from '../../../../assets/umg_logo.png';
 import { useRegistration } from '../context/RegistrationContext';
 
 export function UserLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentRegistration } = useRegistration();
+
+  const params = new URLSearchParams(location.search);
+  const isEmbeddedFromDashboard = params.has('carne');
+
+  if (isEmbeddedFromDashboard) {
+    return <Outlet />;
+  }
 
   const userName = currentRegistration.fullName || currentRegistration.carnet || 'Usuario';
 

@@ -1,4 +1,5 @@
-import { LandingPage } from "./pages/LandingPage";
+import { createElement } from "react";
+import { Navigate } from "react-router";
 import { UserLayout } from "./components/UserLayout";
 import { AdminLayout } from "./components/AdminLayout";
 
@@ -21,7 +22,7 @@ import { AdminFines } from "./pages/admin/AdminFines";
 export const parkingRoutes = [
   {
     index: true,
-    Component: LandingPage,
+    element: createElement(Navigate, { to: "/parking/user/pago", replace: true }),
   },
   {
     path: "user",

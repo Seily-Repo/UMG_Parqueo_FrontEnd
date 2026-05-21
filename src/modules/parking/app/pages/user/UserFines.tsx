@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { Alert, Button, Card, Spinner, Table } from 'react-bootstrap';
 import { AlertTriangle, CreditCard, Receipt, Search } from 'lucide-react';
 import { useRegistration } from '../../context/RegistrationContext';
 import { getReadableApiError } from '../../../../../shared/api';
 import type { BackendEstudianteMulta } from '../../../../../shared/models/backend';
 import { fineService } from '../../../../../shared/services';
+
+function normalizeCarnet(carnet: string) {
+  return carnet.replace(/\D/g, '');
+}
 
 function getFineStatusLabel(status?: string) {
   switch (status) {
@@ -53,13 +57,28 @@ function formatFineDate(value?: string) {
 
 export function UserFines() {
   const navigate = useNavigate();
-  const { currentRegistration } = useRegistration();
+  const location = useLocation();
+  const { currentRegistration, updateRegistration } = useRegistration();
+
+  const carnetFromUrl = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return normalizeCarnet(params.get('carne') || '');
+  }, [location.search]);
+  const isEmbedded = Boolean(carnetFromUrl);
+  const activeCarnet = carnetFromUrl || currentRegistration.carnet || '';
+
   const [fines, setFines] = useState<BackendEstudianteMulta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!currentRegistration.carnet) {
+    if (carnetFromUrl && carnetFromUrl !== currentRegistration.carnet) {
+      updateRegistration({ carnet: carnetFromUrl, id: carnetFromUrl });
+    }
+  }, [carnetFromUrl, currentRegistration.carnet, updateRegistration]);
+
+  useEffect(() => {
+    if (!activeCarnet) {
       return;
     }
 
@@ -70,7 +89,7 @@ export function UserFines() {
       setError('');
 
       try {
-        const response = await fineService.getStudentFinesByCarne(currentRegistration.carnet);
+        const response = await fineService.getStudentFinesByCarne(activeCarnet);
 
         if (!isMounted) {
           return;
@@ -95,7 +114,7 @@ export function UserFines() {
     return () => {
       isMounted = false;
     };
-  }, [currentRegistration.carnet]);
+  }, [activeCarnet]);
 
   const activeFinesCount = useMemo(
     () => fines.filter((fine) => fine.EMU_ESTADO_MULTA === 'A').length,
