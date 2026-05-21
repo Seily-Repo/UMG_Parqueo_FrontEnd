@@ -15,6 +15,7 @@ type FineFormState = {
 type AssignFineFormState = {
   fineId: string;
   vehicleLookup: string;
+  vehicleIdOverride: string;
 };
 
 const initialFormState: FineFormState = {
@@ -26,6 +27,7 @@ const initialFormState: FineFormState = {
 const initialAssignFormState: AssignFineFormState = {
   fineId: '',
   vehicleLookup: '',
+  vehicleIdOverride: '',
 };
 
 function getFineId(fine: BackendMulta) {
@@ -173,14 +175,15 @@ export function AdminFines() {
 
     const fineId = Number(assignFormData.fineId);
     const vehicleLookup = assignFormData.vehicleLookup.trim();
+    const vehicleIdOverride = assignFormData.vehicleIdOverride.trim();
 
     if (!fineId) {
       toast.error('Seleccione una multa para asignar');
       return;
     }
 
-    if (!vehicleLookup) {
-      toast.error('Ingrese la placa del vehiculo');
+    if (!vehicleLookup && !vehicleIdOverride) {
+      toast.error('Ingrese la placa del vehiculo o el ID directamente');
       return;
     }
 
@@ -188,37 +191,42 @@ export function AdminFines() {
     setError('');
 
     try {
-      let vehicleId = getLookupVehicleId(vehicleLookup);
-      const plate = normalizePlate(vehicleLookup);
+      let vehicleId = vehicleIdOverride || getLookupVehicleId(vehicleLookup);
+      const plate = vehicleLookup ? normalizePlate(vehicleLookup) : '';
 
-      if (!vehicleId) {
+      if (!vehicleId && plate) {
         try {
           const vehicle = await vehicleService.getByPlate(plate);
           vehicleId = String(vehicle.ID_VEHICULO || vehicle.VEH_ID_VEHICULO || '');
-        } catch {
-          vehicleId = '';
+        } catch (lookupError) {
+          const detail = getReadableApiError(lookupError, '');
+          const friendly = `No se encontro un vehiculo registrado con la placa ${plate}. Verifique la placa o ingrese el ID del vehiculo directamente.${detail ? ` (${detail})` : ''}`;
+          setError(friendly);
+          toast.error(friendly);
+          setAssigning(false);
+          return;
         }
       }
 
-      if (vehicleId) {
-        await fineService.createStudentFine({
-          MUL_MULTA: fineId,
-          VEH_ID_VEHICULO: vehicleId,
-          VEH_PLACA: plate,
-          EMU_ESTADO_MULTA: 'A',
-          EMU_CREADO_POR: 'ADMINISTRADOR',
-        });
-      } else {
-        await fineService.createStudentFine({
-          MUL_MULTA: fineId,
-          VEH_PLACA: plate,
-          EMU_ESTADO_MULTA: 'A',
-          EMU_CREADO_POR: 'ADMINISTRADOR',
-        });
+      if (!vehicleId) {
+        const friendly = `No se pudo resolver el ID del vehiculo para la placa ${plate}. Ingrese el ID manualmente.`;
+        setError(friendly);
+        toast.error(friendly);
+        setAssigning(false);
+        return;
       }
 
+      await fineService.createStudentFine({
+        MUL_MULTA: fineId,
+        VEH_ID_VEHICULO: vehicleId,
+        ...(plate ? { VEH_PLACA: plate } : {}),
+        EMU_ESTADO_MULTA: 'A',
+        EMU_CREADO_POR: 'ADMINISTRADOR',
+      });
+
       setAssignFormData(initialAssignFormState);
-      toast.success(`Multa asignada a la placa ${plate}`);
+      const label = plate ? `placa ${plate}` : `vehiculo #${vehicleId}`;
+      toast.success(`Multa asignada al ${label}`);
       void loadFines();
     } catch (requestError) {
       const message = getReadableApiError(requestError, 'No fue posible asignar la multa al vehiculo indicado.');
@@ -461,16 +469,30 @@ export function AdminFines() {
                   </Form.Select>
                 </Form.Group>
 
-                <Form.Group className="mb-4">
-                  <Form.Label>Placa del Vehiculo *</Form.Label>
+                <Form.Group className="mb-3">
+                  <Form.Label>Placa del Vehiculo</Form.Label>
                   <Form.Control
                     value={assignFormData.vehicleLookup}
                     onChange={(event) => setAssignFormData((prev) => ({ ...prev, vehicleLookup: event.target.value }))}
                     placeholder="Ej. P123ABC"
-                    required
                   />
                   <Form.Text className="text-muted">
                     La multa aparecera al usuario propietario del vehiculo.
+                  </Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-4">
+                  <Form.Label>ID del Vehiculo (opcional)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={assignFormData.vehicleIdOverride}
+                    onChange={(event) => setAssignFormData((prev) => ({ ...prev, vehicleIdOverride: event.target.value }))}
+                    placeholder="Ej. 12"
+                  />
+                  <Form.Text className="text-muted">
+                    Si conoce el ID del vehiculo, escribalo aqui para asignar directo y saltar la busqueda por placa.
                   </Form.Text>
                 </Form.Group>
 

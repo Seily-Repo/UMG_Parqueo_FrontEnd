@@ -33,6 +33,11 @@ type PaymentIntentResponse = {
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : Promise.resolve(null);
 const cardPaymentMethodId = Number(import.meta.env.VITE_PAYMENT_FORM_CARD_ID || 1);
+const dashboardUrl = 'http://10.0.40.10/dashboard';
+
+function normalizeCarnet(carnet: string) {
+  return carnet.replace(/\D/g, '');
+}
 
 function FineStripeForm({
   amount,
@@ -112,8 +117,16 @@ export function UserFinePayment() {
   const navigate = useNavigate();
   const location = useLocation();
   const { relationId } = useParams();
-  const { currentRegistration } = useRegistration();
+  const { currentRegistration, updateRegistration } = useRegistration();
   const locationState = location.state as FinePaymentLocationState | null;
+
+  const carnetFromUrl = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return normalizeCarnet(params.get('carne') || '');
+  }, [location.search]);
+  const isEmbedded = Boolean(carnetFromUrl);
+  const activeCarnet = carnetFromUrl || currentRegistration.carnet || '';
+
   const [fineRelation, setFineRelation] = useState<BackendEstudianteMulta | null>(locationState?.fineRelation || null);
   const [fineCatalog, setFineCatalog] = useState<BackendMulta | null>(null);
   const [loading, setLoading] = useState(true);
@@ -128,7 +141,26 @@ export function UserFinePayment() {
   });
 
   useEffect(() => {
-    if (!relationId || !currentRegistration.carnet) {
+    if (carnetFromUrl && carnetFromUrl !== currentRegistration.carnet) {
+      updateRegistration({ carnet: carnetFromUrl, id: carnetFromUrl });
+    }
+  }, [carnetFromUrl, currentRegistration.carnet, updateRegistration]);
+
+  const backToFinesList = () => {
+    const search = isEmbedded ? `?carne=${encodeURIComponent(activeCarnet)}` : '';
+    navigate(`/parking/user/multas${search}`);
+  };
+
+  const finishFlow = () => {
+    if (isEmbedded) {
+      window.location.href = dashboardUrl;
+    } else {
+      navigate('/parking/user/multas');
+    }
+  };
+
+  useEffect(() => {
+    if (!relationId || !activeCarnet) {
       return;
     }
 
@@ -201,8 +233,8 @@ export function UserFinePayment() {
 
     try {
       const paymentResponse = await paymentService.create({
-        EST_CARNE: currentRegistration.carnet,
-        LR_CARNE: currentRegistration.carnet,
+        EST_CARNE: activeCarnet,
+        LR_CARNE: activeCarnet,
         FPG_FORMA_PAGO: formData.paymentMethodId,
         EMU_USUARIO_MULTA: Number(fineRelation.EMU_ESTUDIANTE_MULTA),
         PAG_FECHA_PAGO: new Date().toISOString(),
@@ -234,20 +266,21 @@ export function UserFinePayment() {
 
       await paymentService.update(activePayment.PAG_PAGO, {
         ...activePayment,
+        EST_CARNE: activeCarnet,
         PAG_ESTADO: 'A',
         PAG_FECHA_PAGO: paidAt,
-      });
+      } as unknown as Parameters<typeof paymentService.update>[1]);
 
       await fineService.updateStudentFineStatus(Number(fineRelation.EMU_ESTUDIANTE_MULTA), {
         EMU_ESTADO_MULTA: 'P',
-        EMU_MODIFICADO_POR: currentRegistration.fullName || currentRegistration.carnet || 'estudiante',
+        EMU_MODIFICADO_POR: currentRegistration.fullName || activeCarnet || 'estudiante',
       });
 
       setReceiptData({
         receiptNumber: `MUL-${activePayment.PAG_PAGO || Date.now()}`,
         title: 'Recibo de pago de multa',
         studentName: currentRegistration.fullName || 'Estudiante',
-        carnet: currentRegistration.carnet || 'No disponible',
+        carnet: activeCarnet || 'No disponible',
         concept: fineDescription,
         amount: fineAmount,
         paymentMethod: `Tarjeta (${formData.paymentMethodId})`,
@@ -264,33 +297,40 @@ export function UserFinePayment() {
     }
   };
 
-  if (!currentRegistration.carnet) {
+  if (!activeCarnet) {
     return <Alert variant="warning">Debe iniciar sesion antes de pagar una multa.</Alert>;
   }
 
   if (receiptData) {
     return (
-      <div style={{ maxWidth: 860, margin: '0 auto' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: isEmbedded ? 24 : 0 }}>
         <PaymentReceiptCard
           data={receiptData}
           onExportPdf={() => exportReceiptToPdf(receiptData)}
-          onContinue={() => navigate('/parking/user/multas')}
-          continueLabel="Volver a Multas"
+          onContinue={finishFlow}
+          continueLabel={isEmbedded ? 'Volver al Dashboard' : 'Volver a Multas'}
         />
       </div>
     );
   }
 
+  const containerStyle: React.CSSProperties = isEmbedded
+    ? { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #f5f7fa 0%, #e4ecf3 100%)', padding: 24 }
+    : { maxWidth: 800, margin: '0 auto' };
+  const cardStyle: React.CSSProperties = isEmbedded
+    ? { maxWidth: 720, width: '100%', boxShadow: '0 12px 40px rgba(0,0,0,0.12)', border: 'none' }
+    : {};
+
   return (
-    <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <Card className="shadow-sm">
+    <div style={containerStyle}>
+      <Card className="shadow-sm" style={cardStyle}>
         <Card.Header className="bg-white border-bottom">
           <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
             <div>
               <Card.Title className="mb-1 h4">Pago de Multa</Card.Title>
               <Card.Subtitle className="text-muted">Complete el formulario para registrar el pago de la multa seleccionada</Card.Subtitle>
             </div>
-            <Button variant="outline-secondary" onClick={() => navigate('/parking/user/multas')}>
+            <Button variant="outline-secondary" onClick={backToFinesList}>
               <ArrowLeft size={16} className="me-2" />
               Volver
             </Button>
@@ -311,7 +351,7 @@ export function UserFinePayment() {
               <Alert variant="warning" className="mb-4">
                 Esta multa ya no esta activa para pago. Su estado actual es <strong>{fineRelation.EMU_ESTADO_MULTA}</strong>.
               </Alert>
-              <Button variant="outline-secondary" onClick={() => navigate('/parking/user/multas')}>
+              <Button variant="outline-secondary" onClick={backToFinesList}>
                 <ArrowLeft size={16} className="me-2" />
                 Volver a Consulta de Multas
               </Button>
