@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
+import { Button, Card, Col, Modal, Row, Spinner } from 'react-bootstrap';
 import { CreditCard, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useRegistration } from '../../context/RegistrationContext';
@@ -19,6 +19,16 @@ const fallbackPlanIds = {
   domingo: Number(import.meta.env.VITE_PAYMENT_PLAN_SUNDAY_ID || 3),
 } as const;
 
+const directPlanIdByConcept: Record<string, number> = {
+  'plan matutino carro': Number(import.meta.env.VITE_PAYMENT_PLAN_MATUTINO_CARRO_ID || import.meta.env.VITE_PAYMENT_PLAN_WEEKDAY_ID || 1),
+  'plan matutino moto': Number(import.meta.env.VITE_PAYMENT_PLAN_MATUTINO_MOTO_ID || import.meta.env.VITE_PAYMENT_PLAN_WEEKDAY_ID || 1),
+  'plan vespertino carro': Number(import.meta.env.VITE_PAYMENT_PLAN_VESPERTINO_CARRO_ID || import.meta.env.VITE_PAYMENT_PLAN_WEEKDAY_ID || 1),
+  'plan vespertino moto': Number(import.meta.env.VITE_PAYMENT_PLAN_VESPERTINO_MOTO_ID || import.meta.env.VITE_PAYMENT_PLAN_WEEKDAY_ID || 1),
+  'entre semana': Number(import.meta.env.VITE_PAYMENT_PLAN_WEEKDAY_ID || 1),
+  sabado: Number(import.meta.env.VITE_PAYMENT_PLAN_SATURDAY_ID || 2),
+  domingo: Number(import.meta.env.VITE_PAYMENT_PLAN_SUNDAY_ID || 3),
+};
+
 type PaymentIntentResponse = {
   message: string;
   data: BackendPago;
@@ -27,6 +37,16 @@ type PaymentIntentResponse = {
 
 function normalizeCarnet(carnet: string) {
   return carnet.replace(/\D/g, '');
+}
+
+function normalizeConcept(concept: string) {
+  return concept
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function getDirectPaymentParams() {
@@ -47,32 +67,15 @@ function getDirectPaymentParams() {
   };
 }
 
-function getPlanIdError(directPayment: ReturnType<typeof getDirectPaymentParams>) {
-  if (!directPayment.enabled || directPayment.planId) {
-    return '';
+function inferDirectPlanId(directPayment: ReturnType<typeof getDirectPaymentParams>) {
+  if (directPayment.planId) {
+    return directPayment.planId;
   }
 
-  return 'Falta enviar el planId del plan de parqueo para iniciar Stripe.';
-}
+  const normalizedConcept = normalizeConcept(directPayment.concept);
+  const mappedPlanId = directPlanIdByConcept[normalizedConcept];
 
-function StripeShell({ amount, children }: { amount: number; children: ReactNode }) {
-  return (
-    <div className="parking-payment-flow">
-      <Card className="parking-payment-card">
-        <Card.Header>
-          <Card.Title className="mb-1 h4">Informacion de Pago</Card.Title>
-          <Card.Subtitle>Complete su pago seguro con Stripe</Card.Subtitle>
-        </Card.Header>
-        <Card.Body>
-          <div className="parking-payment-summary">
-            <small style={{ opacity: 0.9 }}>Total a pagar</small>
-            <div className="display-5 fw-bold">Q{amount.toFixed(2)}</div>
-          </div>
-          {children}
-        </Card.Body>
-      </Card>
-    </div>
-  );
+  return Number.isFinite(mappedPlanId) && mappedPlanId > 0 ? mappedPlanId : fallbackPlanIds['entre-semana'];
 }
 
 function StripePaymentForm({
@@ -124,27 +127,30 @@ function StripePaymentForm({
   };
 
   return (
-    <StripeShell amount={amount}>
-      <form onSubmit={handleSubmit}>
-        <div style={{ border: '1px solid #dee2e6', borderRadius: 8, padding: 16, backgroundColor: '#ffffff' }}>
-          <PaymentElement options={{ layout: 'tabs' }} />
-        </div>
+    <form onSubmit={handleSubmit}>
+      <div className="parking-payment-summary mb-4">
+        <small style={{ opacity: 0.9 }}>Total a pagar</small>
+        <div className="display-5 fw-bold">Q{amount.toFixed(2)}</div>
+      </div>
 
-        <Row className="g-3 mt-4">
-          <Col xs={6}>
-            <Button variant="outline-secondary" size="lg" className="w-100" onClick={onCancel} disabled={submitting}>
-              Volver
-            </Button>
-          </Col>
-          <Col xs={6}>
-            <Button variant="primary" type="submit" size="lg" className="w-100" disabled={!stripe || submitting}>
-              {submitting ? <Spinner size="sm" className="me-2" /> : <CreditCard size={16} className="me-2" />}
-              {submitting ? 'Procesando...' : `Pagar Q${amount.toFixed(2)}`}
-            </Button>
-          </Col>
-        </Row>
-      </form>
-    </StripeShell>
+      <div style={{ border: '1px solid #dee2e6', borderRadius: 8, padding: 16, backgroundColor: '#ffffff' }}>
+        <PaymentElement options={{ layout: 'tabs' }} />
+      </div>
+
+      <Row className="g-3 mt-4">
+        <Col xs={6}>
+          <Button variant="outline-secondary" size="lg" className="w-100" onClick={onCancel} disabled={submitting}>
+            Volver
+          </Button>
+        </Col>
+        <Col xs={6}>
+          <Button variant="primary" type="submit" size="lg" className="w-100" disabled={!stripe || submitting}>
+            {submitting ? <Spinner size="sm" className="me-2" /> : <CreditCard size={16} className="me-2" />}
+            {submitting ? 'Procesando...' : `Pagar Q${amount.toFixed(2)}`}
+          </Button>
+        </Col>
+      </Row>
+    </form>
   );
 }
 
@@ -164,7 +170,7 @@ export function Payment() {
   const payerCarnet = directPayment.carne || currentRegistration.carnet || '';
   const isPaid = currentRegistration.paymentStatus === 'paid';
   const planId =
-    directPayment.planId ||
+    (directPayment.enabled ? inferDirectPlanId(directPayment) : 0) ||
     currentRegistration.selectedPlanId ||
     fallbackPlanIds[(currentRegistration.parkingPlan as keyof typeof fallbackPlanIds) || 'entre-semana'] ||
     1;
@@ -215,12 +221,6 @@ export function Payment() {
 
     if (!payerCarnet) {
       toast.error('Debe iniciar sesion antes de pagar.');
-      return;
-    }
-
-    const planError = getPlanIdError(directPayment);
-    if (planError) {
-      setPaymentError(planError);
       return;
     }
 
@@ -298,50 +298,19 @@ export function Payment() {
     );
   }
 
-  if (clientSecret) {
-    return (
-      <Elements stripe={stripePromise} options={{ clientSecret }}>
-        <StripePaymentForm
-          amount={amount}
-          clientSecret={clientSecret}
-          onPaid={handlePaymentConfirmed}
-          onCancel={() => setClientSecret('')}
-        />
-      </Elements>
-    );
-  }
-
-  if (directPayment.enabled) {
-    return (
-      <div className="parking-payments-page">
-        <div className="parking-payments-page__heading">
-          <h1>Modulo de Pagos</h1>
-          <p>{planLabel}</p>
-        </div>
-
-        {paymentError ? (
-          <div className="alert alert-danger">{paymentError}</div>
-        ) : (
-          <div className="text-center py-5">
-            <Spinner animation="border" />
-            <p className="text-muted mt-3 mb-0">Abriendo Stripe...</p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="parking-payments-page">
       <div className="parking-payments-page__heading">
         <h1>Modulo de Pagos</h1>
-        <p>Consulta tu estado de cuenta y realiza los pagos de tus planes de parqueo.</p>
+        <p>{directPayment.enabled ? planLabel : 'Consulta tu estado de cuenta y realiza los pagos de tus planes de parqueo.'}</p>
       </div>
+
+      {paymentError && <div className="alert alert-danger">{paymentError}</div>}
 
       <div className="parking-pending-charges">
         <Card className="parking-pending-charges__card">
           <Card.Header>
-            <Card.Title>Cobros Disponibles</Card.Title>
+            <Card.Title>{directPayment.enabled ? 'Cargo Pendiente' : 'Cobros Disponibles'}</Card.Title>
           </Card.Header>
           <Card.Body>
             <div className="parking-charge-table">
@@ -354,7 +323,7 @@ export function Payment() {
               <div className="parking-charge-table__row">
                 <div>
                   <strong>{planLabel}</strong>
-                  <small>{vehicleCount} vehiculo(s) registrado(s) en el portal.</small>
+                  <small>{directPayment.enabled ? `Carne ${payerCarnet}` : `${vehicleCount} vehiculo(s) registrado(s) en el portal.`}</small>
                 </div>
                 <div>
                   <span className={`parking-charge-table__badge ${isPaid ? 'parking-charge-table__badge--paid' : 'parking-charge-table__badge--available'}`}>
@@ -374,7 +343,7 @@ export function Payment() {
                       </Button>
                     </div>
                   ) : (
-                    <Button variant="primary" className="parking-charge-table__pay" onClick={handleStartStripePayment} disabled={loadingStripe}>
+                    <Button variant="primary" className="parking-charge-table__pay" onClick={handleStartStripePayment} disabled={loadingStripe || Boolean(clientSecret)}>
                       {loadingStripe ? <Spinner size="sm" className="me-2" /> : <CreditCard size={16} className="me-2" />}
                       {loadingStripe ? 'Abriendo Stripe...' : 'Pagar'}
                     </Button>
@@ -385,6 +354,27 @@ export function Payment() {
           </Card.Body>
         </Card>
       </div>
+
+      <Modal show={Boolean(clientSecret)} onHide={() => setClientSecret('')} centered size="lg">
+        <Modal.Header closeButton>
+          <div>
+            <Modal.Title>Pago con Stripe</Modal.Title>
+            <div className="text-muted small">{planLabel}</div>
+          </div>
+        </Modal.Header>
+        <Modal.Body>
+          {clientSecret && (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <StripePaymentForm
+                amount={amount}
+                clientSecret={clientSecret}
+                onPaid={handlePaymentConfirmed}
+                onCancel={() => setClientSecret('')}
+              />
+            </Elements>
+          )}
+        </Modal.Body>
+      </Modal>
     </div>
   );
 }
