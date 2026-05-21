@@ -5,7 +5,11 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_URL: http://localhost:4000   # o la URL real del backend en prod
+        REACT_APP_API_URL: ${REACT_APP_API_URL:-/api}
+        REACT_APP_ROUTER_BASENAME: ${REACT_APP_ROUTER_BASENAME:-}        
+        REACT_APP_ID_CICLO: 1
+        REACT_APP_ID_JORNADA: 1   
+        # o la URL real del backend en prod
     container_name: umg_frontend_prod
     ports:
       - "3000:80"

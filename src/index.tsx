@@ -22,18 +22,10 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/disponibilidad" replace />} />
+        <Route path="/" element={<Navigate to="/disponibilidad/parqueo" replace />} />
         <Route path="/inicio" element={<App />} />
         <Route
-          path="/disponibilidad"
-          element={
-            <StudentLayout activeSection="disponibilidad">
-              <Parqueo />
-            </StudentLayout>
-          }
-        />
-        <Route
-          path="/parqueo"
+          path="/disponibilidad/parqueo"
           element={
             <StudentLayout activeSection="disponibilidad">
               <Parqueo />
@@ -42,14 +34,6 @@ root.render(
         />
         <Route
           path="/disponibilidad/admin"
-          element={
-            <AdminLayout activeSection="islas">
-              <ParqueoAdmin />
-            </AdminLayout>
-          }
-        />
-        <Route
-          path="/admin/parqueo"
           element={
             <AdminLayout activeSection="islas">
               <ParqueoAdmin />

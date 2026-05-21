@@ -4,6 +4,7 @@ import Isla, { type EspacioBackend } from "../components/Isla";
 import MessageBox from "../components/Mensaje";
 import {
   asignarEspacio,
+  getAuthToken,
   obtenerDetalleIsla,
   obtenerEspaciosLibres,
   obtenerEspaciosOcupados,
@@ -36,19 +37,6 @@ const ISLAS: IslaLocal[] = [
   { nombre: "Isla D", descripcion: "Ubicada al lado izquierdo del Edificio C", carros: 8, motos: 3, discapacitados: 2, catedraticos: 0 },
 ];
 
-function cargarIslasExtra(): IslaVista[] {
-  try {
-    const data = JSON.parse(localStorage.getItem("islas_extra") || "[]");
-    return data.map((isla: any) => ({
-      ...isla,
-      motos: isla.motos ?? 0,
-      catedraticos: isla.catedraticos ?? 0,
-    }));
-  } catch {
-    return [];
-  }
-}
-
 const obtenerCarneUsuario = () => {
   const usuarioRaw = localStorage.getItem("usuarioParqueo") || localStorage.getItem("usuarioAdmin");
   if (!usuarioRaw) return null;
@@ -72,7 +60,8 @@ export default function Parqueo() {
   const [cargando, setCargando] = useState(true);
 
   const cargarDisponibilidad = useCallback(async () => {
-    setCargando(true);
+
+      setCargando(true);
     try {
       const [libresRes, ocupadosRes] = await Promise.all([
         obtenerEspaciosLibres(ID_CICLO, ID_JORNADA),
@@ -134,12 +123,13 @@ export default function Parqueo() {
       } catch {
         setIslasBackend([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al traer disponibilidad:", error);
+      const status = error?.response?.status;
       Swal.fire({
         icon: "error",
         title: "No se pudo cargar la disponibilidad",
-        text: "Verifica tu sesion, el backend y los parametros de ciclo/jornada.",
+        text: "Verifica el backend y los parametros de ciclo/jornada.",
       });
     } finally {
       setCargando(false);
@@ -153,17 +143,8 @@ export default function Parqueo() {
   const handleSeleccion = async (idEspacio?: number) => {
     if (!idEspacio) return;
 
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     const carneUsuario = obtenerCarneUsuario();
-
-    if (!token || !carneUsuario) {
-      Swal.fire({
-        icon: "warning",
-        title: "Sesion requerida",
-        text: "Inicia sesion para reservar un espacio de parqueo.",
-      });
-      return;
-    }
 
     const { value: correlativo } = await Swal.fire<string>({
       title: "Correlativo de pago",
@@ -217,10 +198,9 @@ export default function Parqueo() {
     }, {});
   }, []);
 
-  // Combinar islas del backend + islas base + islas extra del admin
+  // Se muestran islas base solo como respaldo visual si el backend no responde con islas.
   const islasBase = islasBackend.length > 0 ? islasBackend : ISLAS;
-  const islasExtra = cargarIslasExtra();
-  const islas: IslaVista[] = [...islasBase, ...islasExtra];
+  const islas: IslaVista[] = islasBase;
 
   const totalEspacios = islas.reduce(
     (sum, isla) =>

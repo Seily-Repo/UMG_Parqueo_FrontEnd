@@ -1,30 +1,33 @@
-# frontend/Dockerfile
-# Habilitar sintaxis BuildKit (opcional, mejora mounts de cache)
+# frontend/disponibilidad/Dockerfile
 # syntax=docker/dockerfile:1.4
 
 FROM node:18-alpine AS builder
 WORKDIR /usr/src/app
 
-# copio package files primero para cachear instalación
 COPY package*.json ./
 
-# cache npm para acelerar reinstalaciones (BuildKit needed)
-# this uses BuildKit mount type=cache to cache ~/.npm
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --no-audit --no-fund
 
 COPY . .
 
-# Si necesitas variables en build, podrías pasar ARGs y crear .env
 ARG REACT_APP_API_URL
-RUN if [ -n "$REACT_APP_API_URL" ]; then echo "REACT_APP_API_URL=$REACT_APP_API_URL" > .env; fi
+ARG REACT_APP_LOGIN_URL
+ARG REACT_APP_LOGIN_ADMIN_URL
+ARG REACT_APP_ID_CICLO
+ARG REACT_APP_ID_JORNADA
+
+RUN echo "REACT_APP_API_URL=${REACT_APP_API_URL}" > .env && \
+    echo "REACT_APP_LOGIN_URL=${REACT_APP_LOGIN_URL}" >> .env && \
+    echo "REACT_APP_LOGIN_ADMIN_URL=${REACT_APP_LOGIN_ADMIN_URL}" >> .env && \
+    echo "REACT_APP_ID_CICLO=${REACT_APP_ID_CICLO:-1}" >> .env && \
+    echo "REACT_APP_ID_JORNADA=${REACT_APP_ID_JORNADA:-1}" >> .env
 
 RUN npm run build
 
-# production image
 FROM nginx:stable-alpine AS runner
 COPY --from=builder /usr/src/app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# optional: custom nginx conf (gzip, cache headers) para mejorar performance
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

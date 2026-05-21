@@ -1,20 +1,41 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3000";
+const rawApiUrl = (process.env.REACT_APP_API_URL || "/api").trim().replace(/^["']|["']$/g, "");
+const API_BASE_URL = rawApiUrl.replace(/\/+$/, "").endsWith("/api")
+  ? rawApiUrl.replace(/\/api\/?$/, "")
+  : rawApiUrl.replace(/\/+$/, "");
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
 });
 
+export const getAuthToken = () => {
+  const tokenKeys = ["token", "jwt", "accessToken", "authToken"];
+  return tokenKeys.map((key) => localStorage.getItem(key)).find(Boolean) ?? null;
+};
+
+export const hasAuthToken = () => Boolean(getAuthToken());
+
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = getAuthToken();
 
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
   }
 
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default api;
 
@@ -59,6 +80,14 @@ export interface IslaApi {
   IS_ESTADO: number;
 }
 
+export interface ParqueoApi {
+  PQ_Parqueo: number;
+  PQ_Nombre: string;
+  PQ_Direccion: string;
+  PQ_Capacidad: number;
+  estado: number;
+}
+
 export interface DetalleIslaApi {
   id_detalle: number;
   id_espacio: number;
@@ -72,6 +101,13 @@ export interface AsignacionEspacioPayload {
   id_ciclo: number;
   id_jornada: number;
   correlativo: string;
+}
+
+export interface CrearIslaPayload {
+  PQ_PARQUEO: number;
+  IS_CAPACIDAD: number;
+  IS_DESCRIPCION?: string;
+  espacios: number[];
 }
 
 export const asignarEspacio = (data: AsignacionEspacioPayload) => {
@@ -98,4 +134,24 @@ export const obtenerIslas = (id_parqueo?: number, estado = 1) => {
 
 export const obtenerDetalleIsla = (id: number) => {
   return api.get<ApiResponse<DetalleIslaApi[]>>(`/api/islas/${id}/espacios`);
+};
+
+export const obtenerParqueos = () => {
+  return api.get<ApiResponse<ParqueoApi[]>>("/api/parqueos");
+};
+
+export const obtenerTiposEspacio = () => {
+  return api.get<ApiResponse<TipoEspacioApi[]>>("/api/tipo-espacios");
+};
+
+export const obtenerEspacios = () => {
+  return api.get<ApiResponse<EspacioApi[]>>("/api/espacios");
+};
+
+export const crearIsla = (data: CrearIslaPayload) => {
+  return api.post<ApiResponse<{ id_isla: number; nombre: string; descripcion?: string }>>("/api/islas", data);
+};
+
+export const anularIsla = (id: number) => {
+  return api.put<ApiResponse<null>>(`/api/islas/${id}/anular`);
 };
