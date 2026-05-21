@@ -13,6 +13,7 @@ import { exportReceiptToPdf } from '../../utils/receiptExport';
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : Promise.resolve(null);
+const loginApiBaseUrl = (import.meta.env.VITE_LOGIN_API_BASE_URL || 'http://10.0.40.10/api').replace(/\/$/, '');
 const fallbackPlanIds = {
   'entre-semana': Number(import.meta.env.VITE_PAYMENT_PLAN_WEEKDAY_ID || 1),
   sabado: Number(import.meta.env.VITE_PAYMENT_PLAN_SATURDAY_ID || 2),
@@ -33,6 +34,13 @@ type PaymentIntentResponse = {
   message: string;
   data: BackendPago;
   clientSecret?: string;
+};
+
+type LoginPendingCharge = {
+  ID_A_PAGAR?: number | string;
+  DESCRIPCION?: string;
+  MONTO?: number | string;
+  TIPO?: string;
 };
 
 function normalizeCarnet(carnet: string) {
@@ -161,8 +169,12 @@ export function Payment() {
   const [clientSecret, setClientSecret] = useState('');
   const [activePayment, setActivePayment] = useState<BackendPago | null>(null);
   const [loadingStripe, setLoadingStripe] = useState(false);
+  const [stripeModalOpen, setStripeModalOpen] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [resolvedPlanId, setResolvedPlanId] = useState(0);
+  const [resolvingPlanId, setResolvingPlanId] = useState(false);
+  const [planLookupDone, setPlanLookupDone] = useState(false);
 
   const planLabel = directPayment.concept || currentRegistration.parkingPlan || 'ENTRE-SEMANA';
   const vehicleCount = currentRegistration.vehicles?.length || 0;
@@ -170,10 +182,11 @@ export function Payment() {
   const payerCarnet = directPayment.carne || currentRegistration.carnet || '';
   const isPaid = currentRegistration.paymentStatus === 'paid';
   const planId =
-    (directPayment.enabled ? inferDirectPlanId(directPayment) : 0) ||
-    currentRegistration.selectedPlanId ||
-    fallbackPlanIds[(currentRegistration.parkingPlan as keyof typeof fallbackPlanIds) || 'entre-semana'] ||
-    1;
+    directPayment.enabled
+      ? directPayment.planId || resolvedPlanId
+      : currentRegistration.selectedPlanId ||
+        fallbackPlanIds[(currentRegistration.parkingPlan as keyof typeof fallbackPlanIds) || 'entre-semana'] ||
+        1;
 
   useEffect(() => {
     if (directPayment.token) {
@@ -193,6 +206,62 @@ export function Payment() {
       paymentStatus: 'pending',
     });
   }, [amount, directPayment, planId, updateRegistration]);
+
+  useEffect(() => {
+    if (!directPayment.enabled || directPayment.planId || !payerCarnet || planLookupDone) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const resolvePlanFromLogin = async () => {
+      setResolvingPlanId(true);
+      setPaymentError('');
+
+      try {
+        const response = await fetch(`${loginApiBaseUrl}/pagos/lista-pendiente/${encodeURIComponent(payerCarnet)}`);
+
+        if (!response.ok) {
+          throw new Error(`No se pudo consultar el cargo pendiente (${response.status}).`);
+        }
+
+        const charges = await response.json() as LoginPendingCharge[];
+        const normalizedConcept = normalizeConcept(directPayment.concept);
+        const matchedCharge = charges.find((charge) => {
+          return charge.TIPO === 'PLAN' && normalizeConcept(charge.DESCRIPCION || '') === normalizedConcept;
+        }) || charges.find((charge) => {
+          return charge.TIPO === 'PLAN' && Number(charge.MONTO) === amount;
+        });
+
+        const nextPlanId = Number(matchedCharge?.ID_A_PAGAR || 0);
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (Number.isFinite(nextPlanId) && nextPlanId > 0) {
+          setResolvedPlanId(nextPlanId);
+        } else {
+          setPaymentError('No se pudo identificar el plan pendiente para este cargo.');
+        }
+      } catch (error) {
+        if (isMounted) {
+          setPaymentError(getReadableApiError(error, 'No se pudo consultar el plan pendiente del usuario.'));
+        }
+      } finally {
+        if (isMounted) {
+          setPlanLookupDone(true);
+          setResolvingPlanId(false);
+        }
+      }
+    };
+
+    void resolvePlanFromLogin();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [amount, directPayment, payerCarnet, planLookupDone]);
 
   const receiptData: PaymentReceiptData = {
     receiptNumber: currentRegistration.paymentReference || activePayment?.STRIPE_PAYMENT_INTENT_ID || `PAG-${Date.now()}`,
@@ -221,6 +290,13 @@ export function Payment() {
 
     if (!payerCarnet) {
       toast.error('Debe iniciar sesion antes de pagar.');
+      return;
+    }
+
+    setStripeModalOpen(true);
+
+    if (!planId) {
+      setPaymentError('No se pudo identificar el plan de parqueo para iniciar Stripe.');
       return;
     }
 
@@ -255,13 +331,13 @@ export function Payment() {
   };
 
   useEffect(() => {
-    if (!directPayment.enabled || directPaymentStarted.current || clientSecret || loadingStripe) {
+    if (!directPayment.enabled || directPaymentStarted.current || clientSecret || loadingStripe || resolvingPlanId || !planId) {
       return;
     }
 
     directPaymentStarted.current = true;
     void handleStartStripePayment();
-  }, [clientSecret, directPayment.enabled, loadingStripe]);
+  }, [clientSecret, directPayment.enabled, loadingStripe, planId, resolvingPlanId]);
 
   const handlePaymentConfirmed = () => {
     const reference = activePayment?.STRIPE_PAYMENT_INTENT_ID || `STRIPE-${Date.now()}`;
@@ -271,6 +347,7 @@ export function Payment() {
       paymentReference: reference,
     });
     setClientSecret('');
+    setStripeModalOpen(false);
     setShowReceipt(true);
   };
 
@@ -343,9 +420,9 @@ export function Payment() {
                       </Button>
                     </div>
                   ) : (
-                    <Button variant="primary" className="parking-charge-table__pay" onClick={handleStartStripePayment} disabled={loadingStripe || Boolean(clientSecret)}>
-                      {loadingStripe ? <Spinner size="sm" className="me-2" /> : <CreditCard size={16} className="me-2" />}
-                      {loadingStripe ? 'Abriendo Stripe...' : 'Pagar'}
+                    <Button variant="primary" className="parking-charge-table__pay" onClick={handleStartStripePayment} disabled={loadingStripe || resolvingPlanId}>
+                      {loadingStripe || resolvingPlanId ? <Spinner size="sm" className="me-2" /> : <CreditCard size={16} className="me-2" />}
+                      {resolvingPlanId ? 'Preparando...' : loadingStripe ? 'Abriendo Stripe...' : 'Pagar'}
                     </Button>
                   )}
                 </div>
@@ -355,7 +432,15 @@ export function Payment() {
         </Card>
       </div>
 
-      <Modal show={Boolean(clientSecret)} onHide={() => setClientSecret('')} centered size="lg">
+      <Modal
+        show={stripeModalOpen}
+        onHide={() => {
+          setStripeModalOpen(false);
+          setClientSecret('');
+        }}
+        centered
+        size="lg"
+      >
         <Modal.Header closeButton>
           <div>
             <Modal.Title>Pago con Stripe</Modal.Title>
@@ -363,15 +448,32 @@ export function Payment() {
           </div>
         </Modal.Header>
         <Modal.Body>
-          {clientSecret && (
+          {paymentError ? (
+            <div className="alert alert-danger mb-0">{paymentError}</div>
+          ) : loadingStripe || resolvingPlanId ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" />
+              <p className="text-muted mt-3 mb-0">Preparando Stripe...</p>
+            </div>
+          ) : clientSecret ? (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <StripePaymentForm
                 amount={amount}
                 clientSecret={clientSecret}
                 onPaid={handlePaymentConfirmed}
-                onCancel={() => setClientSecret('')}
+                onCancel={() => {
+                  setStripeModalOpen(false);
+                  setClientSecret('');
+                }}
               />
             </Elements>
+          ) : (
+            <div className="text-center py-5">
+              <Button variant="primary" onClick={handleStartStripePayment}>
+                <CreditCard size={16} className="me-2" />
+                Preparar pago
+              </Button>
+            </div>
           )}
         </Modal.Body>
       </Modal>
