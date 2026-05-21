@@ -15,7 +15,7 @@ import ReporteAdministrativo from './pages/DashboardAdmin/reportes/administrativ
 
 function App() {
   return (
-    <BrowserRouter basename="/reportes">
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<SelectorRol />} />
         <Route path="/login" element={<Login />} />
