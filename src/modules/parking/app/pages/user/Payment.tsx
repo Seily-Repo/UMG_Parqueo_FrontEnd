@@ -47,6 +47,14 @@ function getDirectPaymentParams() {
   };
 }
 
+function getPlanIdError(directPayment: ReturnType<typeof getDirectPaymentParams>) {
+  if (!directPayment.enabled || directPayment.planId) {
+    return '';
+  }
+
+  return 'Falta enviar el planId del plan de parqueo para iniciar Stripe.';
+}
+
 function StripeShell({ amount, children }: { amount: number; children: ReactNode }) {
   return (
     <div className="parking-payment-flow">
@@ -210,6 +218,12 @@ export function Payment() {
       return;
     }
 
+    const planError = getPlanIdError(directPayment);
+    if (planError) {
+      setPaymentError(planError);
+      return;
+    }
+
     setLoadingStripe(true);
     setPaymentError('');
 
@@ -299,43 +313,20 @@ export function Payment() {
 
   if (directPayment.enabled) {
     return (
-      <div className="parking-payment-flow">
-        <Card className="parking-payment-card">
-          <Card.Header>
-            <Card.Title className="mb-1 h4">Informacion de Pago</Card.Title>
-            <Card.Subtitle>{planLabel}</Card.Subtitle>
-          </Card.Header>
-          <Card.Body>
-            <div className="parking-payment-summary">
-              <small style={{ opacity: 0.9 }}>Total a pagar</small>
-              <div className="display-5 fw-bold">Q{amount.toFixed(2)}</div>
-            </div>
+      <div className="parking-payments-page">
+        <div className="parking-payments-page__heading">
+          <h1>Modulo de Pagos</h1>
+          <p>{planLabel}</p>
+        </div>
 
-            {paymentError ? (
-              <>
-                <div className="alert alert-danger">{paymentError}</div>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="w-100"
-                  onClick={() => {
-                    directPaymentStarted.current = false;
-                    void handleStartStripePayment();
-                  }}
-                  disabled={loadingStripe}
-                >
-                  {loadingStripe ? <Spinner size="sm" className="me-2" /> : <CreditCard size={16} className="me-2" />}
-                  Reintentar
-                </Button>
-              </>
-            ) : (
-              <div className="text-center py-4">
-                <Spinner animation="border" />
-                <p className="text-muted mt-3 mb-0">Abriendo Stripe...</p>
-              </div>
-            )}
-          </Card.Body>
-        </Card>
+        {paymentError ? (
+          <div className="alert alert-danger">{paymentError}</div>
+        ) : (
+          <div className="text-center py-5">
+            <Spinner animation="border" />
+            <p className="text-muted mt-3 mb-0">Abriendo Stripe...</p>
+          </div>
+        )}
       </div>
     );
   }
