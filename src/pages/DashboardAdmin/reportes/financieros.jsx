@@ -34,7 +34,7 @@ function ReporteFinanciero() {
     }
   };
 
-  const cargarReporteFinanciero = async () => {
+  /* const cargarReporteFinanciero = async () => {
     setLoading(true);
     setError(null);
 
@@ -52,11 +52,11 @@ function ReporteFinanciero() {
     } finally {
       setLoading(false);
     }
-  };
+  }; */
 
   // Carga de datos desde tu API
   useEffect(() => {
-    cargarReporteFinanciero();
+    // cargarReporteFinanciero();
     cargarPagos();
   }, []);
 
