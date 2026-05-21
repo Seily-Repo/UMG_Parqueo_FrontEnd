@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { Button, Card, Col, Row, Spinner } from 'react-bootstrap';
@@ -24,6 +24,28 @@ type PaymentIntentResponse = {
   data: BackendPago;
   clientSecret?: string;
 };
+
+function normalizeCarnet(carnet: string) {
+  return carnet.replace(/\D/g, '');
+}
+
+function getDirectPaymentParams() {
+  const params = new URLSearchParams(window.location.search);
+  const carne = normalizeCarnet(params.get('carne') || '');
+  const amount = Number(params.get('monto') || '');
+  const concept = (params.get('concepto') || '').trim();
+  const planId = Number(params.get('planId') || params.get('pln_plan') || params.get('plan') || '');
+  const token = params.get('token') || '';
+
+  return {
+    carne,
+    amount: Number.isFinite(amount) && amount > 0 ? amount : 0,
+    concept,
+    planId: Number.isFinite(planId) && planId > 0 ? planId : 0,
+    token,
+    enabled: Boolean(carne && amount > 0 && concept),
+  };
+}
 
 function StripeShell({ amount, children }: { amount: number; children: ReactNode }) {
   return (
@@ -120,25 +142,49 @@ function StripePaymentForm({
 
 export function Payment() {
   const { currentRegistration, updateRegistration } = useRegistration();
+  const directPayment = useMemo(getDirectPaymentParams, []);
+  const directPaymentStarted = useRef(false);
   const [clientSecret, setClientSecret] = useState('');
   const [activePayment, setActivePayment] = useState<BackendPago | null>(null);
   const [loadingStripe, setLoadingStripe] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
 
-  const planLabel = currentRegistration.parkingPlan || 'ENTRE-SEMANA';
+  const planLabel = directPayment.concept || currentRegistration.parkingPlan || 'ENTRE-SEMANA';
   const vehicleCount = currentRegistration.vehicles?.length || 0;
-  const amount = Number(currentRegistration.amount || 600);
+  const amount = Number(directPayment.amount || currentRegistration.amount || 600);
+  const payerCarnet = directPayment.carne || currentRegistration.carnet || '';
   const isPaid = currentRegistration.paymentStatus === 'paid';
   const planId =
+    directPayment.planId ||
     currentRegistration.selectedPlanId ||
     fallbackPlanIds[(currentRegistration.parkingPlan as keyof typeof fallbackPlanIds) || 'entre-semana'] ||
     1;
+
+  useEffect(() => {
+    if (directPayment.token) {
+      localStorage.setItem('token', directPayment.token);
+    }
+
+    if (!directPayment.enabled) {
+      return;
+    }
+
+    updateRegistration({
+      id: directPayment.carne,
+      carnet: directPayment.carne,
+      parkingPlan: directPayment.concept,
+      selectedPlanId: planId,
+      amount,
+      paymentStatus: 'pending',
+    });
+  }, [amount, directPayment, planId, updateRegistration]);
 
   const receiptData: PaymentReceiptData = {
     receiptNumber: currentRegistration.paymentReference || activePayment?.STRIPE_PAYMENT_INTENT_ID || `PAG-${Date.now()}`,
     title: 'Recibo de pago de parqueo',
     studentName: currentRegistration.fullName || 'Estudiante',
-    carnet: currentRegistration.carnet || 'No disponible',
+    carnet: payerCarnet || 'No disponible',
     concept: `Pago de parqueo - ${planLabel}`,
     amount,
     paymentMethod: 'Stripe',
@@ -159,17 +205,18 @@ export function Payment() {
       return;
     }
 
-    if (!currentRegistration.carnet) {
+    if (!payerCarnet) {
       toast.error('Debe iniciar sesion antes de pagar.');
       return;
     }
 
     setLoadingStripe(true);
+    setPaymentError('');
 
     try {
       const payload: BackendCreatePagoPayload = {
-        EST_CARNE: currentRegistration.carnet,
-        LR_CARNE: currentRegistration.carnet,
+        EST_CARNE: payerCarnet,
+        LR_CARNE: payerCarnet,
         PLN_PLAN: planId,
         FPG_FORMA_PAGO: Number(import.meta.env.VITE_PAYMENT_FORM_CARD_ID || 1),
         PAG_FECHA_PAGO: new Date().toISOString().slice(0, 10),
@@ -185,11 +232,22 @@ export function Payment() {
       setActivePayment(result.data);
       setClientSecret(result.clientSecret);
     } catch (error) {
-      toast.error(getReadableApiError(error, 'No se pudo iniciar el pago con Stripe.'));
+      const message = getReadableApiError(error, 'No se pudo iniciar el pago con Stripe.');
+      setPaymentError(message);
+      toast.error(message);
     } finally {
       setLoadingStripe(false);
     }
   };
+
+  useEffect(() => {
+    if (!directPayment.enabled || directPaymentStarted.current || clientSecret || loadingStripe) {
+      return;
+    }
+
+    directPaymentStarted.current = true;
+    void handleStartStripePayment();
+  }, [clientSecret, directPayment.enabled, loadingStripe]);
 
   const handlePaymentConfirmed = () => {
     const reference = activePayment?.STRIPE_PAYMENT_INTENT_ID || `STRIPE-${Date.now()}`;
@@ -236,6 +294,49 @@ export function Payment() {
           onCancel={() => setClientSecret('')}
         />
       </Elements>
+    );
+  }
+
+  if (directPayment.enabled) {
+    return (
+      <div className="parking-payment-flow">
+        <Card className="parking-payment-card">
+          <Card.Header>
+            <Card.Title className="mb-1 h4">Informacion de Pago</Card.Title>
+            <Card.Subtitle>{planLabel}</Card.Subtitle>
+          </Card.Header>
+          <Card.Body>
+            <div className="parking-payment-summary">
+              <small style={{ opacity: 0.9 }}>Total a pagar</small>
+              <div className="display-5 fw-bold">Q{amount.toFixed(2)}</div>
+            </div>
+
+            {paymentError ? (
+              <>
+                <div className="alert alert-danger">{paymentError}</div>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-100"
+                  onClick={() => {
+                    directPaymentStarted.current = false;
+                    void handleStartStripePayment();
+                  }}
+                  disabled={loadingStripe}
+                >
+                  {loadingStripe ? <Spinner size="sm" className="me-2" /> : <CreditCard size={16} className="me-2" />}
+                  Reintentar
+                </Button>
+              </>
+            ) : (
+              <div className="text-center py-4">
+                <Spinner animation="border" />
+                <p className="text-muted mt-3 mb-0">Abriendo Stripe...</p>
+              </div>
+            )}
+          </Card.Body>
+        </Card>
+      </div>
     );
   }
 

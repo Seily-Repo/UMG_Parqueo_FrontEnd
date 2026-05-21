@@ -65,6 +65,34 @@ function normalizeCarnet(carnet?: string | number | null) {
   return String(carnet || '').replace(/-/g, '');
 }
 
+function getDirectRegistrationFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const carne = normalizeCarnet(params.get('carne'));
+  const amount = Number(params.get('monto') || '');
+  const concept = (params.get('concepto') || '').trim();
+  const planId = Number(params.get('planId') || params.get('pln_plan') || params.get('plan') || '');
+  const token = params.get('token') || '';
+
+  if (token) {
+    localStorage.setItem('token', token);
+  }
+
+  if (!carne && !concept && !amount) {
+    return null;
+  }
+
+  return {
+    id: carne || 'direct-payment',
+    carnet: carne,
+    vehicles: [],
+    parkingPlan: concept,
+    selectedPlanId: Number.isFinite(planId) && planId > 0 ? planId : undefined,
+    amount: Number.isFinite(amount) && amount > 0 ? amount : 600,
+    paymentStatus: 'pending' as const,
+    createdAt: new Date(),
+  };
+}
+
 function getJwtUser() {
   const token = localStorage.getItem('token') || import.meta.env.VITE_API_JWT || '';
 
@@ -186,8 +214,13 @@ const simulatedUsers: Registration[] = [
 
 export function RegistrationProvider({ children }: { children: React.ReactNode }) {
   const [currentRegistration, setCurrentRegistration] = useState<Partial<Registration>>(() => {
+    const directRegistration = getDirectRegistrationFromUrl();
     const tokenUser = getJwtUser();
     const saved = localStorage.getItem('currentRegistration');
+
+    if (directRegistration) {
+      return directRegistration;
+    }
 
     if (saved) {
       const parsed = JSON.parse(saved);

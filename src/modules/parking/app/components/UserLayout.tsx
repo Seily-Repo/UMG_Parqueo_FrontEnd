@@ -7,7 +7,7 @@ export function UserLayout() {
   const navigate = useNavigate();
   const { currentRegistration } = useRegistration();
 
-  const userName = currentRegistration.fullName || 'Cristian Estrada';
+  const userName = currentRegistration.fullName || currentRegistration.carnet || 'Usuario';
 
   const navItems = [
     { to: '/parking/user', label: 'Inicio', icon: Home },
