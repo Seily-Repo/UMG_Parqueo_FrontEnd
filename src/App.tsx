@@ -16,6 +16,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/reportes" replace />} />
         <Route path="/reportes" element={<Reportes />} />
+        <Route path="/reportes/" element={<Reportes />} />
         <Route path="/reportes/financieros" element={<ReporteFinanciero />} />
         <Route path="/reportes/gerenciales" element={<ReporteGerencial />} />
         <Route path="/reportes/administrativos" element={<ReporteAdministrativo />} />
