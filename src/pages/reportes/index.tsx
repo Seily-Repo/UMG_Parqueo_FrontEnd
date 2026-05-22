@@ -5,21 +5,7 @@ import SideBarAdmin from "../../components/SidebarAdmin";
 import {useNavigate} from "react-router-dom";
 
 const Index = () => {
-
-  const [adminLogueado, setAdminLogueado] = useState<any>({});
-
   const navigate = useNavigate();
-
-   useEffect(() => {
-    const adminGuardado = localStorage.getItem('usuarioAdmin');
-    const token = localStorage.getItem('token');
-    if (adminGuardado && token) {
-      setAdminLogueado(JSON.parse(adminGuardado));
-    } else {
-      navigate('/login'); 
-    }
-    
-  }, [navigate]);
 
   return (
     <div style={{

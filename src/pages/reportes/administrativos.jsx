@@ -5,21 +5,6 @@ import SideBarAdmin from "../../components/SidebarAdmin";
 const API_URL = `http://10.0.40.10/api/reportes`;
 
 function PanelParqueo() {
-
-  const obtenerHeaders = (conJson = false) => {
-    const token = localStorage.getItem('token');
-    const headers = {};
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    if (conJson) {
-      headers['Content-Type'] = 'application/json';
-    }
-
-    return headers;
-  };
   
   const [anio, setAnio] = useState("");
   const [mes, setMes] = useState("");

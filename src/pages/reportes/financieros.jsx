@@ -8,21 +8,6 @@ import { Card, Row, Col } from "react-bootstrap";
 
 function ReporteFinanciero() {
 
-  const obtenerHeaders = (conJson = false) => {
-    const token = localStorage.getItem('token');
-    const headers = {};
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    if (conJson) {
-      headers['Content-Type'] = 'application/json';
-    }
-
-    return headers;
-  };
-
   const [datos, setDatos] = useState([]);
   const [pagos, setPagos] = useState([]);
   const [busqueda, setBusqueda] = useState("");

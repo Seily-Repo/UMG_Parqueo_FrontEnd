@@ -15,20 +15,6 @@ const API_URL = `http://10.0.40.10/api/reportes`;
 
 const ReporteGerencial = () => {
 
-  const obtenerHeaders = (conJson = false) => {
-    const token = localStorage.getItem('token');
-    const headers = {};
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    if (conJson) {
-      headers['Content-Type'] = 'application/json';
-    }
-
-    return headers;
-  };
   const [dashboard, setDashboard] = useState(null);
   const [facultades, setFacultades] = useState([]);
   const [loading, setLoading] = useState(true);
