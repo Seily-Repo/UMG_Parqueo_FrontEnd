@@ -163,7 +163,12 @@ const Dashboard = () => {
           if (result.isConfirmed && planIdParaCobros) {
             // Opción B: Redirigir al portal de cobros-dev con parámetros por URL
             const token = localStorage.getItem('token');
-            window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&plan_id=${planIdParaCobros}&vehiculo=nuevo&token=${token}`;
+            const plan = planes.find(p => p.PLN_PLAN.toString() === planIdParaCobros.toString());
+            if (plan) {
+              window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&monto=${plan.PLN_PRECIO}&concepto=${encodeURIComponent(plan.PLN_NOMBRE_PLAN)}&token=${token}`;
+            } else {
+              window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&plan_id=${planIdParaCobros}&vehiculo=nuevo&token=${token}`;
+            }
           } else {
             setActiveSection('vehiculos');
           }
