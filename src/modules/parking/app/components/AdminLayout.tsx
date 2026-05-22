@@ -1,14 +1,14 @@
-import { Outlet, useNavigate } from 'react-router';
+import { Outlet } from 'react-router';
 import { Container, Button } from 'react-bootstrap';
-import { LogOut, ShieldAlert } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { AppHeader } from './AppHeader';
 import { AppFooter } from './AppFooter';
 
-export function AdminLayout() {
-  const navigate = useNavigate();
+const ADMIN_DASHBOARD_URL = 'http://10.0.40.10/dashboard-admin';
 
+export function AdminLayout() {
   const handleLogout = () => {
-    navigate('/parking/admin');
+    window.location.href = ADMIN_DASHBOARD_URL;
   };
 
   return (
@@ -21,13 +21,9 @@ export function AdminLayout() {
               <div className="small fw-medium">Admin Usuario</div>
               <small style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Administrador</small>
             </div>
-            <Button variant="light" size="sm" onClick={() => navigate('/parking/admin/dashboard/multas')}>
-              <ShieldAlert size={16} className="me-2" />
-              Multas
-            </Button>
             <Button variant="light" size="sm" onClick={handleLogout}>
               <LogOut size={16} className="me-2" />
-              Cerrar Sesion
+              Volver al Dashboard
             </Button>
           </>
         }
