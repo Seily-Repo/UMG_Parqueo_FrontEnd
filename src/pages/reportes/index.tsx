@@ -16,7 +16,7 @@ const Index = () => {
     if (adminGuardado && token) {
       setAdminLogueado(JSON.parse(adminGuardado));
     } else {
-      navigate('/login-admin');
+      navigate('http://10.0.40.10/login');
     }
     
   }, [navigate]);
