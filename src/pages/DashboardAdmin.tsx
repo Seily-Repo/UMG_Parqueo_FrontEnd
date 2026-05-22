@@ -17,7 +17,7 @@ const DashboardAdmin = () => {
   // --- ESTADOS PRINCIPALES ---
   const [cargando, setCargando] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [vistaActual, setVistaActual] = useState('reportes');
+  const [vistaActual, setVistaActual] = useState('dashboard');
   const [adminLogueado, setAdminLogueado] = useState<any>({});
 
   const [usuarios, setUsuarios] = useState<any[]>([]);
