@@ -237,9 +237,11 @@ const Dashboard = () => {
   );
 
   const renderPagoSection = () => {
-    const tieneDeuda = listaDeuda.length > 0;
-    const tieneDeudaNormal = listaDeuda.some(d => d.TIPO === 'PLAN');
-    const tieneMultas = listaDeuda.some(d => d.TIPO === 'MULTA');
+    const deudasPendientes = listaDeuda.filter(d => d.PAG_ESTADO === 'P');
+    const tieneDeuda = deudasPendientes.length > 0;
+    const tieneDeudaNormal = deudasPendientes.some(d => d.TIPO === 'PLAN');
+    const tieneMultas = deudasPendientes.some(d => d.TIPO === 'MULTA');
+    const tieneCargos = listaDeuda.length > 0;
 
     return (
       <div className="animate-fade-in">
@@ -248,7 +250,7 @@ const Dashboard = () => {
           <p className="text-muted">Consulta tu estado de cuenta y realiza los pagos de tus planes de parqueo.</p>
         </div>
 
-        {tieneDeuda ? (
+        {tieneCargos ? (
           <div className="d-flex flex-column gap-4">
 
             {tieneDeudaNormal && (
@@ -287,19 +289,27 @@ const Dashboard = () => {
                             <div className="fw-bold" style={{ color: cargo.TIPO === 'MULTA' ? '#dc3545' : 'inherit' }}>{cargo.DESCRIPCION}</div>
                             <small className="text-muted">Cargo generado por el sistema</small>
                           </td>
-                          <td><Badge bg={cargo.TIPO === 'MULTA' ? 'danger' : 'warning'} text={cargo.TIPO === 'MULTA' ? 'white' : 'dark'}>Pendiente</Badge></td>
+                          <td>
+                            {cargo.PAG_ESTADO === 'P' ? (
+                              <Badge bg={cargo.TIPO === 'MULTA' ? 'danger' : 'warning'} text={cargo.TIPO === 'MULTA' ? 'white' : 'dark'}>Pendiente</Badge>
+                            ) : (
+                              <Badge bg="success">Pagado</Badge>
+                            )}
+                          </td>
                           <td className="text-end fw-bold">Q.{cargo.MONTO}.00</td>
                           <td className="text-center">
-                            <Button size="sm" style={{ backgroundColor: 'var(--color-accion)', border: 'none' }} onClick={() => {
-                              const token = localStorage.getItem('token');
-                              if (cargo.TIPO === 'MULTA') {
-                                window.location.href = `${COBROS_URL}/parking/user/multas?carne=${carneUsuario.replace(/-/g, '')}&token=${token}`;
-                              } else {
-                                window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&monto=${cargo.MONTO}&concepto=${encodeURIComponent(cargo.DESCRIPCION)}&token=${token}`;
-                              }
-                            }}>
-                              <CreditCardFill className="me-1" /> Pagar
-                            </Button>
+                            {cargo.PAG_ESTADO === 'P' && (
+                              <Button size="sm" style={{ backgroundColor: 'var(--color-accion)', border: 'none' }} onClick={() => {
+                                const token = localStorage.getItem('token');
+                                if (cargo.TIPO === 'MULTA') {
+                                  window.location.href = `${COBROS_URL}/parking/user/multas?carne=${carneUsuario.replace(/-/g, '')}&token=${token}`;
+                                } else {
+                                  window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&monto=${cargo.MONTO}&concepto=${encodeURIComponent(cargo.DESCRIPCION)}&token=${token}`;
+                                }
+                              }}>
+                                <CreditCardFill className="me-1" /> Pagar
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -334,13 +344,14 @@ const Dashboard = () => {
               key={item.key}
               onClick={() => {
                 if (item.key === 'disponibilidad') {
-                  const tieneDeuda = listaDeuda.length > 0;
+                  const tieneDeuda = listaDeuda.filter(d => d.PAG_ESTADO === 'P').length > 0;
                   if (tieneDeuda) {
                     Swal.fire('Acceso Restringido', 'Debes solventar tus pagos pendientes para acceder a la disponibilidad de parqueos.', 'warning');
                   } else if (vehiculos.length === 0) {
                     Swal.fire('Acceso Restringido', 'Debes registrar al menos un vehículo y contar con un plan activo.', 'warning');
                   } else {
-                    window.location.href = '/disponibilidad/parqueo';
+                    const token = localStorage.getItem('token');
+                    window.location.href = `http://10.0.40.10:3001/disponibilidad/parqueo?token=${token}`;
                   }
                   return;
                 }
@@ -398,7 +409,7 @@ const Dashboard = () => {
                   <Card className="border-0 h-100 stat-card" onClick={() => setActiveSection('pago')} style={{ cursor: 'pointer' }}>
                     <Card.Body className="p-4 d-flex align-items-center">
                       <div className="icon-glass"><Wallet2 size={28} style={{ color: 'var(--color-accion)' }} /></div>
-                      <div className="ms-4"><small className="text-muted fw-bold text-uppercase">Estado de Pago</small><h4 className={`mb-0 fw-bold ${listaDeuda.length > 0 ? 'text-danger' : 'text-success'}`}>{listaDeuda.length > 0 ? 'Pendiente' : 'Solvente'}</h4></div>
+                      <div className="ms-4"><small className="text-muted fw-bold text-uppercase">Estado de Pago</small><h4 className={`mb-0 fw-bold ${listaDeuda.filter(d => d.PAG_ESTADO === 'P').length > 0 ? 'text-danger' : 'text-success'}`}>{listaDeuda.filter(d => d.PAG_ESTADO === 'P').length > 0 ? 'Pendiente' : 'Solvente'}</h4></div>
                     </Card.Body>
                   </Card>
                 </Col>

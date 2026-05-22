@@ -245,7 +245,10 @@ const DashboardAdmin = () => {
             <PieChartFill size={20} className="me-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
             <span style={{ display: sidebarOpen ? 'block' : 'none', color: 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>Reportes</span>
           </Nav.Link>
-          <Nav.Link onClick={() => { window.location.href = '/disponibilidad/admin'; }} className="d-flex align-items-center px-4 py-3 text-white mb-1 admin-logout-hover" style={{ cursor: 'pointer', transition: '0.2s' }}>
+          <Nav.Link onClick={() => { 
+                const token = localStorage.getItem('token');
+                window.location.href = `http://10.0.40.10:3001/disponibilidad/admin?token=${token}`; 
+              }} className="d-flex align-items-center px-4 py-3 text-white mb-1 admin-logout-hover" style={{ cursor: 'pointer', transition: '0.2s' }}>
             <Building size={20} className="me-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
             <span style={{ display: sidebarOpen ? 'block' : 'none', color: 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>Gestión de Islas</span>
           </Nav.Link>
@@ -386,7 +389,10 @@ const DashboardAdmin = () => {
                             variant="danger"
                             size="lg"
                             className="fw-bold rounded-3 shadow-sm px-5"
-                            onClick={() => window.location.href = 'http://10.0.40.10:3000/parking/admin/dashboard/multas'}
+                            onClick={() => {
+                              const token = localStorage.getItem('token');
+                              window.location.href = `http://10.0.40.10:3000/parking/admin/dashboard/multas?token=${token}`;
+                            }}
                           >
                             Ir a Asignar Multa
                           </Button>
