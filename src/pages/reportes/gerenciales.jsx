@@ -9,6 +9,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import styles from "../../styles/Gerenciales.module.css";
 import SideBarAdmin from "../../components/SidebarAdmin";
+import { obtenerHeaders } from "../../utils/authHeaders";
 
 const API_URL = `http://10.0.40.10/api/reportes`;
 
@@ -39,8 +40,9 @@ const ReporteGerencial = () => {
       // Cargar todos los datos en paralelo
       const [dashboardRes, facultadesRes] = await Promise.all([
         axios.get(`${API_URL}/dashboard`, {
-          params: { fecha_inicio: fechaInicio, fecha_fin: fechaFin }
-        }, { headers: obtenerHeaders() }),
+          params: { fecha_inicio: fechaInicio, fecha_fin: fechaFin },
+          headers: obtenerHeaders(),
+        }),
         axios.get(`${API_URL}/distribucion-facultades`, { headers: obtenerHeaders() })
       ]);
       

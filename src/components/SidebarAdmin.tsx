@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Nav, Button } from "react-bootstrap";
+import { useState } from "react";
+import { Nav } from "react-bootstrap";
 import {
   PersonLinesFill,
   CashStack,
@@ -8,9 +8,6 @@ import {
   BoxArrowRight,
   ChevronLeft,
   CarFront,
-  List,
-  PersonCircle,
-  PencilSquare,
 } from "react-bootstrap-icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -20,8 +17,6 @@ const SideBarAdmin = () => {
   const location = useLocation();
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [vistaActual, setVistaActual] = useState("usuarios");
-
   const handleLogout = () => {
     Swal.fire({
       title: "¿Cerrar Sesión?",
@@ -33,18 +28,18 @@ const SideBarAdmin = () => {
     }).then((result) => {
       if (result.isConfirmed) {
         localStorage.removeItem("usuarioAdmin");
-        navigate("/login-admin");
+        localStorage.removeItem("token");
+        navigate("/reportes");
       }
     });
   };
 
   const handleChangeVista = (vista: string) => {
-    setVistaActual(vista);
-    navigate(`/dashboard-admin${vista}`);
+    navigate(vista);
   }
 
   const SidebarItem = ({ icon: Icon, label, vista }: any) => {
-    const isActive = location.pathname === `/dashboard-admin${vista}`;
+    const isActive = location.pathname === vista;
     return (
       <Nav.Link
         onClick={() => handleChangeVista(vista)}
@@ -131,17 +126,17 @@ const SideBarAdmin = () => {
         </div>
 
         <Nav className="flex-column mt-3 flex-grow-1">
-          <SidebarItem icon={Speedometer2} label="Inicio" vista="" />
+          <SidebarItem icon={Speedometer2} label="Inicio" vista="/reportes" />
           <SidebarItem
             icon={PersonLinesFill}
             label="Gestión de Usuarios"
-            vista=""
+            vista="/reportes"
           />
-          <SidebarItem icon={CashStack} label="Pagos y Cobros" vista="/pagos" />
+          <SidebarItem icon={CashStack} label="Pagos y Cobros" vista="/reportes/financieros" />
           <SidebarItem
             icon={CarFront}
             label="Disponibilidad"
-            vista="/disponibilidad"
+            vista="/reportes/administrativos"
           />
           <SidebarItem icon={PieChartFill} label="Reportes" vista="/reportes" />
         </Nav>

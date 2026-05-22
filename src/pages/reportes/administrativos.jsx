@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import SideBarAdmin from "../../components/SidebarAdmin";
+import { obtenerHeaders } from "../../utils/authHeaders";
 
 const API_URL = `http://10.0.40.10/api/reportes`;
 
@@ -44,7 +45,8 @@ function PanelParqueo() {
           mes,
           dia,
         },
-      }, { headers: obtenerHeaders() });
+        headers: obtenerHeaders(),
+      });
 
       setDatos(response.data.datos);
       setTotal(response.data.total);
@@ -61,10 +63,30 @@ function PanelParqueo() {
   // EXCEL
   // ============================================
 
-  const excel = () => {
+  const descargarArchivo = async (url, nombreArchivo) => {
     //if (!validar()) return;
 
-    window.open(`${API_URL}/excel?anio=${anio}&mes=${mes}&dia=${dia}`, { headers: obtenerHeaders() });
+    try {
+      const response = await axios.get(url, {
+        headers: obtenerHeaders(),
+        responseType: "blob",
+      });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.setAttribute("download", nombreArchivo);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Error al descargar el archivo");
+    }
+  };
+
+  const excel = () => {
+    descargarArchivo(`${API_URL}/excel?anio=${anio}&mes=${mes}&dia=${dia}`, "reporte-administrativo.xlsx");
   };
 
   // ============================================
@@ -72,9 +94,7 @@ function PanelParqueo() {
   // ============================================
 
   const pdf = () => {
-    //if (!validar()) return;
-
-    window.open(`${API_URL}/pdf?anio=${anio}&mes=${mes}&dia=${dia}`, { headers: obtenerHeaders() });
+    descargarArchivo(`${API_URL}/pdf?anio=${anio}&mes=${mes}&dia=${dia}`, "reporte-administrativo.pdf");
   };
 
   // ============================================
