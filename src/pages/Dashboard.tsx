@@ -122,6 +122,11 @@ const Dashboard = () => {
   const esPrimerVehiculo = vehiculos.length === 0;
 
   const handleGuardarVehiculo = async () => {
+    if (vehiculos.length >= 3) {
+      Swal.fire('Límite Alcanzado', 'Solo puedes registrar un máximo de 3 vehículos.', 'warning');
+      return;
+    }
+
     if (!nuevoVehiculo.placa) {
       Swal.fire('Error', 'La placa es obligatoria', 'error');
       return;
@@ -164,11 +169,15 @@ const Dashboard = () => {
             // Opción B: Redirigir al portal de cobros-dev con parámetros por URL
             const token = localStorage.getItem('token');
             const plan = planes.find(p => p.PLN_PLAN.toString() === planIdParaCobros.toString());
-            if (plan) {
-              window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&monto=${plan.PLN_PRECIO}&concepto=${encodeURIComponent(plan.PLN_NOMBRE_PLAN)}&token=${token}`;
-            } else {
-              window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&plan_id=${planIdParaCobros}&vehiculo=nuevo&token=${token}`;
-            }
+            
+            // Añadir un pequeño retraso para asegurar que Stripe cargue y el backend termine de asentar los datos
+            setTimeout(() => {
+              if (plan) {
+                window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&monto=${plan.PLN_PRECIO}&concepto=${encodeURIComponent(plan.PLN_NOMBRE_PLAN)}&token=${token}`;
+              } else {
+                window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&plan_id=${planIdParaCobros}&vehiculo=nuevo&token=${token}`;
+              }
+            }, 1500);
           } else {
             setActiveSection('vehiculos');
           }
