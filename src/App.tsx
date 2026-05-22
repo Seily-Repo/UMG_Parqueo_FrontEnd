@@ -1,14 +1,36 @@
 import { useEffect } from 'react';
+import axios from 'axios';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Reportes from './pages/reportes';
 import ReporteFinanciero from './pages/reportes/financieros';
 import ReporteGerencial from './pages/reportes/gerenciales';
 import ReporteAdministrativo from './pages/reportes/administrativos';
-import { guardarTokenDesdeUrl } from './utils/authHeaders';
+import { guardarTokenDesdeUrl, obtenerToken, redirigirALogin } from './utils/authHeaders';
 
 function App() {
   useEffect(() => {
     guardarTokenDesdeUrl();
+
+    if (!obtenerToken()) {
+      redirigirALogin();
+      return;
+    }
+
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        const status = error.response?.status;
+
+        if (status === 401 || status === 403) {
+          localStorage.removeItem('token');
+          redirigirALogin();
+        }
+
+        return Promise.reject(error);
+      },
+    );
+
+    return () => axios.interceptors.response.eject(interceptor);
   }, []);
 
   return (

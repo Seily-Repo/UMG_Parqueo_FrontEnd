@@ -7,8 +7,12 @@ export function guardarTokenDesdeUrl() {
   }
 }
 
+export function obtenerToken() {
+  return localStorage.getItem('token');
+}
+
 export function obtenerHeaders(conJson = false) {
-  const token = localStorage.getItem('token');
+  const token = obtenerToken();
   const headers: Record<string, string> = {};
 
   if (token) {
@@ -20,4 +24,12 @@ export function obtenerHeaders(conJson = false) {
   }
 
   return headers;
+}
+
+export function redirigirALogin() {
+  const loginUrl = import.meta.env.VITE_LOGIN_URL || 'http://10.0.40.10/login-admin';
+  const redirectUrl = `${window.location.origin}/reportes`;
+  const separator = loginUrl.includes('?') ? '&' : '?';
+
+  window.location.href = `${loginUrl}${separator}redirect=${encodeURIComponent(redirectUrl)}`;
 }
