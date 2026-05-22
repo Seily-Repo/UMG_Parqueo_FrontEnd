@@ -7,13 +7,28 @@ import {
 import * as XLSX from "xlsx";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import styles from "../../../styles/Gerenciales.module.css";
-import SideBarAdmin from "../../../components/SidebarAdmin";
+import styles from "../../styles/Gerenciales.module.css";
+import SideBarAdmin from "../../components/SidebarAdmin";
 
 const API_URL = `http://10.0.40.10/api/reportes`;
 
 
 const ReporteGerencial = () => {
+
+  const obtenerHeaders = (conJson = false) => {
+    const token = localStorage.getItem('token');
+    const headers = {};
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    if (conJson) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    return headers;
+  };
   const [dashboard, setDashboard] = useState(null);
   const [facultades, setFacultades] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,8 +54,8 @@ const ReporteGerencial = () => {
       const [dashboardRes, facultadesRes] = await Promise.all([
         axios.get(`${API_URL}/dashboard`, {
           params: { fecha_inicio: fechaInicio, fecha_fin: fechaFin }
-        }),
-        axios.get(`${API_URL}/distribucion-facultades`)
+        }, { headers: obtenerHeaders() }),
+        axios.get(`${API_URL}/distribucion-facultades`, { headers: obtenerHeaders() })
       ]);
       
       if (dashboardRes.data.success) setDashboard(dashboardRes.data.data);

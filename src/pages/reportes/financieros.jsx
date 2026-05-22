@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import SideBarAdmin from "../../../components/SidebarAdmin";
+import SideBarAdmin from "../../components/SidebarAdmin";
 import axios from "axios";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -7,6 +7,22 @@ import autoTable from "jspdf-autotable";
 import { Card, Row, Col } from "react-bootstrap";
 
 function ReporteFinanciero() {
+
+  const obtenerHeaders = (conJson = false) => {
+    const token = localStorage.getItem('token');
+    const headers = {};
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    if (conJson) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    return headers;
+  };
+
   const [datos, setDatos] = useState([]);
   const [pagos, setPagos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
@@ -20,6 +36,7 @@ function ReporteFinanciero() {
     try {
       const response = await axios.get(
         `http://10.0.40.10/api/reportes/pagos-aceptados`,
+        { headers: obtenerHeaders() }
       );
 
       if (response.data.success) {

@@ -1,10 +1,26 @@
 import { useState } from "react";
 import axios from "axios";
-import SideBarAdmin from "../../../components/SidebarAdmin";
+import SideBarAdmin from "../../components/SidebarAdmin";
 
 const API_URL = `http://10.0.40.10/api/reportes`;
 
 function PanelParqueo() {
+
+  const obtenerHeaders = (conJson = false) => {
+    const token = localStorage.getItem('token');
+    const headers = {};
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    if (conJson) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    return headers;
+  };
+  
   const [anio, setAnio] = useState("");
   const [mes, setMes] = useState("");
   const [dia, setDia] = useState("");
@@ -43,7 +59,7 @@ function PanelParqueo() {
           mes,
           dia,
         },
-      });
+      }, { headers: obtenerHeaders() });
 
       setDatos(response.data.datos);
       setTotal(response.data.total);
@@ -63,7 +79,7 @@ function PanelParqueo() {
   const excel = () => {
     //if (!validar()) return;
 
-    window.open(`${API_URL}/excel?anio=${anio}&mes=${mes}&dia=${dia}`);
+    window.open(`${API_URL}/excel?anio=${anio}&mes=${mes}&dia=${dia}`, { headers: obtenerHeaders() });
   };
 
   // ============================================
@@ -73,7 +89,7 @@ function PanelParqueo() {
   const pdf = () => {
     //if (!validar()) return;
 
-    window.open(`${API_URL}/pdf?anio=${anio}&mes=${mes}&dia=${dia}`);
+    window.open(`${API_URL}/pdf?anio=${anio}&mes=${mes}&dia=${dia}`, { headers: obtenerHeaders() });
   };
 
   // ============================================
