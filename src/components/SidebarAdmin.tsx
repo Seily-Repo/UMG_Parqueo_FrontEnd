@@ -7,78 +7,93 @@ import {
   Speedometer2,
   BoxArrowRight,
   ChevronLeft,
-  CarFront,
+  Building,
 } from "react-bootstrap-icons";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+
+const DASHBOARD_ADMIN_URL =
+  import.meta.env.VITE_DASHBOARD_ADMIN_URL || "http://10.0.40.10/dashboard-admin";
+
+const DISPONIBILIDAD_ADMIN_URL =
+  import.meta.env.VITE_DISPONIBILIDAD_ADMIN_URL || "http://10.0.40.10:3001/disponibilidad/admin";
+
+const LOGIN_ADMIN_URL =
+  import.meta.env.VITE_LOGIN_URL || "http://10.0.40.10/login-admin";
 
 const SideBarAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const limpiarSesionReportes = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+  };
+
+  const volverAlDashboardAdmin = () => {
+    limpiarSesionReportes();
+    window.location.href = DASHBOARD_ADMIN_URL;
+  };
+
+  const irADisponibilidadAdmin = () => {
+    limpiarSesionReportes();
+    window.location.href = DISPONIBILIDAD_ADMIN_URL;
+  };
+
   const handleLogout = () => {
     Swal.fire({
-      title: "¿Cerrar Sesión?",
+      title: "Cerrar Sesion?",
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "var(--azul-universitario)",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Sí, salir",
+      confirmButtonText: "Si, salir",
     }).then((result) => {
       if (result.isConfirmed) {
-        localStorage.removeItem("usuarioAdmin");
-        localStorage.removeItem("token");
-        navigate("/reportes");
+        limpiarSesionReportes();
+        window.location.href = LOGIN_ADMIN_URL;
       }
     });
   };
 
-  const handleChangeVista = (vista: string) => {
-    navigate(vista);
-  }
-
-  const SidebarItem = ({ icon: Icon, label, vista }: any) => {
-    const isActive = location.pathname === vista;
-    return (
-      <Nav.Link
-        onClick={() => handleChangeVista(vista)}
-        className={`d-flex align-items-center px-4 py-3 text-white mb-1`}
+  const SidebarItem = ({ icon: Icon, label, active = false, onClick }: any) => (
+    <Nav.Link
+      onClick={onClick}
+      className="d-flex align-items-center px-4 py-3 text-white mb-1"
+      style={{
+        cursor: "pointer",
+        transition: "0.2s",
+        backgroundColor: active ? "rgba(255,255,255,0.05)" : "transparent",
+        borderLeft: active
+          ? "4px solid var(--color-accion, #00d2ff)"
+          : "4px solid transparent",
+      }}
+    >
+      <Icon
+        size={20}
+        className="me-3"
         style={{
-          cursor: "pointer",
-          transition: "0.2s",
-          backgroundColor: isActive ? "rgba(255,255,255,0.05)" : "transparent",
-          borderLeft: isActive
-            ? "4px solid var(--color-accion, #00d2ff)"
-            : "4px solid transparent",
+          color: active
+            ? "var(--color-accion, #00d2ff)"
+            : "rgba(255,255,255,0.7)",
+        }}
+      />
+      <span
+        style={{
+          display: sidebarOpen ? "block" : "none",
+          fontWeight: active ? "bold" : "normal",
+          color: active ? "#fff" : "rgba(255,255,255,0.8)",
+          whiteSpace: "nowrap",
         }}
       >
-        <Icon
-          size={20}
-          className="me-3"
-          style={{
-            color: isActive
-              ? "var(--color-accion, #00d2ff)"
-              : "rgba(255,255,255,0.7)",
-          }}
-        />
-        <span
-          style={{
-            display: sidebarOpen ? "block" : "none",
-            fontWeight: isActive ? "bold" : "normal",
-            color: isActive ? "#fff" : "rgba(255,255,255,0.8)",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {label}
-        </span>
-      </Nav.Link>
-    );
-  };
+        {label}
+      </span>
+    </Nav.Link>
+  );
+
   return (
-    <div
-        className="d-flex"
-    >
+    <div className="d-flex">
       <div
         style={{
           width: sidebarOpen ? "260px" : "80px",
@@ -126,19 +141,24 @@ const SideBarAdmin = () => {
         </div>
 
         <Nav className="flex-column mt-3 flex-grow-1">
-          <SidebarItem icon={Speedometer2} label="Inicio" vista="/reportes" />
+          <SidebarItem icon={Speedometer2} label="Inicio" onClick={volverAlDashboardAdmin} />
           <SidebarItem
             icon={PersonLinesFill}
-            label="Gestión de Usuarios"
-            vista="/reportes"
+            label="Gestion de Usuarios"
+            onClick={volverAlDashboardAdmin}
           />
-          <SidebarItem icon={CashStack} label="Pagos y Cobros" vista="/reportes/financieros" />
+          <SidebarItem icon={CashStack} label="Pagos y Cobros" onClick={volverAlDashboardAdmin} />
           <SidebarItem
-            icon={CarFront}
-            label="Disponibilidad"
-            vista="/reportes/administrativos"
+            icon={PieChartFill}
+            label="Reportes"
+            active={location.pathname.startsWith("/reportes")}
+            onClick={() => navigate("/reportes")}
           />
-          <SidebarItem icon={PieChartFill} label="Reportes" vista="/reportes" />
+          <SidebarItem
+            icon={Building}
+            label="Gestion de Islas"
+            onClick={irADisponibilidadAdmin}
+          />
         </Nav>
 
         <div
@@ -180,12 +200,11 @@ const SideBarAdmin = () => {
                 whiteSpace: "nowrap",
               }}
             >
-              Cerrar Sesión
+              Cerrar Sesion
             </span>
           </Nav.Link>
         </div>
       </div>
-      
     </div>
   );
 };
