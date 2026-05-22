@@ -20,6 +20,6 @@ function normalizePlate(plate: string) {
 
 export const vehicleService = {
   getByPlate(plate: string) {
-    return apiRequest<BackendVehicleLookup>(`/api/vehiculos/placa/${encodeURIComponent(normalizePlate(plate))}`);
+    return apiRequest<BackendVehicleLookup>(`/api/usuario/vehiculo/placa/${encodeURIComponent(normalizePlate(plate))}`);
   },
 };
