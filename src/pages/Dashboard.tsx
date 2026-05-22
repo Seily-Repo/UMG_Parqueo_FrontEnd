@@ -162,7 +162,8 @@ const Dashboard = () => {
 
           if (result.isConfirmed && planIdParaCobros) {
             // Opción B: Redirigir al portal de cobros-dev con parámetros por URL
-            window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&plan_id=${planIdParaCobros}&vehiculo=nuevo`;
+            const token = localStorage.getItem('token');
+            window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&plan_id=${planIdParaCobros}&vehiculo=nuevo&token=${token}`;
           } else {
             setActiveSection('vehiculos');
           }
@@ -290,10 +291,11 @@ const Dashboard = () => {
                           <td className="text-end fw-bold">Q.{cargo.MONTO}.00</td>
                           <td className="text-center">
                             <Button size="sm" style={{ backgroundColor: 'var(--color-accion)', border: 'none' }} onClick={() => {
+                              const token = localStorage.getItem('token');
                               if (cargo.TIPO === 'MULTA') {
-                                window.location.href = `${COBROS_URL}/parking/user/multas?carne=${carneUsuario.replace(/-/g, '')}`;
+                                window.location.href = `${COBROS_URL}/parking/user/multas?carne=${carneUsuario.replace(/-/g, '')}&token=${token}`;
                               } else {
-                                window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&monto=${cargo.MONTO}&concepto=${encodeURIComponent(cargo.DESCRIPCION)}`;
+                                window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&monto=${cargo.MONTO}&concepto=${encodeURIComponent(cargo.DESCRIPCION)}&token=${token}`;
                               }
                             }}>
                               <CreditCardFill className="me-1" /> Pagar
