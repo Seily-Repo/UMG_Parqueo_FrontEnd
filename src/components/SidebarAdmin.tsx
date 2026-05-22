@@ -60,30 +60,35 @@ const SideBarAdmin = () => {
   const SidebarItem = ({ icon: Icon, label, active = false, onClick }: any) => (
     <Nav.Link
       onClick={onClick}
-      className="d-flex align-items-center px-4 py-3 text-white mb-1"
+      className="d-flex align-items-center text-white"
       style={{
         cursor: "pointer",
-        transition: "0.2s",
-        backgroundColor: active ? "rgba(255,255,255,0.05)" : "transparent",
+        transition: "background-color 0.2s ease, border-color 0.2s ease",
+        backgroundColor: active ? "#2e638f" : "transparent",
         borderLeft: active
-          ? "4px solid var(--color-accion, #00d2ff)"
+          ? "4px solid #1498d5"
           : "4px solid transparent",
+        minHeight: "64px",
+        padding: "0 26px",
       }}
     >
       <Icon
-        size={20}
-        className="me-3"
+        size={22}
+        className="me-4"
         style={{
           color: active
-            ? "var(--color-accion, #00d2ff)"
-            : "rgba(255,255,255,0.7)",
+            ? "#1398d5"
+            : "rgba(212,232,246,0.82)",
+          minWidth: "22px",
         }}
       />
       <span
         style={{
           display: sidebarOpen ? "block" : "none",
           fontWeight: active ? "bold" : "normal",
-          color: active ? "#fff" : "rgba(255,255,255,0.8)",
+          color: active ? "#fff" : "rgba(255,255,255,0.94)",
+          fontSize: "18px",
+          lineHeight: 1,
           whiteSpace: "nowrap",
         }}
       >
@@ -97,7 +102,7 @@ const SideBarAdmin = () => {
       <div
         style={{
           width: sidebarOpen ? "260px" : "80px",
-          backgroundColor: "var(--azul-oscuro, #002b5c)",
+          backgroundColor: "#235882",
           transition: "width 0.3s ease",
           zIndex: 1000,
           minHeight: "100vh",
@@ -105,33 +110,38 @@ const SideBarAdmin = () => {
         className="d-flex flex-column"
       >
         <div
-          className="text-center py-4"
+          className="text-center d-flex flex-column align-items-center justify-content-center"
           style={{
             borderBottom: "1px solid rgba(255,255,255,0.05)",
             overflow: "hidden",
+            minHeight: "204px",
+            padding: "26px 12px 30px",
           }}
         >
           <img
             src="/logo.png"
             alt="UMG"
-            style={{ width: sidebarOpen ? "55px" : "40px", transition: "0.3s" }}
+            style={{ width: sidebarOpen ? "66px" : "42px", transition: "0.3s" }}
           />
           {sidebarOpen && (
-            <div className="mt-2 animate-fade-in">
+            <div className="mt-3 animate-fade-in">
               <h4
-                className="mb-0 fw-bold"
+                className="mb-2 fw-bold"
                 style={{
-                  color: "var(--color-accion, #00d2ff)",
+                  color: "#1689ca",
                   fontStyle: "italic",
+                  fontSize: "28px",
+                  letterSpacing: "0",
                 }}
               >
                 MiUMG
               </h4>
               <small
                 style={{
-                  color: "rgba(255,255,255,0.5)",
+                  color: "rgba(218,234,247,0.58)",
                   letterSpacing: "1px",
-                  fontSize: "0.65rem",
+                  fontSize: "12px",
+                  fontWeight: 600,
                 }}
               >
                 CONTROL DE PARQUEO
@@ -140,11 +150,11 @@ const SideBarAdmin = () => {
           )}
         </div>
 
-        <Nav className="flex-column mt-3 flex-grow-1">
+        <Nav className="flex-column flex-grow-1">
           <SidebarItem icon={Speedometer2} label="Inicio" onClick={volverAlDashboardAdmin} />
           <SidebarItem
             icon={PersonLinesFill}
-            label="Gestion de Usuarios"
+            label="Gestión de Usuarios"
             onClick={volverAlDashboardAdmin}
           />
           <SidebarItem icon={CashStack} label="Pagos y Cobros" onClick={volverAlDashboardAdmin} />
@@ -156,7 +166,7 @@ const SideBarAdmin = () => {
           />
           <SidebarItem
             icon={Building}
-            label="Gestion de Islas"
+            label="Gestión de Islas"
             onClick={irADisponibilidadAdmin}
           />
         </Nav>
