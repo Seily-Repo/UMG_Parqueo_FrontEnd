@@ -24,7 +24,7 @@ const DashboardAdmin = () => {
   const [busquedaUsuarios, setBusquedaUsuarios] = useState('');
 
   const [showProfile, setShowProfile] = useState(false);
-  const [stats, setStats] = useState({ carros: 0, motos: 0, ingresos: 0 });
+  const [stats, setStats] = useState({ carros: 0, motos: 0, ingresos: 0, ocupacion: 0 });
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [roles, setRoles] = useState<any[]>([]);
@@ -241,7 +241,10 @@ const DashboardAdmin = () => {
           <SidebarItem icon={Speedometer2} label="Inicio" vista="dashboard" />
           <SidebarItem icon={PersonLinesFill} label="Gestión de Usuarios" vista="usuarios" />
           <SidebarItem icon={CashStack} label="Pagos y Cobros" vista="pagos" />
-          <Nav.Link onClick={() => { window.location.href = '/reportes/financieros'; }} className="d-flex align-items-center px-4 py-3 text-white mb-1 admin-logout-hover" style={{ cursor: 'pointer', transition: '0.2s' }}>
+          <Nav.Link onClick={() => { 
+                const token = localStorage.getItem('token');
+                window.location.href = `http://10.0.40.10:3002/reportes?token=${token}`; 
+              }} className="d-flex align-items-center px-4 py-3 text-white mb-1 admin-logout-hover" style={{ cursor: 'pointer', transition: '0.2s' }}>
             <PieChartFill size={20} className="me-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
             <span style={{ display: sidebarOpen ? 'block' : 'none', color: 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>Reportes</span>
           </Nav.Link>
@@ -285,7 +288,7 @@ const DashboardAdmin = () => {
             <div className="animate-fade-in">
               <Row className="mb-4"><Col><h2 className="fw-bold" style={{ color: 'var(--color-accion, #0098db)', fontStyle: 'italic' }}>Visión General</h2><p className="text-muted">Resumen del estado del sistema</p></Col></Row>
               <Row className="mb-4">
-                <StatCard title="Ocupación" value="78%" icon={PieChartFill} color="#0098db" />
+                <StatCard title="Ocupación" value={`${stats.ocupacion || 0}%`} icon={PieChartFill} color="#0098db" />
                 <StatCard title="Carros" value={stats.carros} icon={CarFrontFill} color="#28a745" />
                 <StatCard title="Motos" value={stats.motos} icon={Scooter} color="#f5a623" />
                 <StatCard title="Ingresos" value={`Q ${stats.ingresos}`} icon={CashStack} color="#6f42c1" />

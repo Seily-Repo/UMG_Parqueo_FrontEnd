@@ -558,7 +558,7 @@ const Dashboard = () => {
               <Alert variant="info" className="d-flex align-items-center border-0 shadow-sm rounded-3 py-2 px-3 mb-4">
                 <InfoCircleFill size={20} className="me-3" />
                 <div style={{ fontSize: '0.85rem' }}>
-                  <strong>Vehículo Adicional:</strong> Al guardar este vehículo se aplicará únicamente la tarifa administrativa de <strong>Q.50.00</strong> a tu estado de cuenta.
+                  <strong>Vehículo Adicional:</strong> Recuerda que el sistema permite un máximo de <strong>3 vehículos</strong> por usuario (Llevas {vehiculos.length}/3).
                 </div>
               </Alert>
             )}
