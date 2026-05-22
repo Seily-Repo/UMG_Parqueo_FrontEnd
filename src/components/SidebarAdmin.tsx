@@ -121,7 +121,7 @@ const SideBarAdmin = () => {
           <img
             src="/logo.png"
             alt="UMG"
-            style={{ width: sidebarOpen ? "66px" : "42px", transition: "0.3s" }}
+            style={{ width: sidebarOpen ? "55px" : "40px", transition: "0.3s" }}
           />
           {sidebarOpen && (
             <div className="mt-3 animate-fade-in">
