@@ -241,7 +241,7 @@ const DashboardAdmin = () => {
           <SidebarItem icon={Speedometer2} label="Inicio" vista="dashboard" />
           <SidebarItem icon={PersonLinesFill} label="Gestión de Usuarios" vista="usuarios" />
           <SidebarItem icon={CashStack} label="Pagos y Cobros" vista="pagos" />
-          <Nav.Link onClick={() => { window.location.href = '/reportes/'; }} className="d-flex align-items-center px-4 py-3 text-white mb-1 admin-logout-hover" style={{ cursor: 'pointer', transition: '0.2s' }}>
+          <Nav.Link onClick={() => { window.location.href = '/reportes/financieros'; }} className="d-flex align-items-center px-4 py-3 text-white mb-1 admin-logout-hover" style={{ cursor: 'pointer', transition: '0.2s' }}>
             <PieChartFill size={20} className="me-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
             <span style={{ display: sidebarOpen ? 'block' : 'none', color: 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>Reportes</span>
           </Nav.Link>

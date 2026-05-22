@@ -338,7 +338,7 @@ const Dashboard = () => {
                   } else if (vehiculos.length === 0) {
                     Swal.fire('Acceso Restringido', 'Debes registrar al menos un vehículo y contar con un plan activo.', 'warning');
                   } else {
-                    window.location.href = '/disponibilidad/';
+                    window.location.href = '/disponibilidad/parqueo';
                   }
                   return;
                 }
