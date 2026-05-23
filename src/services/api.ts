@@ -1,6 +1,6 @@
 import axios, { AxiosError } from "axios";
 
-const rawApiUrl = (process.env.REACT_APP_API_URL || "/api").trim().replace(/^["']|["']$/g, "");
+const rawApiUrl = (process.env.REACT_APP_API_URL || "/api/disponibilidad").trim().replace(/^["']|["']$/g, "");
 const API_BASE_URL = rawApiUrl.replace(/\/+$/, "").endsWith("/api")
   ? rawApiUrl.replace(/\/api\/?$/, "")
   : rawApiUrl.replace(/\/+$/, "");
