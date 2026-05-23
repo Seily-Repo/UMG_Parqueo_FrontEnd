@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -146,8 +146,11 @@ export function UserFinePayment() {
   }, [carnetFromUrl, currentRegistration.carnet, updateRegistration]);
 
   const backToFinesList = () => {
-    const search = isEmbedded ? `?carne=${encodeURIComponent(activeCarnet)}` : '';
-    navigate(`/parking/user/multas${search}`);
+    if (isEmbedded) {
+      window.location.href = dashboardUrl;
+      return;
+    }
+    navigate('/parking/user/multas');
   };
 
   const finishFlow = () => {
@@ -207,21 +210,19 @@ export function UserFinePayment() {
   const fineAmount = Number(fineRelation?.MUL_MONTO_TOTAL ?? formData.amount ?? 0);
   const fineDescription = fineRelation?.MUL_DESCRIPCION || `Multa #${fineRelation?.MUL_MULTA || ''}`;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const initiateStripePayment = async (silent = false) => {
     if (!fineRelation) {
-      toast.error('No se encontro la multa a pagar');
+      if (!silent) toast.error('No se encontro la multa a pagar');
       return;
     }
 
     if (!fineAmount || fineAmount <= 0) {
-      toast.error('La multa no tiene un monto valido configurado');
+      if (!silent) toast.error('La multa no tiene un monto valido configurado');
       return;
     }
 
     if (!formData.paymentMethodId) {
-      toast.error('Seleccione una forma de pago');
+      if (!silent) toast.error('Seleccione una forma de pago');
       return;
     }
 
@@ -249,6 +250,24 @@ export function UserFinePayment() {
       setSubmitting(false);
     }
   };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void initiateStripePayment();
+  };
+
+  const autoStartedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isEmbedded || autoStartedRef.current) return;
+    if (loading || !fineRelation || !fineAmount || fineAmount <= 0) return;
+    if (clientSecret || submitting) return;
+    if (fineRelation.EMU_ESTADO_MULTA !== 'A') return;
+
+    autoStartedRef.current = true;
+    void initiateStripePayment(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEmbedded, loading, fineRelation, fineAmount, clientSecret, submitting]);
 
   const handleFinePaid = async () => {
     if (!fineRelation || !activePayment) {
@@ -354,17 +373,34 @@ export function UserFinePayment() {
             </>
           ) : clientSecret ? (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <div className="mb-3">
+                <div className="fw-semibold" style={{ color: '#0d3a66' }}>
+                  {fineDescription}
+                </div>
+                <small className="text-muted">
+                  Carne {fineRelation.EST_CARNE || activeCarnet} · Total a pagar Q{fineAmount.toFixed(2)}
+                </small>
+              </div>
               <FineStripeForm
                 amount={fineAmount}
                 clientSecret={clientSecret}
                 submitting={submitting}
                 onBack={() => {
+                  if (isEmbedded) {
+                    window.location.href = dashboardUrl;
+                    return;
+                  }
                   setClientSecret('');
                   setActivePayment(null);
                 }}
                 onPaid={handleFinePaid}
               />
             </Elements>
+          ) : isEmbedded ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" />
+              <p className="text-muted mt-3 mb-0">Preparando Stripe...</p>
+            </div>
           ) : (
             <Form onSubmit={handleSubmit}>
               <div className="p-4 rounded mb-4 text-white" style={{ background: 'linear-gradient(135deg, #C41230 0%, #0d47a1 100%)' }}>
@@ -437,7 +473,7 @@ export function UserFinePayment() {
                     variant="outline-secondary"
                     size="lg"
                     className="w-100 d-flex align-items-center justify-content-center"
-                    onClick={() => navigate('/parking/user/multas')}
+                    onClick={backToFinesList}
                   >
                     <ArrowLeft size={16} className="me-2" />
                     Atras
