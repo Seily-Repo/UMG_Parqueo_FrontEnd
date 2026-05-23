@@ -365,7 +365,7 @@ const Dashboard = () => {
                     Swal.fire('Acceso Restringido', 'Debes registrar al menos un vehículo y contar con un plan activo.', 'warning');
                   } else {
                     const token = localStorage.getItem('token');
-                    window.location.href = `http://10.0.40.10:3001/disponibilidad/parqueo?token=${token}`;
+                    window.location.href = `http://10.0.40.10/disponibilidad/parqueo?token=${token}`;
                   }
                   return;
                 }
