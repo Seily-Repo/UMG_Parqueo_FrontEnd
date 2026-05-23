@@ -135,8 +135,12 @@ const Registro = () => {
           background: 'var(--fondo-blanco)',
           color: 'var(--azul-oscuro)'
         }).then((result) => {
-          if (result.isConfirmed) navigate(-1); 
+          if (result.isConfirmed && !esAdmin) navigate(-1); 
         });
+        
+        e.currentTarget.reset();
+        setDeptoSeleccionado('');
+        setMuniSeleccionado('');
       } else {
         Swal.fire({
           title: 'Error de Validación',
@@ -199,7 +203,7 @@ const Registro = () => {
                   </p>
                 </div>
 
-                <Form onSubmit={handleSubmit} style={{ fontFamily: 'var(--fuente-principal)' }}>
+                <Form onSubmit={handleSubmit} style={{ fontFamily: 'var(--fuente-principal)' }} autoComplete="off">
                   <input type="hidden" name="id_rol" value="1" />
 
                   <h5 className="mb-3 fw-bold border-bottom pb-2" style={{ color: 'var(--azul-universitario)', fontStyle: 'italic', fontFamily: 'var(--fuente-titulos)' }}>
