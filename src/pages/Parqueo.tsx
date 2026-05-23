@@ -61,7 +61,7 @@ export default function Parqueo() {
 
   const cargarDisponibilidad = useCallback(async () => {
 
-      setCargando(true);
+    setCargando(true);
     try {
       const [libresRes, ocupadosRes] = await Promise.all([
         obtenerEspaciosLibres(ID_CICLO, ID_JORNADA),
@@ -93,10 +93,10 @@ export default function Parqueo() {
 
         const islasConDetalle = await Promise.all(
           islasActivas.map(async (isla) => {
-            const detalleRes = await obtenerDetalleIsla(isla.IS_ISLA);
+            const detalleRes = await obtenerDetalleIsla(Number(isla.IS_ISLA));
             const detalle = detalleRes.data.details ?? [];
             return {
-              id: isla.IS_ISLA,
+              id: Number(isla.IS_ISLA),
               nombre: isla.IS_NOMBRE,
               descripcion: isla.IS_DESCRIPCION || "",
               carros: isla.IS_CAPACIDAD,

@@ -1,17 +1,18 @@
 version: "3.8"
 services:
   frontend:
+    restart: always
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_URL: ${REACT_APP_API_URL:-/api}
-        REACT_APP_ROUTER_BASENAME: ${REACT_APP_ROUTER_BASENAME:-}        
+        REACT_APP_API_URL: http://10.0.40.10/disponibilidad
+        REACT_APP_LOGIN_URL: http://10.0.40.10/login
+        REACT_APP_LOGIN_ADMIN_URL: http://10.0.40.10/login-admin
         REACT_APP_ID_CICLO: 1
-        REACT_APP_ID_JORNADA: 1   
-        # o la URL real del backend en prod
-    container_name: umg_frontend_prod
-    ports:
-      - "3000:80"
+        REACT_APP_ID_JORNADA: 1
+    container_name: umg_disponibilidad_prod
+    expose:
+      - "80"
     environment:
       - NODE_ENV=production

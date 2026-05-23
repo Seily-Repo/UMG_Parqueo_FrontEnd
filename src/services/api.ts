@@ -44,6 +44,7 @@ export interface ApiResponse<T> {
   status?: number;
   message: string;
   details: T;
+  data?: T;
 }
 
 export interface TipoEspacioApi {
@@ -72,8 +73,8 @@ export interface AsignacionApi {
 }
 
 export interface IslaApi {
-  IS_ISLA: number;
-  PQ_PARQUEO: number;
+  IS_ISLA: number | string;
+  PQ_PARQUEO: number | string;
   IS_NOMBRE: string;
   IS_CAPACIDAD: number;
   IS_DESCRIPCION?: string | null;
@@ -81,7 +82,7 @@ export interface IslaApi {
 }
 
 export interface ParqueoApi {
-  PQ_Parqueo: number;
+  PQ_Parqueo: number | string;
   PQ_Nombre: string;
   PQ_Direccion: string;
   PQ_Capacidad: number;
@@ -154,4 +155,8 @@ export const crearIsla = (data: CrearIslaPayload) => {
 
 export const anularIsla = (id: number) => {
   return api.put<ApiResponse<null>>(`/api/islas/${id}/anular`);
+};
+
+export const habilitarIsla = (id: number) => {
+  return api.put<ApiResponse<null>>(`/api/islas/${id}/habilitar`);
 };
