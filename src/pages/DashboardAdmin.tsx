@@ -243,14 +243,14 @@ const DashboardAdmin = () => {
           <SidebarItem icon={CashStack} label="Pagos y Cobros" vista="pagos" />
           <Nav.Link onClick={() => { 
                 const token = localStorage.getItem('token');
-                window.location.href = `http://10.0.40.10:3002/reportes?token=${token}`; 
+                window.location.href = `http://10.0.40.10/reportes?token=${token}`; 
               }} className="d-flex align-items-center px-4 py-3 text-white mb-1 admin-logout-hover" style={{ cursor: 'pointer', transition: '0.2s' }}>
             <PieChartFill size={20} className="me-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
             <span style={{ display: sidebarOpen ? 'block' : 'none', color: 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>Reportes</span>
           </Nav.Link>
           <Nav.Link onClick={() => { 
                 const token = localStorage.getItem('token');
-                window.location.href = `http://10.0.40.10:3001/disponibilidad/admin?token=${token}`; 
+                window.location.href = `http://10.0.40.10/disponibilidad/admin?token=${token}`; 
               }} className="d-flex align-items-center px-4 py-3 text-white mb-1 admin-logout-hover" style={{ cursor: 'pointer', transition: '0.2s' }}>
             <Building size={20} className="me-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
             <span style={{ display: sidebarOpen ? 'block' : 'none', color: 'rgba(255,255,255,0.8)', whiteSpace: 'nowrap' }}>Gestión de Islas</span>
