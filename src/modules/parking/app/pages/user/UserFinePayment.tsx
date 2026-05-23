@@ -7,7 +7,7 @@ import { ArrowLeft, CreditCard, DollarSign, Receipt } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useRegistration } from '../../context/RegistrationContext';
 import { getReadableApiError } from '../../../../../shared/api';
-import type { BackendEstudianteMulta, BackendMulta } from '../../../../../shared/models/backend';
+import type { BackendEstudianteMulta } from '../../../../../shared/models/backend';
 import { fineService, paymentService } from '../../../../../shared/services';
 import { PaymentReceiptCard, type PaymentReceiptData } from '../../components/PaymentReceiptCard';
 import { exportReceiptToPdf } from '../../utils/receiptExport';
@@ -128,7 +128,6 @@ export function UserFinePayment() {
   const activeCarnet = carnetFromUrl || currentRegistration.carnet || '';
 
   const [fineRelation, setFineRelation] = useState<BackendEstudianteMulta | null>(locationState?.fineRelation || null);
-  const [fineCatalog, setFineCatalog] = useState<BackendMulta | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -175,25 +174,22 @@ export function UserFinePayment() {
           ? await Promise.resolve(fineRelation)
           : await fineService.getStudentFineById(Number(relationId));
 
-        const catalogResponse = await fineService.getFineById(Number(fineResponse.MUL_MULTA));
-
         if (!isMounted) {
           return;
         }
 
         setFineRelation(fineResponse);
-        setFineCatalog(catalogResponse);
+        const monto = Number(fineResponse.MUL_MONTO_TOTAL ?? 0);
         setFormData((prev) => ({
           ...prev,
-          amount: `${Number(catalogResponse.MUL_MONTO_TOTAL ?? catalogResponse.MUL_monto_total ?? 0)}`,
+          amount: monto > 0 ? `${monto}` : '',
           paymentMethodId: prev.paymentMethodId || cardPaymentMethodId,
         }));
       } catch (requestError) {
         if (!isMounted) {
           return;
         }
-
-        setError(getReadableApiError(requestError, 'No fue posible cargar la informacion para pagar la multa.'));
+        setError(getReadableApiError(requestError, 'No fue posible cargar la informacion de la multa.'));
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -206,10 +202,10 @@ export function UserFinePayment() {
     return () => {
       isMounted = false;
     };
-  }, [currentRegistration.carnet, fineRelation, relationId]);
+  }, [activeCarnet, fineRelation, relationId]);
 
-  const fineAmount = Number(fineCatalog?.MUL_MONTO_TOTAL ?? fineCatalog?.MUL_monto_total ?? formData.amount ?? 0);
-  const fineDescription = fineCatalog?.MUL_DESCRIPCION || fineCatalog?.MUL_descripcion || `Multa #${fineRelation?.MUL_MULTA || ''}`;
+  const fineAmount = Number(fineRelation?.MUL_MONTO_TOTAL ?? formData.amount ?? 0);
+  const fineDescription = fineRelation?.MUL_DESCRIPCION || `Multa #${fineRelation?.MUL_MULTA || ''}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -380,7 +376,7 @@ export function UserFinePayment() {
                   <Col>
                     <div>
                       <small style={{ opacity: 0.9 }}>Carne</small>
-                      <div className="fw-medium">{fineRelation.EST_CARNE}</div>
+                      <div className="fw-medium">{fineRelation.EST_CARNE || activeCarnet || 'No disponible'}</div>
                       <small style={{ opacity: 0.9 }} className="mt-2 d-block">
                         {fineDescription}
                       </small>
@@ -448,8 +444,8 @@ export function UserFinePayment() {
                   </Button>
                 </Col>
                 <Col xs={6}>
-                  <Button variant="primary" type="submit" size="lg" className="w-100" disabled={submitting}>
-                    {submitting ? 'Procesando...' : 'Pagar Multa'}
+                  <Button variant="primary" type="submit" size="lg" className="w-100" disabled={submitting || !fineAmount || fineAmount <= 0}>
+                    {submitting ? 'Procesando...' : !fineAmount ? 'Monto no disponible' : 'Pagar Multa'}
                   </Button>
                 </Col>
               </Row>

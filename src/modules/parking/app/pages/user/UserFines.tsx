@@ -225,13 +225,23 @@ export function UserFines() {
                           </div>
                           <div>
                             <div className="fw-semibold" style={{ color: '#0d3a66' }}>
-                              Multa #{fine.MUL_MULTA || fine.EMU_ESTUDIANTE_MULTA} — Carne {fine.EST_CARNE}
+                              {fine.MUL_DESCRIPCION || `Multa #${fine.MUL_MULTA || fine.EMU_ESTUDIANTE_MULTA}`}
                             </div>
-                            <small className="text-muted">
-                              Creada por {fine.EMU_CREADO_POR} el {formatFineDate(fine.EMU_FECHA_CREACION)}
+                            <small className="text-muted d-block">
+                              {fine.VEH_ID_VEHICULO ? `Vehiculo ${fine.VEH_ID_VEHICULO} · ` : ''}
+                              Creada el {formatFineDate(fine.EMU_FECHA_CREACION)}
                             </small>
                           </div>
                         </div>
+
+                        {Number(fine.MUL_MONTO_TOTAL) > 0 && (
+                          <div className="text-end">
+                            <small className="text-muted d-block">Monto</small>
+                            <span className="fw-bold" style={{ color: '#0d3a66', fontSize: '1.1rem' }}>
+                              Q{Number(fine.MUL_MONTO_TOTAL).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
 
                         <span className={`badge text-bg-${getFineStatusVariant(fine.EMU_ESTADO_MULTA)}`} style={{ fontSize: '0.85rem' }}>
                           {getFineStatusLabel(fine.EMU_ESTADO_MULTA)}

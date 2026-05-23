@@ -12,6 +12,9 @@ export interface BackendVehicleLookup {
   MODELO?: string;
   COLOR?: string;
   ACTIVO?: number;
+  ESTUDIANTE_NOMBRE?: string;
+  ESTUDIANTE_APELLIDO?: string;
+  ESTUDIANTE_CORREO?: string;
 }
 
 function normalizePlate(plate: string) {

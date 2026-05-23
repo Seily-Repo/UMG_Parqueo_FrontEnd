@@ -84,6 +84,15 @@ function escapeExcelCell(value: unknown) {
     .replace(/"/g, '&quot;');
 }
 
+type VehicleStudentInfo = {
+  placa: string;
+  carne: string;
+  nombre: string;
+  tipoVehiculo: string;
+  marca: string;
+  modelo: string;
+};
+
 export function AdminFines() {
   const [fines, setFines] = useState<BackendMulta[]>([]);
   const [assignedFines, setAssignedFines] = useState<BackendEstudianteMulta[]>([]);
@@ -94,6 +103,7 @@ export function AdminFines() {
   const [assigning, setAssigning] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [vehicleStudentCache, setVehicleStudentCache] = useState<Record<string, VehicleStudentInfo>>({});
 
   const sortedFines = useMemo(
     () => fines.slice().sort((a, b) => getFineId(b) - getFineId(a)),
@@ -193,11 +203,20 @@ export function AdminFines() {
     try {
       let vehicleId = vehicleIdOverride || getLookupVehicleId(vehicleLookup);
       const plate = vehicleLookup ? normalizePlate(vehicleLookup) : '';
+      let vehicleInfo: VehicleStudentInfo | null = null;
 
       if (!vehicleId && plate) {
         try {
           const vehicle = await vehicleService.getByPlate(plate);
           vehicleId = String(vehicle.ID_VEHICULO || vehicle.VEH_ID_VEHICULO || '');
+          vehicleInfo = {
+            placa: vehicle.PLACA || vehicle.VEH_PLACA || plate,
+            carne: vehicle.CARNE || vehicle.LR_CARNE || '',
+            nombre: `${vehicle.ESTUDIANTE_NOMBRE || ''} ${vehicle.ESTUDIANTE_APELLIDO || ''}`.trim(),
+            tipoVehiculo: vehicle.TIPO_VEHICULO || '',
+            marca: vehicle.MARCA || '',
+            modelo: vehicle.MODELO || '',
+          };
         } catch (lookupError) {
           const detail = getReadableApiError(lookupError, '');
           const friendly = `No se encontro un vehiculo registrado con la placa ${plate}. Verifique la placa o ingrese el ID del vehiculo directamente.${detail ? ` (${detail})` : ''}`;
@@ -224,8 +243,18 @@ export function AdminFines() {
         EMU_CREADO_POR: 'ADMINISTRADOR',
       });
 
+      if (vehicleInfo) {
+        setVehicleStudentCache((prev) => ({ ...prev, [vehicleId]: vehicleInfo! }));
+      } else if (plate) {
+        setVehicleStudentCache((prev) => ({
+          ...prev,
+          [vehicleId]: prev[vehicleId] || { placa: plate, carne: '', nombre: '', tipoVehiculo: '', marca: '', modelo: '' },
+        }));
+      }
+
       setAssignFormData(initialAssignFormState);
-      const label = plate ? `placa ${plate}` : `vehiculo #${vehicleId}`;
+      const studentLabel = vehicleInfo?.nombre ? ` (${vehicleInfo.nombre}${vehicleInfo.carne ? ` - ${vehicleInfo.carne}` : ''})` : '';
+      const label = plate ? `placa ${plate}${studentLabel}` : `vehiculo #${vehicleId}`;
       toast.success(`Multa asignada al ${label}`);
       void loadFines();
     } catch (requestError) {
@@ -580,7 +609,9 @@ export function AdminFines() {
                   <ListChecks size={20} color="#0d47a1" />
                   <div>
                     <h5 className="mb-1">Multas Asignadas</h5>
-                    <p className="text-muted small mb-0">Registros activos creados para estudiantes o vehiculos.</p>
+                    <p className="text-muted small mb-0">
+                      Registros activos. Las multas asignadas en esta sesion muestran al estudiante; las anteriores muestran "—" porque el backend no incluye el JOIN con vehiculo/estudiante en <code>/api/usuario_multa</code>.
+                    </p>
                   </div>
                 </div>
                 <div className="d-flex gap-2 flex-wrap">
@@ -612,6 +643,7 @@ export function AdminFines() {
                       <tr>
                         <th>ID</th>
                         <th>Multa</th>
+                        <th>Estudiante</th>
                         <th>Vehiculo</th>
                         <th>Estado</th>
                         <th className="text-end">Accion</th>
@@ -620,11 +652,45 @@ export function AdminFines() {
                     <tbody>
                       {assignedFines.map((fine) => {
                         const relationId = getAssignedFineId(fine);
+                        const vehicleIdKey = fine.VEH_ID_VEHICULO ? String(fine.VEH_ID_VEHICULO) : '';
+                        const studentInfo = vehicleIdKey ? vehicleStudentCache[vehicleIdKey] : undefined;
+                        const catalogFine = fineCatalogById.get(Number(fine.MUL_MULTA));
+                        const fineLabel = catalogFine ? getFineDescription(catalogFine) : `#${fine.MUL_MULTA}`;
+
                         return (
                           <tr key={relationId}>
                             <td className="fw-medium">{relationId}</td>
-                            <td>{fine.MUL_MULTA}</td>
-                            <td>{fine.VEH_ID_VEHICULO ? `#${fine.VEH_ID_VEHICULO}` : 'Sin vehiculo'}</td>
+                            <td>
+                              <div className="fw-medium">#{fine.MUL_MULTA}</div>
+                              <small className="text-muted">{fineLabel}</small>
+                            </td>
+                            <td>
+                              {studentInfo?.nombre || studentInfo?.carne ? (
+                                <div>
+                                  {studentInfo.nombre && <div className="fw-medium">{studentInfo.nombre}</div>}
+                                  {studentInfo.carne && <small className="text-muted">Carne {studentInfo.carne}</small>}
+                                </div>
+                              ) : (
+                                <span className="text-muted" title="El backend no devuelve el estudiante en /api/usuario_multa. Solo se muestran los asignados en esta sesion.">—</span>
+                              )}
+                            </td>
+                            <td>
+                              {fine.VEH_ID_VEHICULO ? (
+                                <div>
+                                  <div className="fw-medium">#{fine.VEH_ID_VEHICULO}</div>
+                                  {studentInfo?.placa && (
+                                    <small className="text-muted">
+                                      {studentInfo.placa}
+                                      {studentInfo.marca || studentInfo.modelo
+                                        ? ` (${[studentInfo.marca, studentInfo.modelo].filter(Boolean).join(' ')})`
+                                        : ''}
+                                    </small>
+                                  )}
+                                </div>
+                              ) : (
+                                'Sin vehiculo'
+                              )}
+                            </td>
                             <td>
                               <Badge bg="danger">Activa</Badge>
                             </td>

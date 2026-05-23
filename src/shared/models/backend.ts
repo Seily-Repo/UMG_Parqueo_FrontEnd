@@ -107,6 +107,8 @@ export interface BackendEstudianteMulta {
   EMU_FECHA_CREACION?: string;
   EMU_MODIFICADO_POR?: string;
   EMU_FECHA_MODIFICACION?: string;
+  MUL_DESCRIPCION?: string;
+  MUL_MONTO_TOTAL?: number;
 }
 
 export interface BackendCreateEstudianteMultaPayload {

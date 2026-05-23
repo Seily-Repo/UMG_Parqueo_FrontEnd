@@ -10,13 +10,18 @@ import type {
 type BackendUsuarioMultaCobros = BackendEstudianteMulta & {
   EMU_USUARIO_MULTA?: number;
   LR_CARNE?: string;
+  MUL_MONTO_TOTAL?: number | string;
 };
 
 function normalizeStudentFine(fine: BackendUsuarioMultaCobros): BackendEstudianteMulta {
+  const rawMonto = fine.MUL_MONTO_TOTAL;
+  const montoNumber = rawMonto == null ? NaN : Number(rawMonto);
+
   return {
     ...fine,
     EMU_ESTUDIANTE_MULTA: fine.EMU_ESTUDIANTE_MULTA || fine.EMU_USUARIO_MULTA || 0,
     EST_CARNE: fine.EST_CARNE || fine.LR_CARNE || "",
+    MUL_MONTO_TOTAL: Number.isFinite(montoNumber) && montoNumber > 0 ? montoNumber : undefined,
   };
 }
 
