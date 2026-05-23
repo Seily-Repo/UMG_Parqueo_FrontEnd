@@ -50,12 +50,12 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/disponibilidad">
       <Routes>
-        <Route path="/" element={<Navigate to="/disponibilidad/parqueo" replace />} />
+        <Route path="/" element={<Navigate to="/parqueo" replace />} />
         <Route path="/inicio" element={<App />} />
         <Route
-          path="/disponibilidad/parqueo"
+          path="/parqueo"
           element={
             <StudentLayout activeSection="disponibilidad">
               <Parqueo />
@@ -63,7 +63,7 @@ root.render(
           }
         />
         <Route
-          path="/disponibilidad/admin"
+          path="/admin"
           element={
             <AdminLayout activeSection="islas">
               <ParqueoAdmin />
