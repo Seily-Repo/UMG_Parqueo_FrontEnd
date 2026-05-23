@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_URL: http://10.0.40.10/disponibilidad
+        REACT_APP_API_URL: http://10.0.40.10/api/disponibilidad
         REACT_APP_LOGIN_URL: http://10.0.40.10/login
         REACT_APP_LOGIN_ADMIN_URL: http://10.0.40.10/login-admin
         REACT_APP_ID_CICLO: 1
