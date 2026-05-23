@@ -204,7 +204,6 @@ const Registro = () => {
                 </div>
 
                 <Form onSubmit={handleSubmit} style={{ fontFamily: 'var(--fuente-principal)' }} autoComplete="off">
-                  <input type="hidden" name="id_rol" value="1" />
 
                   <h5 className="mb-3 fw-bold border-bottom pb-2" style={{ color: 'var(--azul-universitario)', fontStyle: 'italic', fontFamily: 'var(--fuente-titulos)' }}>
                     1. Información Personal
