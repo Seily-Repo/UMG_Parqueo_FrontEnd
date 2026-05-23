@@ -99,7 +99,8 @@ const Registro = () => {
   // --- ENVÍO DEL FORMULARIO ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+    const formElement = e.currentTarget;
+    const formData = new FormData(formElement);
     const datosUsuario = Object.fromEntries(formData.entries());
 
     // 🌟 DEBUG NUEVO E INDESTRUCTIBLE 🌟
@@ -138,7 +139,7 @@ const Registro = () => {
           if (result.isConfirmed && !esAdmin) navigate(-1); 
         });
         
-        e.currentTarget.reset();
+        formElement.reset();
         setDeptoSeleccionado('');
         setMuniSeleccionado('');
       } else {
@@ -150,6 +151,7 @@ const Registro = () => {
         });
       }
     } catch (error) {
+      console.error("❌ Error capturado en el try-catch de Registro:", error);
       Swal.fire('Error de Conexión', 'El servidor de base de datos no responde.', 'error');
     }
   };
