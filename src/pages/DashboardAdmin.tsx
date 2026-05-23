@@ -364,7 +364,7 @@ const DashboardAdmin = () => {
                               {pagosFiltrados.map((p, index) => (
                                 <tr key={index}>
                                   <td className="text-muted small">{p.FECHA}</td><td><strong>{p.CARNE_USUARIO}</strong><br /><small className="text-muted">{p.NOMBRE}</small></td><td>{p.CONCEPTO}</td><td className="fw-bold">Q.{p.PAG_MONTO_TOTAL}.00</td>
-                                  <td><Badge bg={p.PAG_ESTADO === 'C' ? 'success' : 'warning'} text={p.PAG_ESTADO === 'C' ? 'light' : 'dark'}>{p.PAG_ESTADO === 'C' ? 'Completado' : 'Pendiente'}</Badge></td>
+                                  <td><Badge bg={p.PAG_ESTADO === 'C' || p.PAG_ESTADO === 'A' ? 'success' : 'warning'} text={p.PAG_ESTADO === 'C' || p.PAG_ESTADO === 'A' ? 'light' : 'dark'}>{p.PAG_ESTADO === 'C' || p.PAG_ESTADO === 'A' ? 'Completado' : 'Pendiente'}</Badge></td>
                                   <td className="text-center">{p.PAG_ESTADO === 'P' ? (<Button variant="outline-danger" size="sm" title="Usar solo si el cobro automático falló" onClick={() => handleAprobarPago(p.PAG_PAGO, p.NOMBRE)}><ExclamationTriangleFill className="me-1" /> Forzar Aprobación</Button>) : (<span className="text-success small fw-bold"><CheckCircleFill className="me-1" /> Procesado Auto.</span>)}</td>
                                 </tr>
                               ))}

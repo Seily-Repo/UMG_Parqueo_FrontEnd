@@ -283,7 +283,7 @@ const Dashboard = () => {
 
             <Card className="border-0 shadow-sm rounded-4 overflow-hidden liquid-card mt-2">
               <div style={{ backgroundColor: '#f8f9fa', padding: '15px 20px', borderBottom: '2px solid #e0e0e0' }}>
-                <h5 className="mb-0 fw-bold" style={{ color: 'var(--color-primario)' }}>Cargos Pendientes en Cuenta</h5>
+                <h5 className="mb-0 fw-bold" style={{ color: 'var(--color-primario)' }}>Estado de Cuenta (Historial y Pendientes)</h5>
               </div>
               <Card.Body className="p-0">
                 <div className="table-responsive">
