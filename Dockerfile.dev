@@ -6,13 +6,15 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Instalar deps (se ejecuta solo cuando construyas esta imagen)
-RUN npm ci --no-audit --no-fund
+RUN npm install --no-audit --no-fund
 
 # Copiamos el resto (no necesario si montás un volumen en compose)
 COPY . .
 
 # Puerto que CRA usa por defecto es 3000
 EXPOSE 3000
+
+ENV PUBLIC_URL=/disponibilidad
 
 # Comando por defecto (en docker-compose dev normalmente se sobrescribe)
 CMD ["npm", "start"]
