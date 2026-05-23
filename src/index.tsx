@@ -13,6 +13,13 @@ import "./index.css";
 
 const rootElement = document.getElementById("root");
 
+const urlParams = new URLSearchParams(window.location.search);
+const urlToken = urlParams.get("token");
+if (urlToken) {
+  localStorage.setItem("token", urlToken);
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
 if (!rootElement) {
   throw new Error("No se encontro el elemento root");
 }
