@@ -173,9 +173,9 @@ const Dashboard = () => {
             // Añadir un pequeño retraso para asegurar que Stripe cargue y el backend termine de asentar los datos
             setTimeout(() => {
               if (plan) {
-                window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&monto=${plan.PLN_PRECIO}&concepto=${encodeURIComponent(plan.PLN_NOMBRE_PLAN)}&token=${token}`;
+                window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&planId=${planIdParaCobros}&monto=${plan.PLN_PRECIO}&concepto=${encodeURIComponent(plan.PLN_NOMBRE_PLAN)}&token=${token}`;
               } else {
-                window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&plan_id=${planIdParaCobros}&vehiculo=nuevo&token=${token}`;
+                window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&planId=${planIdParaCobros}&vehiculo=nuevo&token=${token}`;
               }
             }, 1500);
           } else {
@@ -318,7 +318,8 @@ const Dashboard = () => {
                                 if (cargo.TIPO === 'MULTA') {
                                   window.location.href = `${COBROS_URL}/parking/user/multas?carne=${carneUsuario.replace(/-/g, '')}&token=${token}`;
                                 } else {
-                                  window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&monto=${cargo.MONTO}&concepto=${encodeURIComponent(cargo.DESCRIPCION)}&token=${token}`;
+                                  const planId = cargo.ID_A_PAGAR ?? '';
+                                  window.location.href = `${COBROS_URL}/parking/user/pago?carne=${carneUsuario.replace(/-/g, '')}&planId=${planId}&monto=${cargo.MONTO}&concepto=${encodeURIComponent(cargo.DESCRIPCION)}&token=${token}`;
                                 }
                               }}>
                                 <CreditCardFill className="me-1" /> Pagar
