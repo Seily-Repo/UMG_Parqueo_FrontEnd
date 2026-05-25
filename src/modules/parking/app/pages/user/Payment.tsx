@@ -110,7 +110,31 @@ function toPlanCharge(charge: LoginPendingCharge): ResolvedPlanCharge | null {
   };
 }
 
-function pickHighestPlanCharge(charges: LoginPendingCharge[]) {
+function getConceptFamilyKey(concept: string) {
+  const normalized = normalizeConcept(concept);
+
+  if (normalized.includes('matutin')) return 'matutino';
+  if (normalized.includes('vespertin')) return 'vespertino';
+  if (normalized.includes('nocturn')) return 'nocturno';
+  if (normalized.includes('sabado')) return 'sabado';
+  if (normalized.includes('domingo')) return 'domingo';
+  if (normalized.includes('fin de semana')) return 'fin-semana';
+
+  return '';
+}
+
+function conceptMatchesFamily(concept: string, familyKey: string) {
+  if (!familyKey) return true;
+  const normalized = normalizeConcept(concept);
+
+  if (familyKey === 'fin-semana') {
+    return normalized.includes('fin de semana') || normalized.includes('sabado') || normalized.includes('domingo');
+  }
+
+  return normalized.includes(familyKey);
+}
+
+function pickHighestPlanCharge(charges: LoginPendingCharge[], preferredFamilyKey = '') {
   const planCharges = charges
     .filter((charge) => normalizeLoginChargeType(charge.TIPO) === 'PLAN')
     .map(toPlanCharge)
@@ -120,7 +144,13 @@ function pickHighestPlanCharge(charges: LoginPendingCharge[]) {
     return null;
   }
 
-  return planCharges.reduce((maxCharge, currentCharge) => {
+  const familyFiltered = preferredFamilyKey
+    ? planCharges.filter((charge) => conceptMatchesFamily(charge.concept, preferredFamilyKey))
+    : planCharges;
+
+  const candidates = familyFiltered.length > 0 ? familyFiltered : planCharges;
+
+  return candidates.reduce((maxCharge, currentCharge) => {
     return currentCharge.amount > maxCharge.amount ? currentCharge : maxCharge;
   });
 }
@@ -356,7 +386,8 @@ export function Payment() {
         }
 
         const charges = await response.json() as LoginPendingCharge[];
-        const highestCharge = pickHighestPlanCharge(charges);
+        const preferredFamily = getConceptFamilyKey(directPayment.concept || planLabel);
+        const highestCharge = pickHighestPlanCharge(charges, preferredFamily);
 
         if (!highestCharge) {
           throw new Error('No se encontró un cargo de plan pendiente para este usuario.');
