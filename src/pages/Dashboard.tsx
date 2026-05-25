@@ -13,6 +13,25 @@ import ThemeSwitcher from '../components/ThemeSwitcher';
 const API_BASE = '/api';
 const COBROS_URL = 'http://10.0.40.10:3000';
 
+const normalizeText = (value: string) =>
+  (value || '')
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+const isPlanAllowedForJornada = (planName: string, jornadaId?: number) => {
+  if (!jornadaId) return true;
+  const name = normalizeText(planName);
+
+  if (jornadaId === 1) return name.includes('MATUTIN');
+  if (jornadaId === 2) return name.includes('VESPERTIN');
+  if (jornadaId === 5) return name.includes('NOCTURN');
+  if (jornadaId === 3) return name.includes('SABAD') || name.includes('FIN DE SEMANA');
+  if (jornadaId === 4) return name.includes('DOMINGO') || name.includes('FIN DE SEMANA');
+
+  return true;
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState<any>(null);
@@ -47,7 +66,7 @@ const Dashboard = () => {
     setApellidoUsuario(usuarioLogueado.apellidos?.split(' ')[0] || '');
     setCarneUsuario(usuarioLogueado.carne);
 
-    cargarPlanes();
+    cargarPlanes(usuarioLogueado.id_jornada);
   }, [navigate]);
 
   useEffect(() => {
@@ -69,11 +88,15 @@ const Dashboard = () => {
     }
   };
 
-  const cargarPlanes = async () => {
+  const cargarPlanes = async (jornadaId?: number) => {
     try {
       const response = await fetch(`${API_BASE}/planes`);
       if (response.ok) {
-        setPlanes(await response.json());
+        const allPlans = await response.json();
+        const filteredPlans = Array.isArray(allPlans)
+          ? allPlans.filter((plan) => isPlanAllowedForJornada(plan.PLN_NOMBRE_PLAN || '', jornadaId))
+          : [];
+        setPlanes(filteredPlans);
       }
     } catch (error) {
       console.error("Error al cargar planes:", error);
