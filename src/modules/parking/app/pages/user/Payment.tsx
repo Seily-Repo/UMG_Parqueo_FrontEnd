@@ -43,6 +43,12 @@ type LoginPendingCharge = {
   TIPO?: string;
 };
 
+type ResolvedPlanCharge = {
+  planId: number;
+  amount: number;
+  concept: string;
+};
+
 function normalizeCarnet(carnet: string) {
   return carnet.replace(/\D/g, '');
 }
@@ -84,6 +90,39 @@ function inferDirectPlanId(directPayment: ReturnType<typeof getDirectPaymentPara
   const mappedPlanId = directPlanIdByConcept[normalizedConcept];
 
   return Number.isFinite(mappedPlanId) && mappedPlanId > 0 ? mappedPlanId : fallbackPlanIds['entre-semana'];
+}
+
+function normalizeLoginChargeType(tipo: string | undefined) {
+  return (tipo || '').toUpperCase().trim();
+}
+
+function toPlanCharge(charge: LoginPendingCharge): ResolvedPlanCharge | null {
+  const planId = Number(charge.ID_A_PAGAR || 0);
+  const amount = Number(charge.MONTO || 0);
+  if (!Number.isFinite(planId) || planId <= 0 || !Number.isFinite(amount) || amount <= 0) {
+    return null;
+  }
+
+  return {
+    planId,
+    amount,
+    concept: (charge.DESCRIPCION || '').trim(),
+  };
+}
+
+function pickHighestPlanCharge(charges: LoginPendingCharge[]) {
+  const planCharges = charges
+    .filter((charge) => normalizeLoginChargeType(charge.TIPO) === 'PLAN')
+    .map(toPlanCharge)
+    .filter((charge): charge is ResolvedPlanCharge => Boolean(charge));
+
+  if (planCharges.length === 0) {
+    return null;
+  }
+
+  return planCharges.reduce((maxCharge, currentCharge) => {
+    return currentCharge.amount > maxCharge.amount ? currentCharge : maxCharge;
+  });
 }
 
 function StripePaymentForm({
@@ -179,6 +218,7 @@ export function Payment() {
   const planLabel = directPayment.concept || currentRegistration.parkingPlan || 'ENTRE-SEMANA';
   const vehicleCount = currentRegistration.vehicles?.length || 0;
   const amount = Number(directPayment.amount || currentRegistration.amount || 600);
+  const amountToPay = Number(activePayment?.PAG_MONTO_TOTAL || amount);
   const payerCarnet = directPayment.carne || currentRegistration.carnet || '';
   const isPaid = currentRegistration.paymentStatus === 'paid';
   const planId =
@@ -269,7 +309,7 @@ export function Payment() {
     studentName: currentRegistration.fullName || 'Estudiante',
     carnet: payerCarnet || 'No disponible',
     concept: `Pago de parqueo - ${planLabel}`,
-    amount,
+    amount: amountToPay,
     paymentMethod: 'Stripe',
     status: 'Completado',
     issuedAt: currentRegistration.paymentRecordedAt
@@ -304,13 +344,42 @@ export function Payment() {
     setPaymentError('');
 
     try {
+      let planIdToPay = planId;
+      let amountToSend = amount;
+      let conceptToSend = planLabel;
+
+      if (directPayment.enabled) {
+        const response = await fetch(`${loginApiBaseUrl}/pagos/lista-pendiente/${encodeURIComponent(payerCarnet)}`);
+
+        if (!response.ok) {
+          throw new Error(`No se pudo consultar el cargo pendiente actualizado (${response.status}).`);
+        }
+
+        const charges = await response.json() as LoginPendingCharge[];
+        const highestCharge = pickHighestPlanCharge(charges);
+
+        if (!highestCharge) {
+          throw new Error('No se encontró un cargo de plan pendiente para este usuario.');
+        }
+
+        planIdToPay = highestCharge.planId;
+        amountToSend = highestCharge.amount;
+        conceptToSend = highestCharge.concept || conceptToSend;
+
+        updateRegistration({
+          selectedPlanId: planIdToPay,
+          amount: amountToSend,
+          parkingPlan: conceptToSend || currentRegistration.parkingPlan,
+        });
+      }
+
       const payload: BackendCreatePagoPayload = {
         EST_CARNE: payerCarnet,
         LR_CARNE: payerCarnet,
-        PLN_PLAN: planId,
+        PLN_PLAN: planIdToPay,
         FPG_FORMA_PAGO: Number(import.meta.env.VITE_PAYMENT_FORM_CARD_ID || 1),
         PAG_FECHA_PAGO: new Date().toISOString().slice(0, 10),
-        PAG_MONTO_TOTAL: amount,
+        PAG_MONTO_TOTAL: amountToSend,
       };
 
       const result = await paymentService.create(payload) as PaymentIntentResponse;
@@ -423,7 +492,7 @@ export function Payment() {
             ) : (
               <Elements stripe={stripePromise} options={{ clientSecret }}>
                 <StripePaymentForm
-                  amount={amount}
+                  amount={amountToPay}
                   clientSecret={clientSecret}
                   onPaid={handlePaymentConfirmed}
                   onCancel={() => (window.location.href = 'http://10.0.40.10/dashboard')}
@@ -468,7 +537,7 @@ export function Payment() {
                     {isPaid ? 'Completado' : 'Disponible'}
                   </span>
                 </div>
-                <div className="parking-charge-table__amount">Q.{amount.toFixed(2)}</div>
+                <div className="parking-charge-table__amount">Q.{amountToPay.toFixed(2)}</div>
                 <div>
                   {isPaid ? (
                     <div className="d-flex flex-wrap gap-2">
@@ -519,7 +588,7 @@ export function Payment() {
           ) : clientSecret ? (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <StripePaymentForm
-                amount={amount}
+                amount={amountToPay}
                 clientSecret={clientSecret}
                 onPaid={handlePaymentConfirmed}
                 onCancel={() => {
