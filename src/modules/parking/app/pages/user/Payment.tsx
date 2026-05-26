@@ -110,31 +110,7 @@ function toPlanCharge(charge: LoginPendingCharge): ResolvedPlanCharge | null {
   };
 }
 
-function getConceptFamilyKey(concept: string) {
-  const normalized = normalizeConcept(concept);
-
-  if (normalized.includes('matutin')) return 'matutino';
-  if (normalized.includes('vespertin')) return 'vespertino';
-  if (normalized.includes('nocturn')) return 'nocturno';
-  if (normalized.includes('sabado')) return 'sabado';
-  if (normalized.includes('domingo')) return 'domingo';
-  if (normalized.includes('fin de semana')) return 'fin-semana';
-
-  return '';
-}
-
-function conceptMatchesFamily(concept: string, familyKey: string) {
-  if (!familyKey) return true;
-  const normalized = normalizeConcept(concept);
-
-  if (familyKey === 'fin-semana') {
-    return normalized.includes('fin de semana') || normalized.includes('sabado') || normalized.includes('domingo');
-  }
-
-  return normalized.includes(familyKey);
-}
-
-function pickHighestPlanCharge(charges: LoginPendingCharge[], preferredFamilyKey = '') {
+function pickHighestPlanCharge(charges: LoginPendingCharge[]) {
   const planCharges = charges
     .filter((charge) => normalizeLoginChargeType(charge.TIPO) === 'PLAN')
     .map(toPlanCharge)
@@ -144,13 +120,7 @@ function pickHighestPlanCharge(charges: LoginPendingCharge[], preferredFamilyKey
     return null;
   }
 
-  const familyFiltered = preferredFamilyKey
-    ? planCharges.filter((charge) => conceptMatchesFamily(charge.concept, preferredFamilyKey))
-    : planCharges;
-
-  const candidates = familyFiltered.length > 0 ? familyFiltered : planCharges;
-
-  return candidates.reduce((maxCharge, currentCharge) => {
+  return planCharges.reduce((maxCharge, currentCharge) => {
     return currentCharge.amount > maxCharge.amount ? currentCharge : maxCharge;
   });
 }
@@ -237,26 +207,42 @@ export function Payment() {
   const directPaymentStarted = useRef(false);
   const [clientSecret, setClientSecret] = useState('');
   const [activePayment, setActivePayment] = useState<BackendPago | null>(null);
+  const [latestPlanCharge, setLatestPlanCharge] = useState<ResolvedPlanCharge | null>(null);
   const [loadingStripe, setLoadingStripe] = useState(false);
   const [stripeModalOpen, setStripeModalOpen] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [resolvedPlanId, setResolvedPlanId] = useState(0);
   const [resolvingPlanId, setResolvingPlanId] = useState(false);
-  const [planLookupDone, setPlanLookupDone] = useState(false);
 
-  const planLabel = directPayment.concept || currentRegistration.parkingPlan || 'ENTRE-SEMANA';
+  const planLabel = latestPlanCharge?.concept || directPayment.concept || currentRegistration.parkingPlan || 'ENTRE-SEMANA';
   const vehicleCount = currentRegistration.vehicles?.length || 0;
-  const amount = Number(directPayment.amount || currentRegistration.amount || 600);
+  const amount = Number(latestPlanCharge?.amount || directPayment.amount || currentRegistration.amount || 600);
   const amountToPay = Number(activePayment?.PAG_MONTO_TOTAL || amount);
   const payerCarnet = directPayment.carne || currentRegistration.carnet || '';
   const isPaid = currentRegistration.paymentStatus === 'paid';
   const planId =
-    directPayment.enabled
+    latestPlanCharge?.planId ||
+    (directPayment.enabled
       ? directPayment.planId || resolvedPlanId
       : currentRegistration.selectedPlanId ||
         fallbackPlanIds[(currentRegistration.parkingPlan as keyof typeof fallbackPlanIds) || 'entre-semana'] ||
-        1;
+        1);
+
+  const fetchHighestPendingPlanCharge = async () => {
+    if (!payerCarnet) {
+      return null;
+    }
+
+    const response = await fetch(`${loginApiBaseUrl}/pagos/lista-pendiente/${encodeURIComponent(payerCarnet)}`);
+
+    if (!response.ok) {
+      throw new Error(`No se pudo consultar el cargo pendiente actualizado (${response.status}).`);
+    }
+
+    const charges = await response.json() as LoginPendingCharge[];
+    return pickHighestPlanCharge(charges);
+  };
 
   useEffect(() => {
     if (directPayment.token) {
@@ -278,60 +264,51 @@ export function Payment() {
   }, [amount, directPayment, planId, updateRegistration]);
 
   useEffect(() => {
-    if (!directPayment.enabled || directPayment.planId || !payerCarnet || planLookupDone) {
+    if (!payerCarnet) {
       return;
     }
 
     let isMounted = true;
 
-    const resolvePlanFromLogin = async () => {
+    const resolveLatestPendingPlan = async () => {
       setResolvingPlanId(true);
-      setPaymentError('');
 
       try {
-        const response = await fetch(`${loginApiBaseUrl}/pagos/lista-pendiente/${encodeURIComponent(payerCarnet)}`);
-
-        if (!response.ok) {
-          throw new Error(`No se pudo consultar el cargo pendiente (${response.status}).`);
-        }
-
-        const charges = await response.json() as LoginPendingCharge[];
-        const normalizedConcept = normalizeConcept(directPayment.concept);
-        const matchedCharge = charges.find((charge) => {
-          return charge.TIPO === 'PLAN' && normalizeConcept(charge.DESCRIPCION || '') === normalizedConcept;
-        }) || charges.find((charge) => {
-          return charge.TIPO === 'PLAN' && Number(charge.MONTO) === amount;
-        });
-
-        const nextPlanId = Number(matchedCharge?.ID_A_PAGAR || 0);
+        const highestCharge = await fetchHighestPendingPlanCharge();
 
         if (!isMounted) {
           return;
         }
 
-        if (Number.isFinite(nextPlanId) && nextPlanId > 0) {
-          setResolvedPlanId(nextPlanId);
+        if (highestCharge) {
+          setLatestPlanCharge(highestCharge);
+          setResolvedPlanId(highestCharge.planId);
+          updateRegistration({
+            selectedPlanId: highestCharge.planId,
+            amount: highestCharge.amount,
+            parkingPlan: highestCharge.concept || currentRegistration.parkingPlan,
+          });
         } else {
-          setPaymentError('No se pudo identificar el plan pendiente para este cargo.');
+          setLatestPlanCharge(null);
+          setResolvedPlanId(0);
         }
       } catch (error) {
-        if (isMounted) {
-          setPaymentError(getReadableApiError(error, 'No se pudo consultar el plan pendiente del usuario.'));
-        }
+        if (!isMounted) return;
+        setLatestPlanCharge(null);
+        setResolvedPlanId(0);
       } finally {
         if (isMounted) {
-          setPlanLookupDone(true);
           setResolvingPlanId(false);
         }
       }
     };
 
-    void resolvePlanFromLogin();
+    void resolveLatestPendingPlan();
 
     return () => {
       isMounted = false;
     };
-  }, [amount, directPayment, payerCarnet, planLookupDone]);
+  }, [payerCarnet, updateRegistration, currentRegistration.parkingPlan]);
 
   const receiptData: PaymentReceiptData = {
     receiptNumber: currentRegistration.paymentReference || activePayment?.STRIPE_PAYMENT_INTENT_ID || `PAG-${Date.now()}`,
@@ -365,44 +342,28 @@ export function Payment() {
 
     setStripeModalOpen(true);
 
-    if (!planId) {
-      setPaymentError('No se pudo identificar el plan de parqueo para iniciar Stripe.');
-      return;
-    }
-
     setLoadingStripe(true);
     setPaymentError('');
 
     try {
-      let planIdToPay = planId;
-      let amountToSend = amount;
-      let conceptToSend = planLabel;
+      const refreshedHighestCharge = await fetchHighestPendingPlanCharge();
+      const chargeToPay = refreshedHighestCharge || latestPlanCharge;
 
-      if (directPayment.enabled) {
-        const response = await fetch(`${loginApiBaseUrl}/pagos/lista-pendiente/${encodeURIComponent(payerCarnet)}`);
-
-        if (!response.ok) {
-          throw new Error(`No se pudo consultar el cargo pendiente actualizado (${response.status}).`);
-        }
-
-        const charges = await response.json() as LoginPendingCharge[];
-        const preferredFamily = getConceptFamilyKey(directPayment.concept || planLabel);
-        const highestCharge = pickHighestPlanCharge(charges, preferredFamily);
-
-        if (!highestCharge) {
-          throw new Error('No se encontró un cargo de plan pendiente para este usuario.');
-        }
-
-        planIdToPay = highestCharge.planId;
-        amountToSend = highestCharge.amount;
-        conceptToSend = highestCharge.concept || conceptToSend;
-
-        updateRegistration({
-          selectedPlanId: planIdToPay,
-          amount: amountToSend,
-          parkingPlan: conceptToSend || currentRegistration.parkingPlan,
-        });
+      if (!chargeToPay) {
+        throw new Error('No se encontró un cargo de plan pendiente para este usuario.');
       }
+
+      const planIdToPay = chargeToPay.planId;
+      const amountToSend = chargeToPay.amount;
+      const conceptToSend = chargeToPay.concept || planLabel;
+
+      setLatestPlanCharge(chargeToPay);
+      setResolvedPlanId(planIdToPay);
+      updateRegistration({
+        selectedPlanId: planIdToPay,
+        amount: amountToSend,
+        parkingPlan: conceptToSend || currentRegistration.parkingPlan,
+      });
 
       const payload: BackendCreatePagoPayload = {
         EST_CARNE: payerCarnet,
@@ -431,13 +392,13 @@ export function Payment() {
   };
 
   useEffect(() => {
-    if (!directPayment.enabled || directPaymentStarted.current || clientSecret || loadingStripe || resolvingPlanId || !planId) {
+    if (!directPayment.enabled || directPaymentStarted.current || clientSecret || loadingStripe || resolvingPlanId) {
       return;
     }
 
     directPaymentStarted.current = true;
     void handleStartStripePayment();
-  }, [clientSecret, directPayment.enabled, loadingStripe, planId, resolvingPlanId]);
+  }, [clientSecret, directPayment.enabled, loadingStripe, resolvingPlanId]);
 
   const handlePaymentConfirmed = () => {
     const reference = activePayment?.STRIPE_PAYMENT_INTENT_ID || `STRIPE-${Date.now()}`;
