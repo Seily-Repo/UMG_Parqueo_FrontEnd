@@ -221,6 +221,8 @@ export function Payment() {
   const amountToPay = Number(activePayment?.PAG_MONTO_TOTAL || amount);
   const payerCarnet = directPayment.carne || currentRegistration.carnet || '';
   const isPaid = currentRegistration.paymentStatus === 'paid';
+  const hasPendingPlanCharge = Boolean(latestPlanCharge);
+  const displayPaidState = isPaid && !hasPendingPlanCharge;
   const planId =
     latestPlanCharge?.planId ||
     (directPayment.enabled
@@ -287,6 +289,9 @@ export function Payment() {
             selectedPlanId: highestCharge.planId,
             amount: highestCharge.amount,
             parkingPlan: highestCharge.concept || currentRegistration.parkingPlan,
+            paymentStatus: 'pending',
+            paymentRecordedAt: undefined,
+            paymentReference: undefined,
           });
         } else {
           setLatestPlanCharge(null);
@@ -363,6 +368,9 @@ export function Payment() {
         selectedPlanId: planIdToPay,
         amount: amountToSend,
         parkingPlan: conceptToSend || currentRegistration.parkingPlan,
+        paymentStatus: 'pending',
+        paymentRecordedAt: undefined,
+        paymentReference: undefined,
       });
 
       const payload: BackendCreatePagoPayload = {
@@ -423,7 +431,7 @@ export function Payment() {
     });
   };
 
-  if (showReceipt && isPaid) {
+  if (showReceipt && displayPaidState) {
     return (
       <div style={{ maxWidth: 860, margin: '0 auto', padding: directPayment.enabled ? '24px' : 0 }}>
         <PaymentReceiptCard
@@ -525,13 +533,13 @@ export function Payment() {
                   <small>{directPayment.enabled ? `Carne ${payerCarnet}` : `${vehicleCount} vehiculo(s) registrado(s) en el portal.`}</small>
                 </div>
                 <div>
-                  <span className={`parking-charge-table__badge ${isPaid ? 'parking-charge-table__badge--paid' : 'parking-charge-table__badge--available'}`}>
-                    {isPaid ? 'Completado' : 'Disponible'}
+                  <span className={`parking-charge-table__badge ${displayPaidState ? 'parking-charge-table__badge--paid' : 'parking-charge-table__badge--available'}`}>
+                    {displayPaidState ? 'Completado' : 'Disponible'}
                   </span>
                 </div>
-                <div className="parking-charge-table__amount">Q.{amountToPay.toFixed(2)}</div>
+                <div className="parking-charge-table__amount">{`Q.${amountToPay.toFixed(2)}`}</div>
                 <div>
-                  {isPaid ? (
+                  {displayPaidState ? (
                     <div className="d-flex flex-wrap gap-2">
                       <Button variant="outline-primary" className="parking-charge-table__pay" onClick={() => setShowReceipt(true)}>
                         Ver Recibo
