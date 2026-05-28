@@ -34,6 +34,9 @@ const DashboardAdmin = () => {
   const [multasCatalogo, setMultasCatalogo] = useState<any[]>([]);
   const [busquedaPagos, setBusquedaPagos] = useState('');
 
+  const [vehiculosDirectorio, setVehiculosDirectorio] = useState<any[]>([]);
+  const [busquedaVehiculos, setBusquedaVehiculos] = useState('');
+
 
   const [reportes, setReportes] = useState<any>({ distribucion: [], ingresosMensuales: [], dashboard: null });
 
@@ -52,7 +55,16 @@ const DashboardAdmin = () => {
   useEffect(() => {
     if (vistaActual === 'pagos') cargarPagosYMultas();
     if (vistaActual === 'reportes') cargarReportes();
+    if (vistaActual === 'vehiculos_admin') cargarDirectorioVehiculos();
   }, [vistaActual]);
+
+  const cargarDirectorioVehiculos = async () => {
+    setCargando(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/vehiculos-general`, { headers: obtenerHeaders() });
+      if (res.ok) setVehiculosDirectorio(await res.json());
+    } catch (error) { console.error(error); } finally { setCargando(false); }
+  };
 
   const obtenerHeaders = (conJson = false) => {
     const token = localStorage.getItem('token');
@@ -150,6 +162,32 @@ const DashboardAdmin = () => {
     });
   };
 
+  const handleDesactivarVehiculoAdmin = async (id: number) => {
+    Swal.fire({
+      title: '¿Desactivar Vehículo?',
+      text: "El vehículo ya no tendrá acceso al parqueo.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      confirmButtonText: 'Sí, desactivar'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch(`${API_BASE}/vehiculos/${id}/desactivar`, { method: 'PUT', headers: obtenerHeaders() });
+          if (response.ok) {
+            Swal.fire('Desactivado', 'Vehículo desactivado con éxito.', 'success');
+            cargarDirectorioVehiculos();
+          } else {
+            const data = await response.json();
+            Swal.fire('No se pudo desactivar', data.error || 'Tiene multas pendientes.', 'error');
+          }
+        } catch (error) {
+          Swal.fire('Error', 'Problema de conexión con el servidor.', 'error');
+        }
+      }
+    });
+  };
+
   const handleAprobarPago = (id_pago: number, nombre: string) => {
     Swal.fire({ title: '⚠️ MODO DE EMERGENCIA', html: `Estás a punto de forzar el pago de <b>${nombre}</b>.<br/><br/><small>Solo debes usar esta opción si el sistema del banco falló.</small>`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Sí, Forzar Aprobación' }).then(async (result) => {
       if (result.isConfirmed) { try { const res = await fetch(`${API_BASE}/admin/pagos/${id_pago}/aprobar`, { method: 'PUT', headers: obtenerHeaders() }); if (res.ok) { cargarPagosYMultas(); cargarEstadisticas(); cargarReportes(); Swal.fire('¡Forzado!', 'El pago ha sido aprobado manualmente.', 'success'); } } catch (error) { Swal.fire('Error', 'No se pudo conectar.', 'error'); } }
@@ -240,6 +278,7 @@ const DashboardAdmin = () => {
         <Nav className="flex-column mt-3 flex-grow-1">
           <SidebarItem icon={Speedometer2} label="Inicio" vista="dashboard" />
           <SidebarItem icon={PersonLinesFill} label="Gestión de Usuarios" vista="usuarios" />
+          <SidebarItem icon={CarFrontFill} label="Directorio de Vehículos" vista="vehiculos_admin" />
           <SidebarItem icon={CashStack} label="Pagos y Cobros" vista="pagos" />
           <Nav.Link onClick={() => { 
                 const token = localStorage.getItem('token');
@@ -503,6 +542,56 @@ const DashboardAdmin = () => {
               )}
             </div>
           )}
+          {/* VISTA 5: DIRECTORIO DE VEHÍCULOS */}
+          {vistaActual === 'vehiculos_admin' && (
+            <div className="animate-fade-in">
+              <Row className="mb-4"><Col><h2 className="fw-bold" style={{ color: 'var(--color-accion, #0098db)', fontStyle: 'italic' }}>Directorio de Vehículos</h2><p className="text-muted">Listado general de vehículos activos en el sistema.</p></Col></Row>
+              <Card className="border-0 shadow-sm rounded-4">
+                <Card.Body className="p-4">
+                  <Row className="mb-4 align-items-center">
+                    <Col md={6}>
+                      <InputGroup>
+                        <InputGroup.Text className="bg-light border-end-0"><Search className="text-muted" /></InputGroup.Text>
+                        <Form.Control placeholder="Buscar placa, marca, propietario..." className="bg-light border-start-0 ps-0 bg-transparent" style={{ boxShadow: 'none' }} value={busquedaVehiculos} onChange={(e) => setBusquedaVehiculos(e.target.value)} />
+                      </InputGroup>
+                    </Col>
+                    <Col md={6} className="text-md-end mt-3 mt-md-0">
+                      <Button variant="light" onClick={cargarDirectorioVehiculos} title="Recargar"><ArrowRepeat size={20} className={cargando ? 'text-muted' : 'text-primary'} /></Button>
+                    </Col>
+                  </Row>
+                  <div className="table-responsive">
+                    {cargando ? <div className="text-center py-5"><Spinner animation="border" style={{ color: 'var(--color-accion, #0098db)' }} /></div> : (
+                      <Table hover className="align-middle">
+                        <thead className="text-muted" style={{ fontSize: '0.85rem' }}><tr><th className="border-0">Dueño / Carné</th><th className="border-0">Placa</th><th className="border-0">Tipo</th><th className="border-0">Marca / Modelo</th><th className="border-0">Color</th><th className="border-0 text-center">Acción</th></tr></thead>
+                        <tbody>
+                          {vehiculosDirectorio.filter(v => 
+                            v.PLACA.toLowerCase().includes(busquedaVehiculos.toLowerCase()) || 
+                            (v.NOMBRE_PROPIETARIO || '').toLowerCase().includes(busquedaVehiculos.toLowerCase()) || 
+                            (v.MARCA || '').toLowerCase().includes(busquedaVehiculos.toLowerCase())
+                          ).map((v, index) => (
+                            <tr key={index}>
+                              <td><strong>{v.NOMBRE_PROPIETARIO}</strong><br /><small className="text-muted">{v.CARNE_USUARIO}</small></td>
+                              <td className="fw-bold">{v.PLACA}</td>
+                              <td><Badge bg={v.TIPO_VEHICULO === 'AUTOMOVIL' ? 'primary' : 'success'}>{v.TIPO_VEHICULO}</Badge></td>
+                              <td>{v.MARCA} {v.MODELO ? `- ${v.MODELO}` : ''}</td>
+                              <td>{v.COLOR}</td>
+                              <td className="text-center">
+                                <Button variant="outline-danger" size="sm" onClick={() => handleDesactivarVehiculoAdmin(v.ID_VEHICULO)}>
+                                  <Trash size={16} />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                          {vehiculosDirectorio.length === 0 && <tr><td colSpan={6} className="text-center py-4 text-muted">No se encontraron vehículos activos.</td></tr>}
+                        </tbody>
+                      </Table>
+                    )}
+                  </div>
+                </Card.Body>
+              </Card>
+            </div>
+          )}
+
         </div>
       </div>
 

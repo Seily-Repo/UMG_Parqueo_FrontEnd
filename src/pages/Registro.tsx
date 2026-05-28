@@ -152,7 +152,7 @@ const Registro = () => {
       }
     } catch (error) {
       console.error("❌ Error capturado en el try-catch de Registro:", error);
-      Swal.fire('Error de Conexión', 'El servidor de base de datos no responde.', 'error');
+      Swal.fire('Error del Servidor', 'Ha ocurrido un error inesperado. Intenta de nuevo más tarde.', 'error');
     }
   };
 
@@ -214,19 +214,53 @@ const Registro = () => {
                     <Col md={6}>
                       <Form.Group className="mb-3">
                         <Form.Label className="fw-bold">Nombres</Form.Label>
-                        <Form.Control name="nombres" type="text" required placeholder="Nombres completos" />
+                        <Form.Control 
+                          name="nombres" 
+                          type="text" 
+                          required 
+                          placeholder="Nombres completos" 
+                          onChange={(e) => {
+                            if (!/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]*$/.test(e.target.value)) {
+                              e.target.value = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúñÑ\s]/g, '');
+                              Swal.fire({ title: 'Atención', text: 'Solo se permiten letras y espacios en los nombres', icon: 'warning', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
+                            }
+                          }}
+                        />
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
                         <Form.Label className="fw-bold">Apellidos</Form.Label>
-                        <Form.Control name="apellidos" type="text" required placeholder="Apellidos completos" />
+                        <Form.Control 
+                          name="apellidos" 
+                          type="text" 
+                          required 
+                          placeholder="Apellidos completos" 
+                          onChange={(e) => {
+                            if (!/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]*$/.test(e.target.value)) {
+                              e.target.value = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúñÑ\s]/g, '');
+                              Swal.fire({ title: 'Atención', text: 'Solo se permiten letras y espacios en los apellidos', icon: 'warning', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
+                            }
+                          }}
+                        />
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
                         <Form.Label className="fw-bold">Número de Carné</Form.Label>
-                        <Form.Control name="carne" type="text" required placeholder="XXXX-XX-XXXXX" pattern="[0-9]{4}-[0-9]{2}-[0-9]{1,6}" />
+                        <Form.Control 
+                          name="carne" 
+                          type="text" 
+                          required 
+                          placeholder="XXXX-XX-XXXXX" 
+                          pattern="[0-9]{4}-[0-9]{2}-[0-9]{1,6}" 
+                          onChange={(e) => {
+                            if (!/^[\d-]*$/.test(e.target.value)) {
+                              e.target.value = e.target.value.replace(/[^\d-]/g, '');
+                              Swal.fire({ title: 'Atención', text: 'El carné solo debe contener números y guiones', icon: 'warning', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
+                            }
+                          }}
+                        />
                       </Form.Group>
                     </Col>
                     <Col md={6}>
@@ -298,7 +332,14 @@ const Registro = () => {
                     <Col md={6}>
                       <Form.Group className="mb-3">
                         <Form.Label className="fw-bold">(Casa/Apto/Calle)</Form.Label>
-                        <Form.Control name="nomenclatura" type="text" required placeholder="Ej: Umg Casa C10" />
+                        <Form.Control 
+                          name="nomenclatura" 
+                          type="text" 
+                          required 
+                          placeholder="Ej: Umg Casa C10" 
+                          onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Este campo es requerido')}
+                          onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                        />
                       </Form.Group>
                     </Col>
                   </Row>

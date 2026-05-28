@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   House, CarFront, Wallet2, DoorOpen, List, PersonCircle,
   ChevronLeft, ChevronRight, PencilSquare, Tools, PlusCircle, Building, Envelope, Telephone,
-  ExclamationCircleFill, CreditCardFill, InfoCircleFill
+  ExclamationCircleFill, CreditCardFill, InfoCircleFill, Trash
 } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
 import ThemeSwitcher from '../components/ThemeSwitcher';
@@ -144,14 +144,51 @@ const Dashboard = () => {
 
   const esPrimerVehiculo = vehiculos.length === 0;
 
+  const handleOpenVehiculoModal = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (vehiculos.length >= 3) {
+      Swal.fire('Límite Alcanzado', 'Has alcanzado el límite de 3 vehículos permitidos.', 'warning');
+    } else {
+      setShowVehiculoModal(true);
+    }
+  };
+
+  const handleDesactivarVehiculo = async (id: number) => {
+    Swal.fire({
+      title: '¿Eliminar vehículo?',
+      text: "El vehículo será desactivado del sistema.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch(`${API_BASE}/vehiculos/${id}/desactivar`, { method: 'PUT' });
+          if (response.ok) {
+            Swal.fire('Eliminado', 'Vehículo eliminado con éxito.', 'success');
+            cargarVehiculos();
+          } else {
+            const data = await response.json();
+            Swal.fire('No se pudo eliminar', data.error || 'Tiene multas pendientes.', 'error');
+          }
+        } catch (error) {
+          Swal.fire('Error', 'Problema de conexión con el servidor.', 'error');
+        }
+      }
+    });
+  };
+
   const handleGuardarVehiculo = async () => {
     if (vehiculos.length >= 3) {
       Swal.fire('Límite Alcanzado', 'Solo puedes registrar un máximo de 3 vehículos.', 'warning');
       return;
     }
 
-    if (!nuevoVehiculo.placa) {
-      Swal.fire('Error', 'La placa es obligatoria', 'error');
+    if (nuevoVehiculo.placa.length !== 6) {
+      Swal.fire('Error', 'La placa debe tener exactamente 6 caracteres (3 números y 3 letras, sin la letra inicial P o M).', 'error');
       return;
     }
 
@@ -160,11 +197,14 @@ const Dashboard = () => {
       return;
     }
 
+    const prefix = nuevoVehiculo.tipo_vehiculo === 'MOTOCICLETA' ? 'M' : 'P';
+    const placaMascara = `${prefix}${nuevoVehiculo.placa}`;
+
     try {
       const response = await fetch(`${API_BASE}/vehiculos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...nuevoVehiculo, carne_usuario: carneUsuario.replace(/-/g, '') })
+        body: JSON.stringify({ ...nuevoVehiculo, placa: placaMascara, carne_usuario: carneUsuario.replace(/-/g, '') })
       });
 
       if (response.ok) {
@@ -241,7 +281,14 @@ const Dashboard = () => {
           <h2 className="mb-1" style={{ fontFamily: 'var(--fuente-titulos)', fontStyle: 'italic', color: 'var(--color-accion)' }}>Mis Vehículos</h2>
           <p className="text-muted">Administra los carros o motocicletas asociados a tu carné.</p>
         </div>
-        <Button className="btn-liquid d-flex align-items-center gap-2" style={{ backgroundColor: 'var(--color-accion)', border: 'none', borderRadius: '12px', padding: '10px 20px', fontWeight: 'bold' }} onClick={() => setShowVehiculoModal(true)}>
+        <Button 
+          className="btn-liquid d-flex align-items-center gap-2" 
+          style={{ 
+            backgroundColor: 'var(--color-accion)', border: 'none', borderRadius: '12px', padding: '10px 20px', fontWeight: 'bold',
+            opacity: vehiculos.length >= 3 ? 0.6 : 1
+          }} 
+          onClick={handleOpenVehiculoModal}
+        >
           <PlusCircle size={18} /> Registrar Vehículo
         </Button>
       </div>
@@ -260,7 +307,12 @@ const Dashboard = () => {
                 <Card.Body className="p-4">
                   <div className="d-flex justify-content-between align-items-start mb-3">
                     <div className="icon-glass p-3"><CarFront size={24} style={{ color: 'var(--color-primario)' }} /></div>
-                    <Badge bg={v.TIPO_VEHICULO === 'AUTOMOVIL' ? 'primary' : 'success'}>{v.TIPO_VEHICULO}</Badge>
+                    <div>
+                      <Badge bg={v.TIPO_VEHICULO === 'AUTOMOVIL' ? 'primary' : 'success'} className="me-2">{v.TIPO_VEHICULO}</Badge>
+                      <Button variant="outline-danger" size="sm" style={{ border: 'none' }} onClick={() => handleDesactivarVehiculo(v.ID_VEHICULO)}>
+                        <Trash size={18} />
+                      </Button>
+                    </div>
                   </div>
                   <h4 className="fw-bold mb-1" style={{ color: 'var(--color-primario)' }}>{v.PLACA}</h4>
                   <p className="text-muted mb-0">{v.MARCA || 'Sin marca'} {v.MODELO ? `- ${v.MODELO}` : ''}</p>
@@ -456,8 +508,11 @@ const Dashboard = () => {
                 <Col lg={4} md={12}>
                   <Card
                     className="border-0 h-100 animate-fade-in"
-                    style={{ background: 'linear-gradient(135deg, #1a3a5c 0%, #0d253f 100%)', borderRadius: '18px', cursor: 'pointer', overflow: 'hidden', position: 'relative', boxShadow: '0 8px 30px rgba(13, 37, 63, 0.25)' }}
-                    onClick={() => setShowVehiculoModal(true)}
+                    style={{ 
+                      background: 'linear-gradient(135deg, #1a3a5c 0%, #0d253f 100%)', borderRadius: '18px', cursor: 'pointer', overflow: 'hidden', position: 'relative', boxShadow: '0 8px 30px rgba(13, 37, 63, 0.25)',
+                      opacity: vehiculos.length >= 3 ? 0.6 : 1
+                    }}
+                    onClick={handleOpenVehiculoModal}
                   >
                     <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
                     <Card.Body className="p-4 d-flex flex-column justify-content-center" style={{ position: 'relative', zIndex: 1 }}>
@@ -466,7 +521,7 @@ const Dashboard = () => {
                         <h5 className="mb-0" style={{ fontFamily: 'var(--fuente-titulos)', fontStyle: 'italic', color: '#ffffff', fontSize: '1.15rem' }}>¿Nuevo Vehículo?</h5>
                       </div>
                       <p className="mb-3" style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.86rem', lineHeight: 1.55 }}>Registra tu placa y modelo para habilitar tu acceso.</p>
-                      <Button size="sm" className="btn-liquid" style={{ backgroundColor: '#ffffff', color: '#1a3a5c', border: 'none', fontWeight: 'bold', width: 'fit-content', borderRadius: '10px', padding: '8px 20px', fontSize: '0.85rem' }} onClick={(e) => { e.stopPropagation(); setShowVehiculoModal(true); }}>
+                      <Button size="sm" className="btn-liquid" style={{ backgroundColor: '#ffffff', color: '#1a3a5c', border: 'none', fontWeight: 'bold', width: 'fit-content', borderRadius: '10px', padding: '8px 20px', fontSize: '0.85rem' }} onClick={handleOpenVehiculoModal}>
                         Registrar ahora →
                       </Button>
                     </Card.Body>
@@ -601,20 +656,45 @@ const Dashboard = () => {
 
             <Form.Group className="mb-3">
               <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Placa <span className="text-danger">*</span></Form.Label>
-              <Form.Control type="text" placeholder="Ej. P123ABC" required value={nuevoVehiculo.placa} onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, placa: e.target.value })} style={{ textTransform: 'uppercase' }} />
+              <Form.Control 
+                type="text" 
+                placeholder="123ABC" 
+                maxLength={6} 
+                required 
+                value={nuevoVehiculo.placa} 
+                onChange={(e) => {
+                  const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                  setNuevoVehiculo({ ...nuevoVehiculo, placa: val });
+                }} 
+                style={{ textTransform: 'uppercase' }} 
+              />
+              <Form.Text className="text-muted">Ingresa 3 números y 3 letras. El sistema añadirá automáticamente la letra según el tipo de vehículo.</Form.Text>
             </Form.Group>
 
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Marca</Form.Label>
-                  <Form.Control type="text" placeholder="Ej. Toyota" value={nuevoVehiculo.marca} onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, marca: e.target.value })} />
+                  <Form.Select value={nuevoVehiculo.marca} onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, marca: e.target.value })}>
+                    <option value="">Selecciona...</option>
+                    <option value="Toyota">Toyota</option>
+                    <option value="Honda">Honda</option>
+                    <option value="Mazda">Mazda</option>
+                    <option value="Nissan">Nissan</option>
+                    <option value="Hyundai">Hyundai</option>
+                    <option value="Suzuki">Suzuki</option>
+                    <option value="Kia">Kia</option>
+                    <option value="Ford">Ford</option>
+                    <option value="Chevrolet">Chevrolet</option>
+                    <option value="BMW">BMW</option>
+                    <option value="Otras">Otras</option>
+                  </Form.Select>
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Modelo</Form.Label>
-                  <Form.Control type="text" placeholder="Ej. Yaris 2020" value={nuevoVehiculo.modelo} onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, modelo: e.target.value })} />
+                  <Form.Control type="text" placeholder="Ingresa el modelo" value={nuevoVehiculo.modelo} onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, modelo: e.target.value })} />
                 </Form.Group>
               </Col>
             </Row>
