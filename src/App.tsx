@@ -4,7 +4,7 @@ import { getStoredUser, isAuthenticated, normalizeRole } from "./services/auth";
 function App() {
   const user = getStoredUser();
   const role = normalizeRole(user?.rol);
-  const targetPath = role === "ADMINISTRADOR" ? "/admin" : "/parqueo";
+  const targetPath = role === "ADMINISTRADOR" ? "/disponibilidad/admin" : "/disponibilidad/parqueo";
 
   return (
     <div className="container" style={{ marginTop: "90px" }}>

@@ -28,7 +28,7 @@ api.interceptors.response.use(
       clearAuth();
       window.dispatchEvent(new CustomEvent("auth:unauthorized"));
       if (!window.location.pathname.endsWith("/disponibilidad/inicio")) {
-        window.location.href = "/inicio";
+        window.location.href = "/disponibilidad/inicio";
       }
     }
 
