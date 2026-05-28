@@ -33,7 +33,7 @@ const ProtectedRoute = ({
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <BrowserRouter basename="/disponibilidad">
+    <BrowserRouter basename="/">
       <Routes>
         <Route path="/" element={<Navigate to="/inicio" replace />} />
         <Route path="/inicio" element={<App />} />
