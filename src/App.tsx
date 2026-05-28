@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 function App() {
   const user = getStoredUser();
   const role = normalizeRole(user?.rol);
-  const targetPath = role === "ADMINISTRADOR" ? "/disponibilidad/admin" : "/disponibilidad/parqueo";
+  const targetPath = role === "ADMINISTRADOR" ? "/admin" : "/parqueo";
 
   return (
     <div className="container" style={{ marginTop: "90px" }}>
