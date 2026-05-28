@@ -1,66 +1,55 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import Isla, { type EspacioBackend } from "../components/Isla";
-import MessageBox from "../components/Mensaje";
 import {
   asignarEspacio,
-  getAuthToken,
   obtenerDetalleIsla,
   obtenerEspaciosLibres,
   obtenerEspaciosOcupados,
   obtenerIslas,
   type EspacioApi,
 } from "../services/api";
+import { isAuthenticated, getStoredUser } from "../services/auth";
 import "../styles/Parqueo.css";
 
-interface IslaLocal {
+interface IslaVista {
+  id: number;
   nombre: string;
   descripcion: string;
   carros: number;
   motos: number;
   discapacitados: number;
   catedraticos: number;
+  espacios: EspacioBackend[];
 }
 
-interface IslaVista extends IslaLocal {
-  id?: number;
-  espacios?: EspacioBackend[];
-}
-
-const ID_CICLO = Number(process.env.REACT_APP_ID_CICLO || 1);
+const ID_CICLO   = Number(process.env.REACT_APP_ID_CICLO   || 1);
 const ID_JORNADA = Number(process.env.REACT_APP_ID_JORNADA || 1);
+const LOGIN_URL  = (process.env.REACT_APP_LOGIN_URL || "http://10.0.40.10/login").trim();
 
-const ISLAS: IslaLocal[] = [
-  { nombre: "Isla A", descripcion: "Frente a Edificio A", carros: 10, motos: 5, discapacitados: 5, catedraticos: 3 },
-  { nombre: "Isla B", descripcion: "Frente a Edificio B", carros: 10, motos: 4, discapacitados: 5, catedraticos: 2 },
-  { nombre: "Isla C", descripcion: "Frente a Edificio C", carros: 10, motos: 6, discapacitados: 5, catedraticos: 1 },
-  { nombre: "Isla D", descripcion: "Ubicada al lado izquierdo del Edificio C", carros: 8, motos: 3, discapacitados: 2, catedraticos: 0 },
-];
+const ordenarEspacios = (espacios: EspacioApi[]) =>
+  [...espacios].sort((a, b) => (a.ES_Numero ?? a.ES_Espacio) - (b.ES_Numero ?? b.ES_Espacio));
 
-const obtenerCarneUsuario = () => {
-  const usuarioRaw = localStorage.getItem("usuarioParqueo") || localStorage.getItem("usuarioAdmin");
-  if (!usuarioRaw) return null;
-  try {
-    const usuario = JSON.parse(usuarioRaw);
-    const carne = usuario.carne ?? usuario.carne_usuario ?? usuario.LR_CARNE;
-    return carne ? Number(String(carne).replace(/-/g, "")) : null;
-  } catch {
-    return null;
-  }
-};
-
-const ordenarEspacios = (espacios: EspacioApi[]) => {
-  return [...espacios].sort((a, b) => (a.ES_Numero ?? a.ES_Espacio) - (b.ES_Numero ?? b.ES_Espacio));
+const obtenerCarneUsuario = (): number | null => {
+  const user = getStoredUser();
+  if (!user?.carne) return null;
+  return Number(String(user.carne).replace(/-/g, ""));
 };
 
 export default function Parqueo() {
-  const [showModal, setShowModal] = useState(false);
-  const [espacios, setEspacios] = useState<EspacioApi[]>([]);
+  const [espacios,    setEspacios]    = useState<EspacioApi[]>([]);
   const [islasBackend, setIslasBackend] = useState<IslaVista[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const [cargando,    setCargando]    = useState(true);
+
+  // ── PDF #4: redirigir si no hay sesión ──────────────────────────────────────
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      window.location.replace(LOGIN_URL);
+    }
+  }, []);
 
   const cargarDisponibilidad = useCallback(async () => {
-
+    if (!isAuthenticated()) return;
     setCargando(true);
     try {
       const [libresRes, ocupadosRes] = await Promise.all([
@@ -75,86 +64,94 @@ export default function Parqueo() {
       });
 
       (ocupadosRes.data.details ?? []).forEach((asignacion) => {
-        const idEspacio = Number(asignacion.ES_Espacio);
-        const espacioActual = espaciosPorId.get(idEspacio);
-        espaciosPorId.set(idEspacio, {
-          ...espacioActual,
-          ES_Espacio: idEspacio,
+        const id = Number(asignacion.ES_Espacio);
+        espaciosPorId.set(id, {
+          ...espaciosPorId.get(id),
+          ES_Espacio: id,
           ES_Estado: 0,
         });
       });
 
-      const espaciosCombinados = ordenarEspacios(Array.from(espaciosPorId.values()));
-      setEspacios(espaciosCombinados);
+      setEspacios(ordenarEspacios(Array.from(espaciosPorId.values())));
 
-      try {
-        const islasRes = await obtenerIslas(undefined, 1);
-        const islasActivas = islasRes.data.details ?? [];
+      // Cargar islas activas con sus espacios
+      const islasRes   = await obtenerIslas(undefined, 1);
+      const islasActivas = islasRes.data.details ?? [];
 
-        const islasConDetalle = await Promise.all(
-          islasActivas.map(async (isla) => {
+      const islasConDetalle = await Promise.all(
+        islasActivas.map(async (isla) => {
+          try {
             const detalleRes = await obtenerDetalleIsla(Number(isla.IS_ISLA));
-            const detalle = detalleRes.data.details ?? [];
+            const detalle    = detalleRes.data.details ?? [];
             return {
-              id: Number(isla.IS_ISLA),
-              nombre: isla.IS_NOMBRE,
-              descripcion: isla.IS_DESCRIPCION || "",
-              carros: isla.IS_CAPACIDAD,
-              motos: 0,
+              id:           Number(isla.IS_ISLA),
+              nombre:       isla.IS_NOMBRE,
+              descripcion:  isla.IS_DESCRIPCION || "",
+              carros:       isla.IS_CAPACIDAD,
+              motos:        0,
               discapacitados: 0,
               catedraticos: 0,
-              espacios: detalle.map((espacio) => {
-                const idEspacio = Number(espacio.id_espacio);
-                const estadoDisponibilidad = espaciosPorId.get(idEspacio);
+              espacios: detalle.map((e: any) => {
+                const idEspacio = Number(e.id_espacio);
+                const estadoDisp = espaciosPorId.get(idEspacio);
                 return {
-                  ...estadoDisponibilidad,
-                  id_espacio: idEspacio,
-                  ES_Espacio: idEspacio,
-                  ES_Estado: estadoDisponibilidad?.ES_Estado ?? espacio.estado_fisico ?? 1,
-                  estado_fisico: espacio.estado_fisico,
-                  tipo: espacio.tipo,
+                  id_espacio:    idEspacio,
+                  ES_Espacio:    idEspacio,
+                  ES_Estado:     estadoDisp?.ES_Estado ?? e.estado_fisico ?? 1,
+                  estado_fisico: e.estado_fisico,
+                  tipo:          e.tipo,
                 };
               }),
             };
-          })
-        );
+          } catch {
+            return {
+              id: Number(isla.IS_ISLA), nombre: isla.IS_NOMBRE,
+              descripcion: isla.IS_DESCRIPCION || "",
+              carros: isla.IS_CAPACIDAD, motos: 0, discapacitados: 0, catedraticos: 0,
+              espacios: [],
+            };
+          }
+        })
+      );
 
-        setIslasBackend(islasConDetalle);
-      } catch {
-        setIslasBackend([]);
-      }
+      setIslasBackend(islasConDetalle);
     } catch (error: any) {
       console.error("Error al traer disponibilidad:", error);
-      const status = error?.response?.status;
       Swal.fire({
         icon: "error",
         title: "No se pudo cargar la disponibilidad",
-        text: "Verifica el backend y los parametros de ciclo/jornada.",
+        text: "Verifica el backend y los parámetros de ciclo/jornada.",
       });
     } finally {
       setCargando(false);
     }
   }, []);
 
-  useEffect(() => {
-    cargarDisponibilidad();
-  }, [cargarDisponibilidad]);
+  useEffect(() => { cargarDisponibilidad(); }, [cargarDisponibilidad]);
 
+  // ── PDF #3: asignación real con correlativo de pago ──────────────────────────
   const handleSeleccion = async (idEspacio?: number) => {
     if (!idEspacio) return;
+    if (!isAuthenticated()) { window.location.replace(LOGIN_URL); return; }
 
-    const token = getAuthToken();
     const carneUsuario = obtenerCarneUsuario();
+    if (!carneUsuario) {
+      Swal.fire({ icon:"error", title:"Sesión incompleta",
+        text:"No se encontró el carné del usuario en la sesión.", confirmButtonColor:"#cb3634" });
+      return;
+    }
 
+    // PDF #3: pedir correlativo de pago antes de reservar
     const { value: correlativo } = await Swal.fire<string>({
-      title: "Correlativo de pago",
-      input: "text",
-      inputPlaceholder: "Ingresa el correlativo",
-      showCancelButton: true,
-      confirmButtonText: "Reservar",
-      cancelButtonText: "Cancelar",
+      title:             "Validar pago",
+      html:              `<p style="margin-bottom:8px">Ingresa el correlativo de pago para reservar el espacio <strong>#${idEspacio}</strong></p>`,
+      input:             "text",
+      inputPlaceholder:  "Ej: CORR-2024-001",
+      showCancelButton:  true,
+      confirmButtonText: "Validar y reservar",
+      cancelButtonText:  "Cancelar",
       confirmButtonColor: "#22c55e",
-      inputValidator: (value) => (!value ? "El correlativo es obligatorio." : null),
+      inputValidator:    (v) => (!v?.trim() ? "El correlativo es obligatorio." : null),
     });
 
     if (!correlativo) return;
@@ -162,54 +159,44 @@ export default function Parqueo() {
     try {
       const res = await asignarEspacio({
         carne_usuario: carneUsuario,
-        ES_Espacio: idEspacio,
-        id_ciclo: ID_CICLO,
-        id_jornada: ID_JORNADA,
-        correlativo,
+        ES_Espacio:    idEspacio,
+        id_ciclo:      ID_CICLO,
+        id_jornada:    ID_JORNADA,
+        correlativo:   correlativo.trim(),
       });
 
+      // PDF #3: recargar para que el espacio quede como ocupado
       await cargarDisponibilidad();
 
       Swal.fire({
-        icon: "success",
-        title: "Espacio asignado",
-        text: res.data.message,
-        confirmButtonColor: "#22c55e",
+        icon: "success", title: "¡Espacio asignado!",
+        text: res.data.message, confirmButtonColor: "#22c55e",
       });
     } catch (error: any) {
       Swal.fire({
-        icon: "error",
-        title: "No se pudo asignar",
-        text: error?.response?.data?.message || "El backend rechazo la asignacion.",
+        icon: "error", title: "No se pudo asignar",
+        text: error?.response?.data?.message || "El backend rechazó la asignación.",
         confirmButtonColor: "#cb3634",
       });
     }
   };
 
+  // ── Métricas ─────────────────────────────────────────────────────────────────
+  const islas          = islasBackend;
+  const totalEspacios  = islas.reduce((s, i) => s + (i.espacios?.length ?? i.carros), 0);
+  const libres         = espacios.filter((e) => Number(e.ES_Estado) !== 0).length;
+  const ocupados       = espacios.filter((e) => Number(e.ES_Estado) === 0).length;
+  const totalDiscapacitados = islas.reduce((s, i) => s + i.discapacitados, 0);
+
   const islaOffsets = useMemo(() => {
-    return ISLAS.reduce<Record<number, number>>((acc, isla, i) => {
-      const prev = acc[i - 1] ?? 0;
-      const prevIsla = ISLAS[i - 1];
-      const prevTotal = prevIsla
-        ? prevIsla.carros + prevIsla.motos + prevIsla.discapacitados + prevIsla.catedraticos
-        : 0;
+    return islas.reduce<Record<number, number>>((acc, isla, i) => {
+      const prev     = acc[i - 1] ?? 0;
+      const prevIsla = islas[i - 1];
+      const prevTotal = prevIsla ? (prevIsla.espacios?.length ?? prevIsla.carros + prevIsla.motos + prevIsla.discapacitados + prevIsla.catedraticos) : 0;
       acc[i] = prev + prevTotal;
       return acc;
     }, {});
-  }, []);
-
-  // Se muestran islas base solo como respaldo visual si el backend no responde con islas.
-  const islasBase = islasBackend.length > 0 ? islasBackend : ISLAS;
-  const islas: IslaVista[] = islasBase;
-
-  const totalEspacios = islas.reduce(
-    (sum, isla) =>
-      sum + (isla.espacios?.length ?? isla.carros + isla.motos + isla.discapacitados + isla.catedraticos),
-    0
-  );
-  const libres = espacios.filter((e) => e.ES_Estado !== 0).length;
-  const ocupados = espacios.filter((e) => e.ES_Estado === 0).length;
-  const totalDiscapacitados = islas.reduce((sum, i) => sum + i.discapacitados, 0);
+  }, [islas]);
 
   return (
     <div className="fondo-parqueo">
@@ -217,110 +204,71 @@ export default function Parqueo() {
         <div className="card-parqueo">
 
           {/* RESUMEN */}
-          <div className="mb-4 p-3" style={{ background: "#1f4e79", borderRadius: 10, color: "white" }}>
+          <div className="mb-4 p-3" style={{ background:"#1f4e79", borderRadius:10, color:"white" }}>
             <h5 className="text-center mb-3">Resumen del Parqueo</h5>
             <div className="d-flex justify-content-around flex-wrap gap-3">
               <div className="text-center">
-                <div style={{ fontSize: 28, fontWeight: 900 }}>{islas.length}</div>
+                <div style={{ fontSize:28, fontWeight:900 }}>{islas.length}</div>
                 <small>Total Islas</small>
               </div>
               <div className="text-center">
-                <div style={{ fontSize: 28, fontWeight: 900 }}>{totalEspacios}</div>
+                <div style={{ fontSize:28, fontWeight:900 }}>{totalEspacios}</div>
                 <small>Total Espacios</small>
               </div>
               <div className="text-center">
-                <div style={{ fontSize: 28, fontWeight: 900, color: "#22c55e" }}>{libres}</div>
+                <div style={{ fontSize:28, fontWeight:900, color:"#22c55e" }}>{libres}</div>
                 <small>Libres</small>
               </div>
               <div className="text-center">
-                <div style={{ fontSize: 28, fontWeight: 900, color: "#cb3634" }}>{ocupados}</div>
+                <div style={{ fontSize:28, fontWeight:900, color:"#cb3634" }}>{ocupados}</div>
                 <small>Ocupados</small>
               </div>
               <div className="text-center">
-                <div style={{ fontSize: 28, fontWeight: 900, color: "#00bfff" }}>{totalDiscapacitados}</div>
+                <div style={{ fontSize:28, fontWeight:900, color:"#00bfff" }}>{totalDiscapacitados}</div>
                 <small>Discapacitados</small>
               </div>
             </div>
-
-            <div className="mt-3" style={{ height: 10, borderRadius: 99, background: "rgba(255,255,255,0.2)", overflow: "hidden" }}>
+            <div className="mt-3" style={{ height:10, borderRadius:99, background:"rgba(255,255,255,0.2)", overflow:"hidden" }}>
               <div style={{
-                height: "100%",
-                width: totalEspacios > 0 ? `${(ocupados / totalEspacios) * 100}%` : "0%",
-                background: "linear-gradient(90deg, #22c55e, #cb3634)",
-                borderRadius: 99,
-                transition: "width 0.5s",
+                height:"100%", borderRadius:99, transition:"width 0.5s",
+                background: ocupados === 0 ? "#22c55e" : ocupados / (totalEspacios || 1) > 0.8 ? "#cb3634" : "#eab308",
+                width: `${totalEspacios ? (ocupados / totalEspacios) * 100 : 0}%`,
               }} />
             </div>
-            <div className="d-flex justify-content-between mt-1">
-              <small>0%</small>
-              <small>Ocupacion</small>
-              <small>100%</small>
+            <div className="d-flex justify-content-between mt-1" style={{ fontSize:11, opacity:0.7 }}>
+              <span>0%</span><span>Ocupación</span><span>100%</span>
             </div>
-          </div>
-
-          {/* LEYENDA */}
-          <div className="d-flex justify-content-center gap-4 mb-4 flex-wrap">
-            <div className="d-flex align-items-center gap-2">
-              <div style={{ width: 16, height: 16, borderRadius: 4, background: "#22c55e" }} />
-              <small>Libre</small>
-            </div>
-            <div className="d-flex align-items-center gap-2">
-              <div style={{ width: 16, height: 16, borderRadius: 4, background: "#cb3634" }} />
-              <small>Ocupado</small>
-            </div>
-            <div className="d-flex align-items-center gap-2">
-              <div style={{ width: 16, height: 16, borderRadius: 4, background: "#1a6db5", border: "2px solid #00bfff" }} />
-              <small>Discapacitado</small>
+            <div className="d-flex justify-content-center gap-3 mt-2" style={{ fontSize:12 }}>
+              <span>🟢 Libre</span><span>🔴 Ocupado</span><span>🔵 Discapacitado</span>
             </div>
           </div>
 
           {/* ISLAS */}
           {cargando ? (
-            <div className="text-center p-4">Cargando disponibilidad...</div>
+            <div className="text-center p-4" style={{ color:"#1f4e79" }}>Cargando disponibilidad...</div>
+          ) : islas.length === 0 ? (
+            <div className="text-center p-4" style={{ color:"#9ca3af" }}>
+              No hay islas activas en este momento.
+            </div>
           ) : (
             <div className="d-flex flex-column align-items-center gap-4">
-              {islas.map((isla, index) => (
-                <div key={isla.id ?? `extra-${index}`} className="card-isla p-4 shadow-sm w-100">
+              {islas.map((isla, i) => (
+                <div key={isla.id} className="card-isla p-4 shadow-sm w-100">
                   <h5 className="text-center mb-1">{isla.nombre}</h5>
-                  <p className="text-muted text-center mb-3">{isla.descripcion}</p>
+                  <p className="text-muted text-center mb-3" style={{ fontSize:13 }}>{isla.descripcion}</p>
                   <Isla
                     carros={isla.carros}
-                    motos={isla.motos}
                     discapacitados={isla.discapacitados}
+                    motos={isla.motos}
                     catedraticos={isla.catedraticos}
-                    espaciosBackend={isla.espacios ?? espacios}
-                    offsetIndex={isla.espacios ? 0 : islaOffsets[index] ?? 0}
+                    espaciosBackend={isla.espacios}
+                    offsetIndex={islaOffsets[i] ?? 0}
                     onSeleccionar={handleSeleccion}
                   />
                 </div>
               ))}
             </div>
           )}
-
-          <div style={{ padding: "50px", textAlign: "center" }}>
-            <button
-              onClick={() => setShowModal(true)}
-              style={{
-                background: "rgba(255,255,255,0.2)",
-                color: "white",
-                borderRadius: "10%",
-                padding: "10px",
-                backgroundColor: "#1a6db5",
-                paddingLeft: "8%",
-                paddingRight: "8%",
-              }}
-            >
-              Siguiente
-            </button>
-
-            <MessageBox
-              isOpen={showModal}
-              onClose={() => setShowModal(false)}
-              title="Estas seguro?"
-              message="Despues de aceptar este puesto no podras cambiarlo"
-              buttonText="Entendido"
-            />
-          </div>
         </div>
       </div>
     </div>

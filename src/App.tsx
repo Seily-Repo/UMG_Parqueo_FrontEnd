@@ -1,35 +1,30 @@
-// src/App.jsx
-import { useEffect, useState } from 'react';
-import Swal from 'sweetalert2';
-import './App.css';
+import "./App.css";
+import { getStoredUser, isAuthenticated, normalizeRole } from "./services/auth";
 
 function App() {
-  const [msg, setMsg] = useState('Cargando...');
-  const API = process.env.REACT_APP_API_URL || 'http://localhost:4000';
-
-  useEffect(() => {
-    const cargarTest = async () => {
-      try {
-        const res = await fetch(`${API}/test`);
-        if (!res.ok) throw new Error('Error en el servidor');
-        const data = await res.json();
-        setMsg(data.message || JSON.stringify(data));
-      } catch (error) {
-        setMsg('No se pudo conectar con el servidor');
-        Swal.fire({
-          icon: 'error',
-          title: 'Error al conectar con el servidor',
-          text: 'Recarga la página o verifica el backend'
-        });
-        console.error(error);
-      }
-    };
-    cargarTest();
-  }, [API]);
+  const user = getStoredUser();
+  const role = normalizeRole(user?.rol);
+  const targetPath = role === "ADMINISTRADOR" ? "/disponibilidad/admin" : "/disponibilidad/parqueo";
 
   return (
     <div className="container" style={{ marginTop: "90px" }}>
-      <h3>{msg}</h3>
+      <div className="card p-4 shadow-sm mx-auto" style={{ maxWidth: 560 }}>
+        <h3 className="mb-3">Disponibilidad de parqueo</h3>
+        {isAuthenticated() ? (
+          <>
+            <p className="text-muted">
+              Tu sesión esta activa. Ingresa a tu vista correspondiente para continuar.
+            </p>
+            <a className="btn btn-primary" href={targetPath}>
+              Ir a disponibilidad
+            </a>
+          </>
+        ) : (
+          <p className="text-muted mb-0">
+            Inicia sesión desde MiUMG para consultar o administrar los espacios de parqueo.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

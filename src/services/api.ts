@@ -1,18 +1,13 @@
 import axios, { AxiosError } from "axios";
+import { clearAuth, getAuthToken } from "./auth";
 
-const rawApiUrl = (process.env.REACT_APP_API_URL || "/api/disponibilidad").trim().replace(/^["']|["']$/g, "");
-const API_BASE_URL = rawApiUrl.replace(/\/+$/, "").endsWith("/api")
-  ? rawApiUrl.replace(/\/api\/?$/, "")
-  : rawApiUrl.replace(/\/+$/, "");
+const API_BASE_URL = (process.env.REACT_APP_API_URL || "http://10.0.40.10/disponibilidad")
+  .trim()
+  .replace(/\/+$/, "");
 
 const api = axios.create({
   baseURL: API_BASE_URL,
 });
-
-export const getAuthToken = () => {
-  const tokenKeys = ["token", "jwt", "accessToken", "authToken"];
-  return tokenKeys.map((key) => localStorage.getItem(key)).find(Boolean) ?? null;
-};
 
 export const hasAuthToken = () => Boolean(getAuthToken());
 
@@ -30,7 +25,11 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
+      clearAuth();
       window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+      if (!window.location.pathname.endsWith("/disponibilidad/inicio")) {
+        window.location.href = "/disponibilidad/inicio";
+      }
     }
 
     return Promise.reject(error);

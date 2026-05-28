@@ -14,6 +14,7 @@ interface EspacioProps {
   ocupado: boolean;
   tipo: TipoEspacio;
   discapacitado?: boolean;
+  disabled?: boolean;
   onClick?: () => void;
 }
 
@@ -22,11 +23,14 @@ export default function Espacio({
   ocupado,
   tipo,
   discapacitado = false,
+  disabled = false,
   onClick
 }: EspacioProps) {
-  const color = ocupado ? "#cb3634" : discapacitado ? "#1a6db5" : "#22c55e";
+  const color = disabled ? "#6b7280" : ocupado ? "#cb3634" : discapacitado ? "#1a6db5" : "#22c55e";
 
   const handleClick = () => {
+    if (disabled) return;
+
     if (ocupado) {
       Swal.fire({
         icon: "error",
@@ -48,13 +52,6 @@ export default function Espacio({
     }).then((result) => {
       if (result.isConfirmed) {
         onClick?.();
-
-        Swal.fire({
-          icon: "success",
-          title: "Espacio seleccionado",
-          text: `Has seleccionado el espacio #${numero}`,
-          confirmButtonColor: "#22c55e"
-        });
       }
     });
   };
@@ -74,12 +71,12 @@ export default function Espacio({
         justifyContent: "center",
         fontWeight: "bold",
         boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-        cursor: ocupado ? "not-allowed" : "pointer",
+        cursor: ocupado || disabled ? "not-allowed" : "pointer",
         transition: "transform 0.2s",
         border: discapacitado ? "2px solid #00bfff" : "none"
       }}
       onMouseEnter={(e) => {
-        if (!ocupado) e.currentTarget.style.transform = "scale(1.1)";
+        if (!ocupado && !disabled) e.currentTarget.style.transform = "scale(1.1)";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.transform = "scale(1)";
@@ -99,7 +96,7 @@ export default function Espacio({
 
       <div style={{ fontSize: "18px" }}>{ocupado ? "X" : <CheckCircleIcon />}</div>
       <small>#{numero}</small>
-      <small style={{ fontSize: "10px" }}>{ocupado ? "Ocupado" : "Libre"}</small>
+      <small style={{ fontSize: "10px" }}>{disabled ? "Inactivo" : ocupado ? "Ocupado" : "Libre"}</small>
     </div>
   );
 }

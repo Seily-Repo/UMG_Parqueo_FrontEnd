@@ -21,6 +21,7 @@ interface IslaProps {
   catedraticos?: number;
   espaciosBackend?: EspacioBackend[];
   offsetIndex?: number;
+  disabled?: boolean;
   onSeleccionar?: (idEspacio?: number) => void;
 }
 
@@ -41,6 +42,7 @@ export default function Isla({
   catedraticos = 0,
   espaciosBackend = [],
   offsetIndex = 0,
+  disabled = false,
   onSeleccionar
 }: IslaProps) {
 
@@ -81,7 +83,8 @@ export default function Isla({
             numero={numero}
             tipo={tipo}
             discapacitado={tipo === "discapacitado"}
-            ocupado={ocupado}
+            ocupado={disabled || ocupado}
+            disabled={disabled}
             onClick={() => onSeleccionar?.(idEspacio)}
           />
         );
