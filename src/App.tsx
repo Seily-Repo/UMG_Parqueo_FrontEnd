@@ -1,6 +1,6 @@
 import "./App.css";
 import { getStoredUser, isAuthenticated, normalizeRole } from "./services/auth";
-
+import { Link } from "react-router-dom";
 function App() {
   const user = getStoredUser();
   const role = normalizeRole(user?.rol);
@@ -15,9 +15,9 @@ function App() {
             <p className="text-muted">
               Tu sesión esta activa. Ingresa a tu vista correspondiente para continuar.
             </p>
-            <a className="btn btn-primary" href={targetPath}>
-              Ir a disponibilidad
-            </a>
+              <Link className="btn btn-primary" to={targetPath}>
+                Ir a disponibilidad
+              </Link>
           </>
         ) : (
           <p className="text-muted mb-0">
