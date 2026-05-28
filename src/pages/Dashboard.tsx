@@ -62,9 +62,13 @@ const Dashboard = () => {
     }
     const usuarioLogueado = JSON.parse(usuarioLogueadoStr);
     setUsuario(usuarioLogueado);
-    setNombreUsuario(usuarioLogueado.nombres.split(' ')[0]);
-    setApellidoUsuario(usuarioLogueado.apellidos?.split(' ')[0] || '');
-    setCarneUsuario(usuarioLogueado.carne);
+    
+    const safeNombres = usuarioLogueado.nombres || usuarioLogueado.NOMBRES || usuarioLogueado.nombre || 'Estudiante';
+    const safeApellidos = usuarioLogueado.apellidos || usuarioLogueado.APELLIDOS || '';
+    
+    setNombreUsuario(safeNombres.split(' ')[0]);
+    setApellidoUsuario(safeApellidos.split(' ')[0] || '');
+    setCarneUsuario(usuarioLogueado.carne || usuarioLogueado.CARNE || '');
 
     cargarPlanes(usuarioLogueado.id_jornada);
   }, [navigate]);
@@ -187,8 +191,9 @@ const Dashboard = () => {
       return;
     }
 
-    if (nuevoVehiculo.placa.length !== 6) {
-      Swal.fire('Error', 'La placa debe tener exactamente 6 caracteres (3 números y 3 letras, sin la letra inicial P o M).', 'error');
+    const placaRegex = /^\d{3}[a-zA-Z]{3}$/;
+    if (!placaRegex.test(nuevoVehiculo.placa)) {
+      Swal.fire('Error', 'La placa debe tener exactamente 3 números seguidos de 3 letras (Ej. 123ABC).', 'error');
       return;
     }
 
@@ -558,7 +563,9 @@ const Dashboard = () => {
               </div>
               <div className="d-flex align-items-center">
                 <span className="text-muted" style={{ width: '120px' }}>Nombre:</span>
-                <strong style={{ color: 'var(--color-primario)' }}>{usuario?.nombres} {usuario?.apellidos}</strong>
+                <strong style={{ color: 'var(--color-primario)' }}>
+                  {usuario?.nombres || usuario?.NOMBRES || usuario?.nombre || ''} {usuario?.apellidos || usuario?.APELLIDOS || ''}
+                </strong>
               </div>
             </div>
 
@@ -568,11 +575,11 @@ const Dashboard = () => {
               <h6 className="text-uppercase text-muted fw-bold mb-3" style={{ fontSize: '0.8rem', letterSpacing: '1px' }}>Información de Contacto</h6>
               <div className="d-flex align-items-center mb-3">
                 <Envelope className="me-3 text-muted" size={18} />
-                <span style={{ color: 'var(--color-primario)' }}>{usuario?.correo_institucional || usuario?.correo_electronico || 'No registrado'}</span>
+                <span style={{ color: 'var(--color-primario)' }}>{usuario?.correo_institucional || usuario?.CORREO_INSTITUCIONAL || usuario?.correo_electronico || 'No registrado'}</span>
               </div>
               <div className="d-flex align-items-center">
                 <Telephone className="me-3 text-muted" size={18} />
-                <span style={{ color: 'var(--color-primario)' }}>{usuario?.telefonos || usuario?.telefono || '+502 (No registrado)'}</span>
+                <span style={{ color: 'var(--color-primario)' }}>{usuario?.telefonos || usuario?.TELEFONO || usuario?.telefono || '+502 (No registrado)'}</span>
               </div>
             </div>
 
@@ -668,7 +675,6 @@ const Dashboard = () => {
                 }} 
                 style={{ textTransform: 'uppercase' }} 
               />
-              <Form.Text className="text-muted">Ingresa 3 números y 3 letras. El sistema añadirá automáticamente la letra según el tipo de vehículo.</Form.Text>
             </Form.Group>
 
             <Row>
