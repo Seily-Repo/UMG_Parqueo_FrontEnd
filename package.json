@@ -1,6 +1,7 @@
 {
   "name": "umg_parqueo_frontend",
   "version": "0.1.0",
+  "homepage": "/disponibilidad",
   "license": "MIT",
   "private": true,
   "dependencies": {
