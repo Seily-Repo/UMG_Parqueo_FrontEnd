@@ -25,6 +25,7 @@ const SideBarAdmin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const reportesActivo = location.pathname === "/" || location.pathname.startsWith("/reportes");
 
   const limpiarSesionReportes = () => {
     localStorage.clear();
@@ -119,7 +120,7 @@ const SideBarAdmin = () => {
           }}
         >
           <img
-            src="/logo.png"
+            src="/logo.png?v=login-registro-menu"
             alt="UMG"
             style={{ width: sidebarOpen ? "55px" : "40px", transition: "0.3s" }}
           />
@@ -161,7 +162,7 @@ const SideBarAdmin = () => {
           <SidebarItem
             icon={PieChartFill}
             label="Reportes"
-            active={location.pathname.startsWith("/reportes")}
+            active={reportesActivo}
             onClick={() => navigate("/reportes")}
           />
           <SidebarItem

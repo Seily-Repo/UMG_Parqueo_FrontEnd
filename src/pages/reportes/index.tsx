@@ -1,10 +1,48 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
 import SideBarAdmin from "../../components/SidebarAdmin";
 //import "@/styles/reportes.module.css";
 
 import {useNavigate} from "react-router-dom";
+import { obtenerHeaders } from "../../utils/authHeaders";
+
+const API_URL = "http://10.0.40.10/api/reportes";
+
+type DescargaReciente = {
+  id: number;
+  carne: number;
+  nombres: string;
+  apellidos: string;
+  tipo: string;
+  fecha: string;
+};
 
 const Index = () => {
   const navigate = useNavigate();
+  const [descargas, setDescargas] = useState<DescargaReciente[]>([]);
+  const [cargandoDescargas, setCargandoDescargas] = useState(false);
+
+  useEffect(() => {
+    const cargarDescargas = async () => {
+      setCargandoDescargas(true);
+
+      try {
+        const response = await axios.get(`${API_URL}/descargas-recientes`, {
+          headers: obtenerHeaders(),
+        });
+
+        if (response.data.success) {
+          setDescargas(response.data.data || []);
+        }
+      } catch (error) {
+        console.error("Error cargando descargas recientes:", error);
+      } finally {
+        setCargandoDescargas(false);
+      }
+    };
+
+    cargarDescargas();
+  }, []);
 
   return (
     <div style={{
@@ -14,9 +52,9 @@ const Index = () => {
       }}>
       
       <SideBarAdmin />
-     <div className="container d-flex justify-content-center align-items-center vh-91">
+     <div className="container py-5">
 
-      <div className="card report-card p-4 w-100" style={{ maxWidth: "900px", borderRadius: "18px", minHeight: "500px" }}>
+      <div className="card report-card p-4 w-100 mx-auto" style={{ maxWidth: "900px", borderRadius: "18px", minHeight: "500px" }}>
         
         {/* Título */}
         <h3 className="text-center mb-4 fw-bold mt-4">
@@ -73,6 +111,57 @@ const Index = () => {
 
         </div>
 
+      </div>
+
+      <div className="card border-0 shadow-sm mt-4 w-100 mx-auto" style={{ maxWidth: "900px", borderRadius: "14px" }}>
+        <div className="card-body p-4">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <h5 className="fw-bold mb-1">Ultimas descargas</h5>
+              <p className="text-muted small mb-0">Usuarios que solicitaron reportes PDF o Excel recientemente.</p>
+            </div>
+            {cargandoDescargas && (
+              <span className="badge bg-light text-muted border">Cargando...</span>
+            )}
+          </div>
+
+          <div className="table-responsive">
+            <table className="table table-hover align-middle mb-0">
+              <thead className="table-light">
+                <tr>
+                  <th>Carne</th>
+                  <th>Nombre</th>
+                  <th>Apellido</th>
+                  <th>Documento</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {descargas.length > 0 ? (
+                  descargas.map((descarga) => (
+                    <tr key={descarga.id}>
+                      <td className="fw-semibold">{descarga.carne}</td>
+                      <td>{descarga.nombres}</td>
+                      <td>{descarga.apellidos}</td>
+                      <td>
+                        <span className={`badge ${descarga.tipo === "PDF" ? "bg-danger" : "bg-success"}`}>
+                          {descarga.tipo}
+                        </span>
+                      </td>
+                      <td>{descarga.fecha}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center text-muted py-4">
+                      No hay descargas registradas.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
     </div>
