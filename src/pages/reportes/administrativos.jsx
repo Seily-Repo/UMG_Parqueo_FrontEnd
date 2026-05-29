@@ -15,6 +15,7 @@ function PanelParqueo() {
   const [total, setTotal] = useState(0);
 
   const [loading, setLoading] = useState(false);
+  const [mensajeDescarga, setMensajeDescarga] = useState("");
 
   // ============================================
   // VALIDAR
@@ -63,8 +64,27 @@ function PanelParqueo() {
   // EXCEL
   // ============================================
 
+  const obtenerMensajeErrorDescarga = async (error) => {
+    const data = error.response?.data;
+
+    if (data instanceof Blob) {
+      const text = await data.text();
+
+      try {
+        const parsed = JSON.parse(text);
+        return parsed.message || "Error al descargar el archivo";
+      } catch {
+        return text || "Error al descargar el archivo";
+      }
+    }
+
+    return data?.message || "Error al descargar el archivo";
+  };
+
   const descargarArchivo = async (url, nombreArchivo) => {
     //if (!validar()) return;
+
+    setMensajeDescarga("");
 
     try {
       const response = await axios.get(url, {
@@ -81,7 +101,8 @@ function PanelParqueo() {
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error("Error:", error);
-      alert("Error al descargar el archivo");
+      const mensaje = await obtenerMensajeErrorDescarga(error);
+      setMensajeDescarga(mensaje);
     }
   };
 
@@ -225,6 +246,12 @@ function PanelParqueo() {
                   Limpiar
                 </button>
               </div>
+
+              {mensajeDescarga && (
+                <div className="alert alert-warning mt-3 mb-0" role="alert">
+                  {mensajeDescarga}
+                </div>
+              )}
             </div>
           </div>
 
