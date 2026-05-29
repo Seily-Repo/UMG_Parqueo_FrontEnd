@@ -6,6 +6,7 @@ import LoginAdmin from './pages/LoginAdmin';
 import Dashboard from './pages/Dashboard';
 import DashboardAdmin from './pages/DashboardAdmin';
 import CambiarPassword from './pages/CambiarPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
@@ -18,7 +19,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/dashboard-admin" element={<DashboardAdmin />} />
         <Route path="/cambiar-password" element={<CambiarPassword />} />
-        <Route path="/cambiar-password" element={<CambiarPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </BrowserRouter>
   );
