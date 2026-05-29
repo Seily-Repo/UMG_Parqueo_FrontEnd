@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   House, CarFront, Wallet2, DoorOpen, List, PersonCircle,
   ChevronLeft, ChevronRight, PencilSquare, Tools, PlusCircle, Building, Envelope, Telephone,
-  ExclamationCircleFill, CreditCardFill, InfoCircleFill, Trash
+  ExclamationCircleFill, CreditCardFill, InfoCircleFill, Trash, Scooter
 } from 'react-bootstrap-icons';
 import Swal from 'sweetalert2';
 import ThemeSwitcher from '../components/ThemeSwitcher';
@@ -311,7 +311,12 @@ const Dashboard = () => {
                 <div style={{ height: '4px', backgroundColor: 'var(--color-accion)' }} />
                 <Card.Body className="p-4">
                   <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div className="icon-glass p-3"><CarFront size={24} style={{ color: 'var(--color-primario)' }} /></div>
+                    <div className="icon-glass p-3">
+                      {v.TIPO_VEHICULO === 'MOTOCICLETA' ? 
+                        <Scooter size={24} style={{ color: 'var(--color-primario)' }} /> : 
+                        <CarFront size={24} style={{ color: 'var(--color-primario)' }} />
+                      }
+                    </div>
                     <div>
                       <Badge bg={v.TIPO_VEHICULO === 'AUTOMOVIL' ? 'primary' : 'success'} className="me-2">{v.TIPO_VEHICULO}</Badge>
                       <Button variant="outline-danger" size="sm" style={{ border: 'none' }} onClick={() => handleDesactivarVehiculo(v.ID_VEHICULO)}>
@@ -683,17 +688,32 @@ const Dashboard = () => {
                   <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Marca</Form.Label>
                   <Form.Select value={nuevoVehiculo.marca} onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, marca: e.target.value })}>
                     <option value="">Selecciona...</option>
-                    <option value="Toyota">Toyota</option>
-                    <option value="Honda">Honda</option>
-                    <option value="Mazda">Mazda</option>
-                    <option value="Nissan">Nissan</option>
-                    <option value="Hyundai">Hyundai</option>
-                    <option value="Suzuki">Suzuki</option>
-                    <option value="Kia">Kia</option>
-                    <option value="Ford">Ford</option>
-                    <option value="Chevrolet">Chevrolet</option>
-                    <option value="BMW">BMW</option>
-                    <option value="Otras">Otras</option>
+                    {nuevoVehiculo.tipo_vehiculo === 'MOTOCICLETA' ? (
+                      <>
+                        <option value="Yamaha">Yamaha</option>
+                        <option value="Honda">Honda</option>
+                        <option value="Suzuki">Suzuki</option>
+                        <option value="Kawasaki">Kawasaki</option>
+                        <option value="Bajaj">Bajaj</option>
+                        <option value="KTM">KTM</option>
+                        <option value="Ducati">Ducati</option>
+                        <option value="Otras">Otras</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Toyota">Toyota</option>
+                        <option value="Honda">Honda</option>
+                        <option value="Mazda">Mazda</option>
+                        <option value="Nissan">Nissan</option>
+                        <option value="Hyundai">Hyundai</option>
+                        <option value="Suzuki">Suzuki</option>
+                        <option value="Kia">Kia</option>
+                        <option value="Ford">Ford</option>
+                        <option value="Chevrolet">Chevrolet</option>
+                        <option value="BMW">BMW</option>
+                        <option value="Otras">Otras</option>
+                      </>
+                    )}
                   </Form.Select>
                 </Form.Group>
               </Col>
