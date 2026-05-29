@@ -1,7 +1,6 @@
-version: "3.8"
 services:
-  frontend:
-    restart: always
+  frontend-disponibilidad:        # ← cambiar de "frontend"
+    container_name: umg_disponibilidad_prod
     build:
       context: .
       dockerfile: Dockerfile
@@ -11,8 +10,7 @@ services:
         REACT_APP_LOGIN_ADMIN_URL: http://10.0.40.10/login-admin
         REACT_APP_ID_CICLO: 1
         REACT_APP_ID_JORNADA: 1
-    container_name: umg_disponibilidad_prod
     expose:
-      - "80"
+      - "3000"                    # ← cambiar de 80 a 3000
     environment:
       - NODE_ENV=production
