@@ -35,9 +35,7 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
-      // Nota: Si el backend aún no tiene el endpoint /reset-password, 
-      // podrías decodificar el JWT aquí y enviarlo al endpoint /cambiar-password
-      const response = await fetch(`${API_BASE}/auth/reset-password`, {
+      const response = await fetch(`${API_BASE}/auth/update-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, nuevaPassword: password })
