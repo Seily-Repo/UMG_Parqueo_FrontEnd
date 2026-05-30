@@ -621,54 +621,18 @@ const Dashboard = () => {
 
           <div style={{ padding: '28px' }}>
 
-            {esPrimerVehiculo ? (
-              <Form.Group className="mb-4">
-                <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Selecciona tu Plan de Parqueo <span className="text-danger">*</span></Form.Label>
-                <Form.Select
-                  required
-                  value={nuevoVehiculo.plan_id}
-                  onChange={(e) => {
-                    const selectedPlanId = e.target.value;
-                    const selectedPlan = planes.find(p => p.PLN_PLAN.toString() === selectedPlanId);
-                    let tipoVehiculo = nuevoVehiculo.tipo_vehiculo;
-                    
-                    if (selectedPlan && selectedPlan.PLN_NOMBRE_PLAN) {
-                      const nombrePlan = selectedPlan.PLN_NOMBRE_PLAN.toUpperCase();
-                      if (nombrePlan.includes('MOTO')) {
-                        tipoVehiculo = 'MOTOCICLETA';
-                      } else if (nombrePlan.includes('CARRO')) {
-                        tipoVehiculo = 'AUTOMOVIL';
-                      }
-                    }
-                    
-                    setNuevoVehiculo({ ...nuevoVehiculo, plan_id: selectedPlanId, tipo_vehiculo: tipoVehiculo });
-                  }}
-                  style={{ border: '2px solid var(--color-accion)' }}
-                >
-                  <option value="" disabled hidden>Elige un plan de la lista...</option>
-                  {planes.map((p) => (
-                    <option key={p.PLN_PLAN} value={p.PLN_PLAN}>
-                      {p.PLN_NOMBRE_PLAN} - Q.{p.PLN_PRECIO}.00
-                    </option>
-                  ))}
-                </Form.Select>
-                <Form.Text className="text-muted"><InfoCircleFill className="me-1" /> Este plan se asociará a tu cuenta principal.</Form.Text>
-              </Form.Group>
-            ) : (
-              <Alert variant="info" className="d-flex align-items-center border-0 shadow-sm rounded-3 py-2 px-3 mb-4">
-                <InfoCircleFill size={20} className="me-3" />
-                <div style={{ fontSize: '0.85rem' }}>
-                  <strong>Vehículo Adicional:</strong> Recuerda que el sistema permite un máximo de <strong>3 vehículos</strong> por usuario (Llevas {vehiculos.length}/3).
-                </div>
-              </Alert>
-            )}
+            <Alert variant="info" className="d-flex align-items-center border-0 shadow-sm rounded-3 py-2 px-3 mb-4">
+              <InfoCircleFill size={20} className="me-3 flex-shrink-0" />
+              <div style={{ fontSize: '0.85rem' }}>
+                <strong>Límite de Vehículos:</strong> Recuerda que el sistema permite un máximo de <strong>3 vehículos</strong> por usuario (Llevas {vehiculos.length}/3).
+              </div>
+            </Alert>
 
             <Form.Group className="mb-3">
               <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Tipo de Vehículo</Form.Label>
               <Form.Select 
                 value={nuevoVehiculo.tipo_vehiculo} 
                 onChange={(e) => setNuevoVehiculo({ ...nuevoVehiculo, tipo_vehiculo: e.target.value })}
-                disabled={esPrimerVehiculo}
               >
                 <option value="AUTOMOVIL">Automóvil</option>
                 <option value="MOTOCICLETA">Motocicleta</option>

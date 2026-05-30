@@ -256,8 +256,11 @@ const DashboardAdmin = () => {
     <Col lg={3} sm={6} className="mb-4">
       <Card className="border-0 shadow-sm rounded-4 h-100" style={{ transition: 'transform 0.2s', cursor: 'default' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
         <Card.Body className="p-4 d-flex align-items-center">
-          <div className="rounded-3 d-flex align-items-center justify-content-center me-3" style={{ width: '60px', height: '60px', backgroundColor: `${color}15`, color: color }}><Icon size={28} /></div>
-          <div><div className="text-muted small fw-bold mb-1" style={{ letterSpacing: '0.5px' }}>{title.toUpperCase()}</div><h3 className="mb-0 fw-bold" style={{ color: 'var(--azul-oscuro, #002b5c)' }}>{value}</h3></div>
+          <div className="rounded-3 d-flex align-items-center justify-content-center me-3" style={{ width: '60px', height: '60px', backgroundColor: `${color}15`, color: color, flexShrink: 0 }}><Icon size={28} /></div>
+          <div style={{ overflow: 'hidden', width: '100%' }}>
+            <div className="text-muted small fw-bold mb-1 text-truncate" style={{ letterSpacing: '0.5px' }}>{title.toUpperCase()}</div>
+            <h3 className="mb-0 fw-bold text-truncate" style={{ color: 'var(--azul-oscuro, #002b5c)', fontSize: '1.4rem' }} title={String(value)}>{value}</h3>
+          </div>
         </Card.Body>
       </Card>
     </Col>
