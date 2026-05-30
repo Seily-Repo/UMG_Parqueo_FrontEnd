@@ -19,6 +19,7 @@ const DashboardAdmin = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [vistaActual, setVistaActual] = useState('dashboard');
   const [adminLogueado, setAdminLogueado] = useState<any>({});
+  const [isLoadingPerfil, setIsLoadingPerfil] = useState(true);
 
   const [usuarios, setUsuarios] = useState<any[]>([]);
   const [busquedaUsuarios, setBusquedaUsuarios] = useState('');
@@ -46,6 +47,7 @@ const DashboardAdmin = () => {
     const token = localStorage.getItem('token');
     if (adminGuardado && token) {
       setAdminLogueado(JSON.parse(adminGuardado));
+      setIsLoadingPerfil(false);
     } else {
       navigate('/login-admin');
     }
@@ -262,8 +264,17 @@ const DashboardAdmin = () => {
   );
 
 
+  const ingresosFormateados = `Q ${Number(stats.ingresos || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--fondo-general, #f4f7f6)' }}>
+      {isLoadingPerfil ? (
+        <div className="d-flex flex-column align-items-center justify-content-center w-100 h-100" style={{ minHeight: '100vh' }}>
+          <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}></div>
+          <h4 className="mt-3 text-muted">Cargando portal administrativo...</h4>
+        </div>
+      ) : (
+        <>
       {/* ================= BARRA LATERAL ================= */}
       <div style={{ width: sidebarOpen ? '260px' : '80px', backgroundColor: 'var(--azul-oscuro, #002b5c)', transition: 'width 0.3s ease', zIndex: 1000 }} className="d-flex flex-column">
         <div className="text-center py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' }}>
@@ -330,7 +341,7 @@ const DashboardAdmin = () => {
                 <StatCard title="Ocupación" value={`${stats.ocupacion || 0}%`} icon={PieChartFill} color="#0098db" />
                 <StatCard title="Carros" value={stats.carros} icon={CarFrontFill} color="#28a745" />
                 <StatCard title="Motos" value={stats.motos} icon={Scooter} color="#f5a623" />
-                <StatCard title="Ingresos" value={`Q ${stats.ingresos}`} icon={CashStack} color="#6f42c1" />
+                <StatCard title="Ingresos" value={ingresosFormateados} icon={CashStack} color="#6f42c1" />
               </Row>
             </div>
           )}
@@ -646,6 +657,8 @@ const DashboardAdmin = () => {
         </div>
       </Modal>
 
+        </>
+      )}
     </div>
   );
 };
