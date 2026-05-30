@@ -25,8 +25,8 @@ interface IslaVista {
 }
 
 interface ParqueoOpcion {
-  PQ_PARQUEO: number;
-  PQ_NOMBRE:  string;
+  PQ_Parqueo: number;
+  PQ_Nombre:  string;
 }
 
 interface AsignacionGuardada {
@@ -80,9 +80,9 @@ export default function Parqueo() {
     const cargarParqueos = async () => {
       try {
         const res = await obtenerParqueos();
-        const lista = ((res.data as any).details ?? []) as ParqueoOpcion[];
+        const lista = ((res.data as any).data ?? []) as ParqueoOpcion[];
         setParqueos(lista);
-        if (lista.length > 0) setParqueoId(Number(lista[0].PQ_PARQUEO));
+        if (lista.length > 0) setParqueoId(Number(lista[0].PQ_Parqueo));
       } catch {
         Swal.fire({ icon: "error", title: "No se pudieron cargar los parqueos",
           text: "Verifica tu conexión con el backend." });
@@ -212,7 +212,7 @@ export default function Parqueo() {
         isla.espacios.some((e) => Number(e.ES_Espacio) === idEspacio || Number(e.id_espacio) === idEspacio)
       );
 
-      const parqueoNombre = parqueos.find((p) => Number(p.PQ_PARQUEO) === parqueoId)?.PQ_NOMBRE ?? "";
+      const parqueoNombre = parqueos.find((p) => Number(p.PQ_Parqueo) === parqueoId)?.PQ_Nombre ?? "";
 
       const nuevaAsignacion: AsignacionGuardada = {
         espacioId:       idEspacio,
@@ -301,8 +301,8 @@ export default function Parqueo() {
                 }}
               >
                 {parqueos.map((p) => (
-                  <option key={p.PQ_PARQUEO} value={p.PQ_PARQUEO}>
-                    {p.PQ_NOMBRE}
+                  <option key={p.PQ_Parqueo} value={p.PQ_Parqueo}>
+                    {p.PQ_Nombre}
                   </option>
                 ))}
               </select>
