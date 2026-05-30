@@ -103,6 +103,11 @@ const Registro = () => {
     const formData = new FormData(formElement);
     const datosUsuario = Object.fromEntries(formData.entries());
 
+    if (datosUsuario.telefonos === datosUsuario.emergencia_telefono) {
+      Swal.fire('Error', 'El teléfono de emergencia no puede ser el mismo que tu teléfono personal', 'error');
+      return;
+    }
+
     // 🌟 DEBUG NUEVO E INDESTRUCTIBLE 🌟
     console.log("🌟 --- INICIANDO VALIDACIÓN DE SESIÓN --- 🌟");
     const sessionAdmin = localStorage.getItem('usuarioAdmin');
@@ -416,7 +421,18 @@ const Registro = () => {
                     <Col md={6}>
                       <Form.Group className="mb-3">
                         <Form.Label className="fw-bold text-danger">Nombre de Contacto</Form.Label>
-                        <Form.Control name="emergencia_nombre" type="text" required placeholder="Familiar o Contacto" />
+                        <Form.Control 
+                          name="emergencia_nombre" 
+                          type="text" 
+                          required 
+                          placeholder="Familiar o Contacto" 
+                          onChange={(e) => {
+                            if (!/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]*$/.test(e.target.value)) {
+                              e.target.value = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúñÑ\s]/g, '');
+                              Swal.fire({ title: 'Atención', text: 'Solo se permiten letras y espacios', icon: 'warning', toast: true, position: 'top-end', timer: 3000, showConfirmButton: false });
+                            }
+                          }}
+                        />
                       </Form.Group>
                     </Col>
                     <Col md={6}>

@@ -40,6 +40,7 @@ const Dashboard = () => {
   const [carneUsuario, setCarneUsuario] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeSection, setActiveSection] = useState('inicio');
+  const [isLoading, setIsLoading] = useState(true);
 
   const [showProfile, setShowProfile] = useState(false);
 
@@ -71,6 +72,7 @@ const Dashboard = () => {
     setCarneUsuario(usuarioLogueado.carne || usuarioLogueado.CARNE || '');
 
     cargarPlanes(usuarioLogueado.id_jornada);
+    setIsLoading(false);
   }, [navigate]);
 
   useEffect(() => {
@@ -431,6 +433,13 @@ const Dashboard = () => {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--fondo-general)', fontFamily: 'var(--fuente-principal)' }}>
+      {isLoading ? (
+        <div className="d-flex flex-column align-items-center justify-content-center w-100 h-100" style={{ minHeight: '100vh' }}>
+          <div className="spinner-border text-primary" role="status" style={{ width: '3rem', height: '3rem' }}></div>
+          <h4 className="mt-3 text-muted">Cargando tu información...</h4>
+        </div>
+      ) : (
+        <>
       {/* SIDEBAR */}
       <div style={{ width: `${sidebarWidth}px`, minWidth: `${sidebarWidth}px`, background: 'linear-gradient(180deg, var(--color-primario) 0%, var(--color-primario-profundo) 100%)', color: 'white', display: 'flex', flexDirection: 'column', zIndex: 10, transition: 'width 0.3s ease', overflow: 'hidden' }}>
         <div className="text-center py-4 border-bottom border-white border-opacity-10">
@@ -738,7 +747,8 @@ const Dashboard = () => {
         </div>
       </Modal>
 
-
+        </>
+      )}
 
     </div>
   );
