@@ -49,6 +49,7 @@ const Dashboard = () => {
   const [listaDeuda, setListaDeuda] = useState<any[]>([]);
   const [showVehiculoModal, setShowVehiculoModal] = useState(false);
   const [nuevoVehiculo, setNuevoVehiculo] = useState({ tipo_vehiculo: 'AUTOMOVIL', placa: '', marca: '', modelo: '', color: '', plan_id: '' });
+  const [planActivoInfo, setPlanActivoInfo] = useState({ activo: false, nombre: '' });
 
 
 
@@ -79,6 +80,7 @@ const Dashboard = () => {
     if ((activeSection === 'vehiculos' || activeSection === 'inicio' || activeSection === 'pago') && carneUsuario) {
       cargarVehiculos();
       cargarDeuda();
+      verificarPlanActivo();
     }
   }, [activeSection, carneUsuario]);
 
@@ -118,6 +120,18 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error("Error al cargar deuda:", error);
+    }
+  };
+
+  const verificarPlanActivo = async () => {
+    try {
+      const carneLimpio = carneUsuario.replace(/-/g, '');
+      const response = await fetch(`${API_BASE}/pagos/plan-activo/${carneLimpio}`);
+      if (response.ok) {
+        setPlanActivoInfo(await response.json());
+      }
+    } catch (error) {
+      console.error("Error al verificar plan activo:", error);
     }
   };
 
@@ -199,8 +213,8 @@ const Dashboard = () => {
       return;
     }
 
-    if (esPrimerVehiculo && !nuevoVehiculo.plan_id) {
-      Swal.fire('Error', 'Debes seleccionar un plan de parqueo para tu primer vehículo', 'warning');
+    if (!planActivoInfo.activo && !nuevoVehiculo.plan_id) {
+      Swal.fire('Error', 'Debes seleccionar un plan de parqueo.', 'warning');
       return;
     }
 
@@ -620,6 +634,49 @@ const Dashboard = () => {
           </div>
 
           <div style={{ padding: '28px' }}>
+
+            {planActivoInfo.activo ? (
+              <Form.Group className="mb-4">
+                <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Plan de Parqueo</Form.Label>
+                <Form.Select disabled value="">
+                  <option value="">Plan Actual: {planActivoInfo.nombre} (Ya pagado)</option>
+                </Form.Select>
+                <Form.Text className="text-success"><InfoCircleFill className="me-1" /> Ya cuentas con un plan activo.</Form.Text>
+              </Form.Group>
+            ) : (
+              <Form.Group className="mb-4">
+                <Form.Label className="fw-bold" style={{ color: 'var(--color-primario)' }}>Selecciona tu Plan de Parqueo <span className="text-danger">*</span></Form.Label>
+                <Form.Select
+                  required
+                  value={nuevoVehiculo.plan_id}
+                  onChange={(e) => {
+                    const selectedPlanId = e.target.value;
+                    const selectedPlan = planes.find(p => p.PLN_PLAN.toString() === selectedPlanId);
+                    let tipoVehiculo = nuevoVehiculo.tipo_vehiculo;
+                    
+                    if (selectedPlan && selectedPlan.PLN_NOMBRE_PLAN) {
+                      const nombrePlan = selectedPlan.PLN_NOMBRE_PLAN.toUpperCase();
+                      if (nombrePlan.includes('MOTO')) {
+                        tipoVehiculo = 'MOTOCICLETA';
+                      } else if (nombrePlan.includes('CARRO')) {
+                        tipoVehiculo = 'AUTOMOVIL';
+                      }
+                    }
+                    
+                    setNuevoVehiculo({ ...nuevoVehiculo, plan_id: selectedPlanId, tipo_vehiculo: tipoVehiculo });
+                  }}
+                  style={{ border: '2px solid var(--color-accion)' }}
+                >
+                  <option value="" disabled hidden>Elige un plan de la lista...</option>
+                  {planes.map((p) => (
+                    <option key={p.PLN_PLAN} value={p.PLN_PLAN}>
+                      {p.PLN_NOMBRE_PLAN} - Q.{p.PLN_PRECIO}.00
+                    </option>
+                  ))}
+                </Form.Select>
+                <Form.Text className="text-muted"><InfoCircleFill className="me-1" /> Este plan se asociará a tu cuenta principal.</Form.Text>
+              </Form.Group>
+            )}
 
             <Alert variant="info" className="d-flex align-items-center border-0 shadow-sm rounded-3 py-2 px-3 mb-4">
               <InfoCircleFill size={20} className="me-3 flex-shrink-0" />
