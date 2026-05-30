@@ -238,8 +238,15 @@ const DashboardAdmin = () => {
     Swal.fire({ title: '¡Reporte Generado!', text: 'Tu documento PDF ha sido descargado exitosamente.', icon: 'success', timer: 2000, showConfirmButton: false });
   };
 
-  const usuariosFiltrados = usuarios.filter(u => u.CARNE.toLowerCase().includes(busquedaUsuarios.toLowerCase()) || u.NOMBRE.toLowerCase().includes(busquedaUsuarios.toLowerCase()) || u.CORREO.toLowerCase().includes(busquedaUsuarios.toLowerCase()));
-  const pagosFiltrados = pagosAdmin.filter(p => p.CARNE_USUARIO.toLowerCase().includes(busquedaPagos.toLowerCase()) || p.NOMBRE.toLowerCase().includes(busquedaPagos.toLowerCase()));
+  const usuariosFiltrados = usuarios.filter(u => 
+    (u.CARNE || '').toString().toLowerCase().includes((busquedaUsuarios || '').toLowerCase()) || 
+    (u.NOMBRE || '').toString().toLowerCase().includes((busquedaUsuarios || '').toLowerCase()) || 
+    (u.CORREO || '').toString().toLowerCase().includes((busquedaUsuarios || '').toLowerCase())
+  );
+  const pagosFiltrados = pagosAdmin.filter(p => 
+    (p.CARNE_USUARIO || '').toString().toLowerCase().includes((busquedaPagos || '').toLowerCase()) || 
+    (p.NOMBRE || '').toString().toLowerCase().includes((busquedaPagos || '').toLowerCase())
+  );
   const COLORES_PASTEL = ['#0098db', '#f5a623', '#28a745', '#dc3545'];
 
   const SidebarItem = ({ icon: Icon, label, vista }: any) => {
@@ -258,7 +265,7 @@ const DashboardAdmin = () => {
         <Card.Body className="p-4 d-flex align-items-center">
           <div className="rounded-3 d-flex align-items-center justify-content-center me-3" style={{ width: '60px', height: '60px', backgroundColor: `${color}15`, color: color, flexShrink: 0 }}><Icon size={28} /></div>
           <div style={{ overflow: 'hidden', width: '100%' }}>
-            <div className="text-muted small fw-bold mb-1 text-truncate" style={{ letterSpacing: '0.5px' }}>{title.toUpperCase()}</div>
+            <div className="text-muted small fw-bold mb-1 text-truncate" style={{ letterSpacing: '0.5px' }}>{(title || '').toString().toUpperCase()}</div>
             <h3 className="mb-0 fw-bold text-truncate" style={{ color: 'var(--azul-oscuro, #002b5c)', fontSize: '1.4rem' }} title={String(value)}>{value}</h3>
           </div>
         </Card.Body>
@@ -579,9 +586,9 @@ const DashboardAdmin = () => {
                         <thead className="text-muted" style={{ fontSize: '0.85rem' }}><tr><th className="border-0">Dueño / Carné</th><th className="border-0">Placa</th><th className="border-0">Tipo</th><th className="border-0">Marca / Modelo</th><th className="border-0">Color</th><th className="border-0 text-center">Acción</th></tr></thead>
                         <tbody>
                           {vehiculosDirectorio.filter(v => 
-                            v.PLACA.toLowerCase().includes(busquedaVehiculos.toLowerCase()) || 
-                            (v.NOMBRE_PROPIETARIO || '').toLowerCase().includes(busquedaVehiculos.toLowerCase()) || 
-                            (v.MARCA || '').toLowerCase().includes(busquedaVehiculos.toLowerCase())
+                            (v.PLACA || '').toString().toLowerCase().includes((busquedaVehiculos || '').toLowerCase()) || 
+                            (v.NOMBRE_PROPIETARIO || '').toString().toLowerCase().includes((busquedaVehiculos || '').toLowerCase()) || 
+                            (v.MARCA || '').toString().toLowerCase().includes((busquedaVehiculos || '').toLowerCase())
                           ).map((v, index) => (
                             <tr key={index}>
                               <td><strong>{v.NOMBRE_PROPIETARIO}</strong><br /><small className="text-muted">{v.CARNE_USUARIO}</small></td>
